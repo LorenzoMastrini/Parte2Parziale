@@ -1,0 +1,65 @@
+
+program prova;
+const
+    c1=5;
+    c2=50;
+
+var 
+    x:Integer;
+    y:Boolean;
+    z:Real;
+    a:Character;
+    b:String;
+    c:array[1..10] of Integer;
+    d:^Integer;
+    x2:Integer;
+
+function func(var r:array[1..10] of Integer, var m:Integer):Integer;
+var x2:Integer;
+begin
+    x:=y;
+    y:=z;
+    z:=5;
+    x:=c[5];
+    x:=d^;
+end; 
+
+function func2(var i:Integer):Integer;
+var x2:Integer;
+begin
+    x:=y;
+    y:=z;
+    z:=5;
+    x:=c[5];
+    x:=d^;
+end; 
+
+procedure prod(var i:Integer);
+var x2:Integer;
+begin
+    x:=y;
+    y:=z;
+    z:=5;
+    x:=c[5];
+    x:=d^;
+end; 
+
+begin
+    x:= y;
+    x:= +x;
+    x := -x;
+    x := not x;
+    x := x+x;
+    x := x*x;
+    y:=func2(x, y, x+5);
+    func2(x, y, x+5);
+    prod(y);
+    if x<5 then if y>5 then b:=5+5 else b:=4+4;
+    while x<5 do y:=y+1
+end.
+
+
+
+
+
+
