@@ -82,7 +82,7 @@ import LexLinguaggio
   L_doubl     { PT _ (TD $$)   }
   L_integ     { PT _ (TI $$)   }
   L_quoted    { PT _ (TL $$)   }
-
+%nonassoc Unary
 %%
 
 Ident :: { AbsLinguaggio.Ident }
@@ -114,22 +114,12 @@ Block
 
 DeclarationPart :: { AbsLinguaggio.DeclarationPart }
 DeclarationPart
-  : ConstantDefinitionPart ListVariableDeclarationPart ListProcedureAndFunctionDeclaration { AbsLinguaggio.Decls $1 $2 $3 }
-
-ListVariableDeclarationPart :: { [AbsLinguaggio.VariableDeclarationPart] }
-ListVariableDeclarationPart
-  : {- empty -} { [] }
-  | VariableDeclarationPart ListVariableDeclarationPart { (:) $1 $2 }
-
-ListProcedureAndFunctionDeclaration :: { [AbsLinguaggio.ProcedureAndFunctionDeclaration] }
-ListProcedureAndFunctionDeclaration
-  : {- empty -} { [] }
-  | ProcedureAndFunctionDeclaration { (:[]) $1 }
-  | ProcedureAndFunctionDeclaration ';' ListProcedureAndFunctionDeclaration { (:) $1 $3 }
+  : ConstantDefinitionPart VariableDeclarationPart ListProcedureAndFunctionDeclaration { AbsLinguaggio.Decls $1 $2 $3 }
 
 ConstantDefinitionPart :: { AbsLinguaggio.ConstantDefinitionPart }
 ConstantDefinitionPart
-  : 'const' ListConstantDefinition { AbsLinguaggio.ConstDefs $2 }
+  : {- empty -} { AbsLinguaggio.NoConstDefs }
+  | 'const' ListConstantDefinition { AbsLinguaggio.ConstDefs $2 }
 
 ConstantDefinition :: { AbsLinguaggio.ConstantDefinition }
 ConstantDefinition
@@ -137,40 +127,47 @@ ConstantDefinition
 
 ListConstantDefinition :: { [AbsLinguaggio.ConstantDefinition] }
 ListConstantDefinition
-  : {- empty -} { [] }
+  : ConstantDefinition ';' { (:[]) $1 }
   | ConstantDefinition ';' ListConstantDefinition { (:) $1 $3 }
 
 VariableDeclarationPart :: { AbsLinguaggio.VariableDeclarationPart }
 VariableDeclarationPart
-  : 'var' ListVariableDeclaration { AbsLinguaggio.VarDecls $2 }
+  : {- empty -} { AbsLinguaggio.NoVarDecls }
+  | 'var' ListVariableDeclaration { AbsLinguaggio.VarDecls $2 }
+
+VariableDeclaration :: { AbsLinguaggio.VariableDeclaration }
+VariableDeclaration
+  : ListIdent ':' Type { AbsLinguaggio.VarDecl $1 $3 }
 
 ListVariableDeclaration :: { [AbsLinguaggio.VariableDeclaration] }
 ListVariableDeclaration
   : VariableDeclaration ';' { (:[]) $1 }
   | VariableDeclaration ';' ListVariableDeclaration { (:) $1 $3 }
 
-VariableDeclaration :: { AbsLinguaggio.VariableDeclaration }
-VariableDeclaration
-  : ListIdent ':' Type { AbsLinguaggio.VarDecl $1 $3 }
-
 ProcedureAndFunctionDeclaration :: { AbsLinguaggio.ProcedureAndFunctionDeclaration }
 ProcedureAndFunctionDeclaration
-  : ProcFunHeading Block { AbsLinguaggio.ProcFunDecl $1 $2 }
+  : ProcedureAndFunctionHeading Block { AbsLinguaggio.ProcFunDecl $1 $2 }
 
-ProcFunHeading :: { AbsLinguaggio.ProcFunHeading }
-ProcFunHeading
-  : 'procedure' Ident '(' ListFormParam ')' ';' { AbsLinguaggio.ProcDecl $2 $4 }
-  | 'function' Ident '(' ListFormParam ')' ':' Type ';' { AbsLinguaggio.FunDecl $2 $4 $7 }
+ListProcedureAndFunctionDeclaration :: { [AbsLinguaggio.ProcedureAndFunctionDeclaration] }
+ListProcedureAndFunctionDeclaration
+  : {- empty -} { [] }
+  | ProcedureAndFunctionDeclaration { (:[]) $1 }
+  | ProcedureAndFunctionDeclaration ';' ListProcedureAndFunctionDeclaration { (:) $1 $3 }
 
-FormParam :: { AbsLinguaggio.FormParam }
-FormParam
+ProcedureAndFunctionHeading :: { AbsLinguaggio.ProcedureAndFunctionHeading }
+ProcedureAndFunctionHeading
+  : 'procedure' Ident '(' ListFormalParameters ')' ';' { AbsLinguaggio.ProcDecl $2 $4 }
+  | 'function' Ident '(' ListFormalParameters ')' ':' Type ';' { AbsLinguaggio.FunDecl $2 $4 $7 }
+
+FormalParameters :: { AbsLinguaggio.FormalParameters }
+FormalParameters
   : OptModality ListIdent ':' Type { AbsLinguaggio.FormParam $1 $2 $4 }
 
-ListFormParam :: { [AbsLinguaggio.FormParam] }
-ListFormParam
+ListFormalParameters :: { [AbsLinguaggio.FormalParameters] }
+ListFormalParameters
   : {- empty -} { [] }
-  | FormParam { (:[]) $1 }
-  | FormParam ',' ListFormParam { (:) $1 $3 }
+  | FormalParameters { (:[]) $1 }
+  | FormalParameters ',' ListFormalParameters { (:) $1 $3 }
 
 OptModality :: { AbsLinguaggio.OptModality }
 OptModality
@@ -203,7 +200,7 @@ ListIndexType
 
 Constant :: { AbsLinguaggio.Constant }
 Constant
-  : OptSign IdentOrNumber { AbsLinguaggio.Const1 $1 $2 }
+  : OptSign IdentOrNumber { AbsLinguaggio.Const $1 $2 }
   | String { AbsLinguaggio.ConstStr $1 }
 
 IdentOrNumber :: { AbsLinguaggio.IdentOrNumber }
@@ -220,14 +217,14 @@ OptSign
 
 CompoundStatement :: { AbsLinguaggio.CompoundStatement }
 CompoundStatement
-  : 'begin' ListStatement 'end' { AbsLinguaggio.CompoundStatement $2 }
+  : 'begin' ListStatement 'end' { AbsLinguaggio.CompStmt $2 }
 
 Statement :: { AbsLinguaggio.Statement }
 Statement
   : CompoundStatement { AbsLinguaggio.Stmts $1 }
-  | {- empty -} { AbsLinguaggio.NoStatement }
-  | RExpr { AbsLinguaggio.RExprStatement $1 }
-  | LExpr ':=' RExpr { AbsLinguaggio.AssignStatement $1 $3 }
+  | {- empty -} { AbsLinguaggio.NoStmt }
+  | RExpr { AbsLinguaggio.RExprStmt $1 }
+  | LExpr ':=' RExpr { AbsLinguaggio.Assign $1 $3 }
   | 'while' RExpr 'do' Statement { AbsLinguaggio.While $2 $4 }
   | 'repeat' Statement 'until' RExpr { AbsLinguaggio.DoWhile $2 $4 }
   | 'for' LExpr ':=' RExpr 'to' RExpr 'do' Statement { AbsLinguaggio.ForTo $2 $4 $6 $8 }
@@ -263,7 +260,7 @@ LExpr
 RExpr :: { AbsLinguaggio.RExpr }
 RExpr
   : RExpr Binary RExpr { AbsLinguaggio.Binary $1 $2 $3 }
-  | Unary RExpr { AbsLinguaggio.Unary $1 $2 }
+  | Unary RExpr %prec UNARY { AbsLinguaggio.Unary $1 $2 }
   | Literal { AbsLinguaggio.Lit $1 }
   | Ident '(' ListRExpr ')' { AbsLinguaggio.FCall $1 $3 }
   | '(' RExpr ')' { $2 }
