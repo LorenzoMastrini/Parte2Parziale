@@ -1,10 +1,8 @@
 entrypoints Program ;
 
-comment "//" ;
-comment "/*" "*/" ;
-
 -- Program
-ProgNoParam.  Program ::= "program" Ident ";" Block "." ;
+-- TODO: decidere se lasciare anche la produzione senza parametri
+ProgNoParams. Program ::= "program" Ident ";" Block "." ;
 Prog.         Program ::= "program" Ident "(" [Ident] ")" ";" Block "." ;
 
 separator nonempty Ident "," ;
@@ -14,17 +12,33 @@ Block.  Block ::= DeclarationPart CompoundStatement;
 
 -- Declarations
 Decls.  DeclarationPart ::= ConstantDefinitionPart VariableDeclarationPart [ProcedureAndFunctionDeclaration] ;
-separator ProcedureAndFunctionDeclaration ";" ;
+
+-- Constants
 NoConstDefs.  ConstantDefinitionPart ::= ;
 ConstDefs.    ConstantDefinitionPart ::= "const" [ConstantDefinition] ;
 ConstDef.     ConstantDefinition ::= Ident "=" Constant ;
 terminator nonempty ConstantDefinition ";" ;
 
---Variables
+-- Variables
 NoVarDecls. VariableDeclarationPart ::= ;
-VarDecls.  VariableDeclarationPart ::= "var" [VariableDeclaration] ;
+VarDecls.   VariableDeclarationPart ::= "var" [VariableDeclaration] ;
+VarDecl.    VariableDeclaration ::= [Ident] ":" Type ;
 terminator nonempty VariableDeclaration ";" ;
-VarDecl.  VariableDeclaration ::= [Ident] ":" Type ;
+
+-- Procedure and Functions
+ProcFunDecl.   ProcedureAndFunctionDeclaration ::= ProcedureAndFunctionHeading Block;
+separator ProcedureAndFunctionDeclaration ";" ;
+
+ProcDecl. ProcedureAndFunctionHeading ::= "procedure" Ident "(" [FormalParameters] ")" ";" ;
+FunDecl.  ProcedureAndFunctionHeading ::= "function" Ident "(" [FormalParameters] ")" ":" Type ";";
+
+FormParam. FormalParameters ::= OptModality [Ident] ":" Type ;
+separator FormalParameters "," ;
+
+ByVal.    OptModality ::= ;
+ByRef.    OptModality ::= "var" ;
+ByValRes. OptModality ::= "valres" ;
+
 
 --Types
 Array.    Type ::= "array" "[" [IndexType] "]" "of" Type ;
@@ -35,7 +49,7 @@ rules BasicType ::= "Integer" | "Real" | "Boolean" | "Character" | "String" ;
 IndexRange. IndexType ::= Constant ".." Constant ;
 separator nonempty IndexType "," ;
 
-Const1.     Constant ::= OptSign IdentOrNumber ;
+Const.      Constant ::= OptSign IdentOrNumber ;
 ConstStr.   Constant ::= String ;
 ConstId.    IdentOrNumber ::= Ident ;
 ConstInt.   IdentOrNumber ::= Integer ;
@@ -43,35 +57,25 @@ ConstFloat. IdentOrNumber ::= Double ;
 rules OptSign ::= {- empty -} | "+" | "-" ;
 
 
-NoProcFunDecl. ProcedureAndFunctionDeclaration ::= ;
-ProcFunDecl.   ProcedureAndFunctionDeclaration ::= ProcFunHeading Block;
-
-ProcDecl. ProcFunHeading ::= "procedure" Ident "(" [FormParam] ")" ";" ;
-FunDecl.  ProcFunHeading ::= "function" Ident "(" [FormParam] ")" ":" Type ";";
-
-FormParam. FormParam ::= OptModality [Ident] ":" Type ;
-separator FormParam "," ;
-
-ByVal.    OptModality ::= ;
-ByRef.    OptModality ::= "var" ;
-ByValRes. OptModality ::= "valres" ;
-
-
 -- Statements
-CompoundStatement.  CompoundStatement ::= "begin" [Statement] "end" ;
-CompoundStatementNoStatements.  CompoundStatement ::= "begin" "end" ;
-separator Statement ";" ;
+CompStmt.   CompoundStatement ::= "begin" [Statement] "end" ;
+Stmts.      Statement ::= CompoundStatement ;
+NoStmt.     Statement ::= ;
+RExprStmt.  Statement ::= RExpr ;
+Assign.     Statement ::= LExpr ":=" RExpr ;
+While.      Statement ::= "while" RExpr "do" Statement ;
+DoWhile.    Statement ::= "repeat" Statement "until" RExpr ;
+ForTo.      Statement ::= "for" LExpr ":=" RExpr "to" RExpr "do" Statement ;
+ForDownTo.  Statement ::= "for" LExpr ":=" RExpr "downto" RExpr "do" Statement ;
+If.         Statement ::= "if" RExpr "then" Statement OptElse ;
+NoElse.     OptElse ::= ;
+Else.       OptElse ::= "else" Statement ;
+Case.       Statement ::= "case" RExpr "of" [CaseItem] "end" ;
+CaseItem.   CaseItem ::= Constant ":" Statement ;
+separator CaseItem ";" ;
+separator nonempty Statement ";" ;
 
-AssignStatement. Statement ::= LExpr ":=" RExpr ;
-ProcedureAndFunctionCallStatement.  Statement ::= ProdAndFunCall ;
-Stmts.  Statement ::= CompoundStatement ;
-
-While.  Statement ::= "while" RExpr "do" Statement ;
-If.     Statement ::= "if" RExpr "then" Statement OptElse ;
-NoElse. OptElse ::= ;
-Else.   OptElse ::= "else" Statement ;
-
-ProcedureAndFunctionCall. ProdAndFunCall ::= Ident "(" [RExpr] ")" ;
+-- Expressions
 LId.    LExpr ::= Ident ;
 LArr.   LExpr ::= LExpr "[" [RExpr] "]" ;
 LDeref. LExpr ::= LExpr "^" ;
@@ -87,75 +91,6 @@ rules Literal ::= Integer | Double | Char | String | "true" | "false" ;
 rules Binary  ::= "+" | "-" | "*" | "/" | "div" | "mod" | "or" | "and" | "=" | "<>" | "<" | "<=" | ">" | ">=" ;
 rules Unary   ::= "+" | "-" | "not" ;
 
-{-
-ConstDecls. ConstDecls ::= "const" ConstDefList ;
-ConstDecls. ConstDecls ::= ;
-ConstDefList. ConstDefList ::= ConstDef ";" ConstDefList ;
-ConstDefList. ConstDefList ::= ;
-ConstDef. ConstDef ::= Ident "=" Integer ;
-
-VarDecls. VarDecls ::= "var" VarDefList ;
-VarDecls. VarDecls ::= ;
-VarDefList. VarDefList ::= VarDef ";" VarDefList ;
-VarDefList. VarDefList ::= ;
-VarDef. VarDef ::= IdentList ":" Type ;
-
-ProcDecls. ProcDecls ::= ProcDecl ProcDecls ;
-ProcDecls. ProcDecls ::= ;
-
-ProcDecl. ProcDecl ::= "procedure" Ident ParamsOpt ";" Block ";" ;
-FuncDecl. ProcDecl ::= "function" Ident ParamsOpt ":" Type ";" Block ";" ;
-
-ParamsOpt. ParamsOpt ::= "(" ParamList ")" ;
-ParamsOpt. ParamsOpt ::= ;
-
-ParamList. ParamList ::= Param ";" ParamList ;
-ParamList. ParamList ::= Param ;
-Param. Param ::= IdentList ":" Type ;
-
-Stmts. Stmts ::= "begin" ListStmt "end" ;
-ListStmt. ListStmt ::= Stmt ";" ListStmt ;
-ListStmt. ListStmt ::= ;
-
-Stmt. Stmt ::= Ident ":=" Exp ;
-Stmt. Stmt ::= Ident "(" ListExp ")" ;
-Stmt. Stmt ::= Stmts ;
-Stmt. Stmt ::= "if" Exp "then" Stmt "else" Stmt ;
-Stmt. Stmt ::= "while" Exp "do" Stmt ;
-Stmt. Stmt ::= "for" Ident ":=" Exp Direction Exp "do" Stmt ;
-
-Direction. Direction ::= "to" ;
-Direction. Direction ::= "downto" ;
-
-Type. Type ::= "integer" | "real" | "boolean" | "char" ;
-
-IdentList. IdentList ::= Ident "," IdentList ;
-IdentList. IdentList ::= Ident ;
-
-Exp. Exp ::= Exp "+" Term ;
-Exp. Exp ::= Exp "-" Term ;
-Exp. Exp ::= Exp "or" Term ;
-Exp. Exp ::= Term ;
-
-Term. Term ::= Term "*" Factor ;
-Term. Term ::= Term "/" Factor ;
-Term. Term ::= Term "div" Factor ;
-Term. Term ::= Term "mod" Factor ;
-Term. Term ::= Term "and" Factor ;
-Term. Term ::= Factor ;
-
-Factor. Factor ::= Ident ;
-Factor. Factor ::= Integer ;
-Factor. Factor ::= "(" Exp ")" ;
-Factor. Factor ::= Ident "(" ListExp ")" ;
-
-ListExp. ListExp ::= Exp "," ListExp ;
-ListExp. ListExp ::= Exp ;
-ListExp. ListExp ::= ;
-
-comment "--" ;
-comment "{" "}" ;
-comment "(*" "*)" ;
-
-entrypoints Program ;
--}
+-- Comments
+comment "//" ;
+comment "/*" "*/" ;

@@ -42,11 +42,13 @@ The set of reserved words is the set of terminals appearing in the grammar. Thos
 The reserved words used in linguaggio are the following:
   | ``Boolean`` | ``Character`` | ``Integer`` | ``Real``
   | ``String`` | ``and`` | ``array`` | ``begin``
-  | ``const`` | ``div`` | ``else`` | ``end``
-  | ``false`` | ``function`` | ``if`` | ``mod``
+  | ``case`` | ``const`` | ``div`` | ``do``
+  | ``downto`` | ``else`` | ``end`` | ``false``
+  | ``for`` | ``function`` | ``if`` | ``mod``
   | ``not`` | ``of`` | ``or`` | ``procedure``
-  | ``program`` | ``then`` | ``true`` | ``valres``
-  | ``var`` |  |  |
+  | ``program`` | ``repeat`` | ``then`` | ``to``
+  | ``true`` | ``until`` | ``valres`` | ``var``
+  | ``while`` |  |  |
 
 The symbols used in linguaggio are the following:
   | ; | . | ( | )
@@ -70,20 +72,30 @@ All other symbols are terminals.
   | //[Ident]// | -> | //Ident//
   |  |  **|**  | //Ident// ``,`` //[Ident]//
   | //Block// | -> | //DeclarationPart// //CompoundStatement//
-  | //DeclarationPart// | -> | //ConstantDefinitionPart// //VariableDeclarationPart// //[ProcedureAndFunctionDeclaration]//
+  | //DeclarationPart// | -> | //ConstantDefinitionPart// //[VariableDeclarationPart]// //[ProcedureAndFunctionDeclaration]//
+  | //[VariableDeclarationPart]// | -> | **eps**
+  |  |  **|**  | //VariableDeclarationPart// //[VariableDeclarationPart]//
   | //[ProcedureAndFunctionDeclaration]// | -> | **eps**
   |  |  **|**  | //ProcedureAndFunctionDeclaration//
   |  |  **|**  | //ProcedureAndFunctionDeclaration// ``;`` //[ProcedureAndFunctionDeclaration]//
-  | //ConstantDefinitionPart// | -> | **eps**
-  |  |  **|**  | ``const`` //[ConstantDefinition]//
+  | //ConstantDefinitionPart// | -> | ``const`` //[ConstantDefinition]//
   | //ConstantDefinition// | -> | //Ident// ``=`` //Constant//
-  | //[ConstantDefinition]// | -> | //ConstantDefinition// ``;``
+  | //[ConstantDefinition]// | -> | **eps**
   |  |  **|**  | //ConstantDefinition// ``;`` //[ConstantDefinition]//
-  | //VariableDeclarationPart// | -> | **eps**
-  |  |  **|**  | ``var`` //[VariableDeclaration]//
+  | //VariableDeclarationPart// | -> | ``var`` //[VariableDeclaration]//
   | //[VariableDeclaration]// | -> | //VariableDeclaration// ``;``
   |  |  **|**  | //VariableDeclaration// ``;`` //[VariableDeclaration]//
   | //VariableDeclaration// | -> | //[Ident]// ``:`` //Type//
+  | //ProcedureAndFunctionDeclaration// | -> | //ProcFunHeading// //Block//
+  | //ProcFunHeading// | -> | ``procedure`` //Ident// ``(`` //[FormParam]// ``)`` ``;``
+  |  |  **|**  | ``function`` //Ident// ``(`` //[FormParam]// ``)`` ``:`` //Type// ``;``
+  | //FormParam// | -> | //OptModality// //[Ident]// ``:`` //Type//
+  | //[FormParam]// | -> | **eps**
+  |  |  **|**  | //FormParam//
+  |  |  **|**  | //FormParam// ``,`` //[FormParam]//
+  | //OptModality// | -> | **eps**
+  |  |  **|**  | ``var``
+  |  |  **|**  | ``valres``
   | //Type// | -> | ``array`` ``[`` //[IndexType]// ``]`` ``of`` //Type//
   |  |  **|**  | ``^`` //Type//
   |  |  **|**  | //BasicType//
@@ -103,29 +115,25 @@ All other symbols are terminals.
   | //OptSign// | -> | **eps**
   |  |  **|**  | ``+``
   |  |  **|**  | ``-``
-  | //ProcedureAndFunctionDeclaration// | -> | **eps**
-  |  |  **|**  | //ProcFunHeading// //Block//
-  | //ProcFunHeading// | -> | ``procedure`` //Ident// ``(`` //[FormParam]// ``)`` ``;``
-  |  |  **|**  | ``function`` //Ident// ``(`` //[FormParam]// ``)`` ``:`` //Type// ``;``
-  | //FormParam// | -> | //OptModality// //[Ident]// ``:`` //Type//
-  | //[FormParam]// | -> | **eps**
-  |  |  **|**  | //FormParam//
-  |  |  **|**  | //FormParam// ``,`` //[FormParam]//
-  | //OptModality// | -> | **eps**
-  |  |  **|**  | ``var``
-  |  |  **|**  | ``valres``
   | //CompoundStatement// | -> | ``begin`` //[Statement]// ``end``
-  |  |  **|**  | ``begin`` ``end``
-  | //[Statement]// | -> | **eps**
-  |  |  **|**  | //Statement//
-  |  |  **|**  | //Statement// ``;`` //[Statement]//
-  | //Statement// | -> | //LExpr// ``:=`` //RExpr//
-  |  |  **|**  | //ProdAndFunCall//
-  |  |  **|**  | //CompoundStatement//
+  | //Statement// | -> | //CompoundStatement//
+  |  |  **|**  | **eps**
+  |  |  **|**  | //RExpr//
+  |  |  **|**  | //LExpr// ``:=`` //RExpr//
+  |  |  **|**  | ``while`` //RExpr// ``do`` //Statement//
+  |  |  **|**  | ``repeat`` //Statement// ``until`` //RExpr//
+  |  |  **|**  | ``for`` //LExpr// ``:=`` //RExpr// ``to`` //RExpr// ``do`` //Statement//
+  |  |  **|**  | ``for`` //LExpr// ``:=`` //RExpr// ``downto`` //RExpr// ``do`` //Statement//
   |  |  **|**  | ``if`` //RExpr// ``then`` //Statement// //OptElse//
+  |  |  **|**  | ``case`` //RExpr// ``of`` //[CaseItem]// ``end``
   | //OptElse// | -> | **eps**
   |  |  **|**  | ``else`` //Statement//
-  | //ProdAndFunCall// | -> | //Ident// ``(`` //[RExpr]// ``)``
+  | //CaseItem// | -> | //Constant// ``:`` //Statement//
+  | //[CaseItem]// | -> | **eps**
+  |  |  **|**  | //CaseItem//
+  |  |  **|**  | //CaseItem// ``;`` //[CaseItem]//
+  | //[Statement]// | -> | //Statement//
+  |  |  **|**  | //Statement// ``;`` //[Statement]//
   | //LExpr// | -> | //Ident//
   |  |  **|**  | //LExpr// ``[`` //[RExpr]// ``]``
   |  |  **|**  | //LExpr// ``^``

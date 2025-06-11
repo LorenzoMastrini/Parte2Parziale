@@ -10,7 +10,7 @@ import Prelude (Char, Double, Integer, String)
 import qualified Prelude as C (Eq, Ord, Show, Read)
 import qualified Data.String
 
-data Program = ProgNoParam Ident Block | Prog Ident [Ident] Block
+data Program = ProgNoParams Ident Block | Prog Ident [Ident] Block
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Block = Block DeclarationPart CompoundStatement
@@ -34,6 +34,21 @@ data VariableDeclarationPart
 data VariableDeclaration = VarDecl [Ident] Type
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
+data ProcedureAndFunctionDeclaration
+    = ProcFunDecl ProcedureAndFunctionHeading Block
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
+data ProcedureAndFunctionHeading
+    = ProcDecl Ident [FormalParameters]
+    | FunDecl Ident [FormalParameters] Type
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
+data FormalParameters = FormParam OptModality [Ident] Type
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
+data OptModality = ByVal | ByRef | ByValRes
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
 data Type = Array [IndexType] Type | Pointer Type | Basic BasicType
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
@@ -48,7 +63,7 @@ data BasicType
 data IndexType = IndexRange Constant Constant
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data Constant = Const1 OptSign IdentOrNumber | ConstStr String
+data Constant = Const OptSign IdentOrNumber | ConstStr String
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data IdentOrNumber
@@ -58,36 +73,26 @@ data IdentOrNumber
 data OptSign = OptSign1 | OptSign2 | OptSign3
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data ProcedureAndFunctionDeclaration
-    = NoProcFunDecl | ProcFunDecl ProcFunHeading Block
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
-
-data ProcFunHeading
-    = ProcDecl Ident [FormParam] | FunDecl Ident [FormParam] Type
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
-
-data FormParam = FormParam OptModality [Ident] Type
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
-
-data OptModality = ByVal | ByRef | ByValRes
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
-
-data CompoundStatement
-    = CompoundStatement [Statement] | CompoundStatementNoStatements
+data CompoundStatement = CompStmt [Statement]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Statement
-    = AssignStatement LExpr RExpr
-    | ProcedureAndFunctionCallStatement ProdAndFunCall
-    | Stmts CompoundStatement
+    = Stmts CompoundStatement
+    | NoStmt
+    | RExprStmt RExpr
+    | Assign LExpr RExpr
     | While RExpr Statement
+    | DoWhile Statement RExpr
+    | ForTo LExpr RExpr RExpr Statement
+    | ForDownTo LExpr RExpr RExpr Statement
     | If RExpr Statement OptElse
+    | Case RExpr [CaseItem]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data OptElse = NoElse | Else Statement
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data ProdAndFunCall = ProcedureAndFunctionCall Ident [RExpr]
+data CaseItem = CaseItem Constant Statement
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data LExpr = LId Ident | LArr LExpr [RExpr] | LDeref LExpr

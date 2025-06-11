@@ -52,25 +52,31 @@ import LexLinguaggio
   'and'       { PT _ (TS _ 27) }
   'array'     { PT _ (TS _ 28) }
   'begin'     { PT _ (TS _ 29) }
-  'const'     { PT _ (TS _ 30) }
-  'div'       { PT _ (TS _ 31) }
-  'do'        { PT _ (TS _ 32) }
-  'else'      { PT _ (TS _ 33) }
-  'end'       { PT _ (TS _ 34) }
-  'false'     { PT _ (TS _ 35) }
-  'function'  { PT _ (TS _ 36) }
-  'if'        { PT _ (TS _ 37) }
-  'mod'       { PT _ (TS _ 38) }
-  'not'       { PT _ (TS _ 39) }
-  'of'        { PT _ (TS _ 40) }
-  'or'        { PT _ (TS _ 41) }
-  'procedure' { PT _ (TS _ 42) }
-  'program'   { PT _ (TS _ 43) }
-  'then'      { PT _ (TS _ 44) }
-  'true'      { PT _ (TS _ 45) }
-  'valres'    { PT _ (TS _ 46) }
-  'var'       { PT _ (TS _ 47) }
-  'while'     { PT _ (TS _ 48) }
+  'case'      { PT _ (TS _ 30) }
+  'const'     { PT _ (TS _ 31) }
+  'div'       { PT _ (TS _ 32) }
+  'do'        { PT _ (TS _ 33) }
+  'downto'    { PT _ (TS _ 34) }
+  'else'      { PT _ (TS _ 35) }
+  'end'       { PT _ (TS _ 36) }
+  'false'     { PT _ (TS _ 37) }
+  'for'       { PT _ (TS _ 38) }
+  'function'  { PT _ (TS _ 39) }
+  'if'        { PT _ (TS _ 40) }
+  'mod'       { PT _ (TS _ 41) }
+  'not'       { PT _ (TS _ 42) }
+  'of'        { PT _ (TS _ 43) }
+  'or'        { PT _ (TS _ 44) }
+  'procedure' { PT _ (TS _ 45) }
+  'program'   { PT _ (TS _ 46) }
+  'repeat'    { PT _ (TS _ 47) }
+  'then'      { PT _ (TS _ 48) }
+  'to'        { PT _ (TS _ 49) }
+  'true'      { PT _ (TS _ 50) }
+  'until'     { PT _ (TS _ 51) }
+  'valres'    { PT _ (TS _ 52) }
+  'var'       { PT _ (TS _ 53) }
+  'while'     { PT _ (TS _ 54) }
   L_Ident     { PT _ (TV $$)   }
   L_charac    { PT _ (TC $$)   }
   L_doubl     { PT _ (TD $$)   }
@@ -96,7 +102,7 @@ String   : L_quoted { $1 }
 
 Program :: { AbsLinguaggio.Program }
 Program
-  : 'program' Ident ';' Block '.' { AbsLinguaggio.ProgNoParam $2 $4 }
+  : 'program' Ident ';' Block '.' { AbsLinguaggio.ProgNoParams $2 $4 }
   | 'program' Ident '(' ListIdent ')' ';' Block '.' { AbsLinguaggio.Prog $2 $4 $7 }
 
 ListIdent :: { [AbsLinguaggio.Ident] }
@@ -109,12 +115,6 @@ Block
 DeclarationPart :: { AbsLinguaggio.DeclarationPart }
 DeclarationPart
   : ConstantDefinitionPart VariableDeclarationPart ListProcedureAndFunctionDeclaration { AbsLinguaggio.Decls $1 $2 $3 }
-
-ListProcedureAndFunctionDeclaration :: { [AbsLinguaggio.ProcedureAndFunctionDeclaration] }
-ListProcedureAndFunctionDeclaration
-  : {- empty -} { [] }
-  | ProcedureAndFunctionDeclaration { (:[]) $1 }
-  | ProcedureAndFunctionDeclaration ';' ListProcedureAndFunctionDeclaration { (:) $1 $3 }
 
 ConstantDefinitionPart :: { AbsLinguaggio.ConstantDefinitionPart }
 ConstantDefinitionPart
@@ -135,14 +135,45 @@ VariableDeclarationPart
   : {- empty -} { AbsLinguaggio.NoVarDecls }
   | 'var' ListVariableDeclaration { AbsLinguaggio.VarDecls $2 }
 
+VariableDeclaration :: { AbsLinguaggio.VariableDeclaration }
+VariableDeclaration
+  : ListIdent ':' Type { AbsLinguaggio.VarDecl $1 $3 }
+
 ListVariableDeclaration :: { [AbsLinguaggio.VariableDeclaration] }
 ListVariableDeclaration
   : VariableDeclaration ';' { (:[]) $1 }
   | VariableDeclaration ';' ListVariableDeclaration { (:) $1 $3 }
 
-VariableDeclaration :: { AbsLinguaggio.VariableDeclaration }
-VariableDeclaration
-  : ListIdent ':' Type { AbsLinguaggio.VarDecl $1 $3 }
+ProcedureAndFunctionDeclaration :: { AbsLinguaggio.ProcedureAndFunctionDeclaration }
+ProcedureAndFunctionDeclaration
+  : ProcedureAndFunctionHeading Block { AbsLinguaggio.ProcFunDecl $1 $2 }
+
+ListProcedureAndFunctionDeclaration :: { [AbsLinguaggio.ProcedureAndFunctionDeclaration] }
+ListProcedureAndFunctionDeclaration
+  : {- empty -} { [] }
+  | ProcedureAndFunctionDeclaration { (:[]) $1 }
+  | ProcedureAndFunctionDeclaration ';' ListProcedureAndFunctionDeclaration { (:) $1 $3 }
+
+ProcedureAndFunctionHeading :: { AbsLinguaggio.ProcedureAndFunctionHeading }
+ProcedureAndFunctionHeading
+  : 'procedure' Ident '(' ListFormalParameters ')' ';' { AbsLinguaggio.ProcDecl $2 $4 }
+  | 'function' Ident '(' ListFormalParameters ')' ':' Type ';' { AbsLinguaggio.FunDecl $2 $4 $7 }
+
+FormalParameters :: { AbsLinguaggio.FormalParameters }
+FormalParameters
+  : OptModality ListIdent ':' Type { AbsLinguaggio.FormParam $1 $2 $4 }
+
+ListFormalParameters :: { [AbsLinguaggio.FormalParameters] }
+ListFormalParameters
+  : {- empty -} { [] }
+  | FormalParameters { (:[]) $1 }
+  | FormalParameters ',' ListFormalParameters { (:) $1 $3 }
+
+OptModality :: { AbsLinguaggio.OptModality }
+OptModality
+  : {- empty -} { AbsLinguaggio.ByVal }
+  | 'var' { AbsLinguaggio.ByRef }
+  | 'valres' { AbsLinguaggio.ByValRes }
 
 Type :: { AbsLinguaggio.Type }
 Type
@@ -169,7 +200,7 @@ ListIndexType
 
 Constant :: { AbsLinguaggio.Constant }
 Constant
-  : OptSign IdentOrNumber { AbsLinguaggio.Const1 $1 $2 }
+  : OptSign IdentOrNumber { AbsLinguaggio.Const $1 $2 }
   | String { AbsLinguaggio.ConstStr $1 }
 
 IdentOrNumber :: { AbsLinguaggio.IdentOrNumber }
@@ -184,59 +215,41 @@ OptSign
   | '+' { AbsLinguaggio.OptSign2 }
   | '-' { AbsLinguaggio.OptSign3 }
 
-ProcedureAndFunctionDeclaration :: { AbsLinguaggio.ProcedureAndFunctionDeclaration }
-ProcedureAndFunctionDeclaration
-  : {- empty -} { AbsLinguaggio.NoProcFunDecl }
-  | ProcFunHeading Block { AbsLinguaggio.ProcFunDecl $1 $2 }
-
-ProcFunHeading :: { AbsLinguaggio.ProcFunHeading }
-ProcFunHeading
-  : 'procedure' Ident '(' ListFormParam ')' ';' { AbsLinguaggio.ProcDecl $2 $4 }
-  | 'function' Ident '(' ListFormParam ')' ':' Type ';' { AbsLinguaggio.FunDecl $2 $4 $7 }
-
-FormParam :: { AbsLinguaggio.FormParam }
-FormParam
-  : OptModality ListIdent ':' Type { AbsLinguaggio.FormParam $1 $2 $4 }
-
-ListFormParam :: { [AbsLinguaggio.FormParam] }
-ListFormParam
-  : {- empty -} { [] }
-  | FormParam { (:[]) $1 }
-  | FormParam ',' ListFormParam { (:) $1 $3 }
-
-OptModality :: { AbsLinguaggio.OptModality }
-OptModality
-  : {- empty -} { AbsLinguaggio.ByVal }
-  | 'var' { AbsLinguaggio.ByRef }
-  | 'valres' { AbsLinguaggio.ByValRes }
-
 CompoundStatement :: { AbsLinguaggio.CompoundStatement }
 CompoundStatement
-  : 'begin' ListStatement 'end' { AbsLinguaggio.CompoundStatement $2 }
-  | 'begin' 'end' { AbsLinguaggio.CompoundStatementNoStatements }
-
-ListStatement :: { [AbsLinguaggio.Statement] }
-ListStatement
-  : {- empty -} { [] }
-  | Statement { (:[]) $1 }
-  | Statement ';' ListStatement { (:) $1 $3 }
+  : 'begin' ListStatement 'end' { AbsLinguaggio.CompStmt $2 }
 
 Statement :: { AbsLinguaggio.Statement }
 Statement
-  : LExpr ':=' RExpr { AbsLinguaggio.AssignStatement $1 $3 }
-  | ProdAndFunCall { AbsLinguaggio.ProcedureAndFunctionCallStatement $1 }
-  | CompoundStatement { AbsLinguaggio.Stmts $1 }
+  : CompoundStatement { AbsLinguaggio.Stmts $1 }
+  | {- empty -} { AbsLinguaggio.NoStmt }
+  | RExpr { AbsLinguaggio.RExprStmt $1 }
+  | LExpr ':=' RExpr { AbsLinguaggio.Assign $1 $3 }
   | 'while' RExpr 'do' Statement { AbsLinguaggio.While $2 $4 }
+  | 'repeat' Statement 'until' RExpr { AbsLinguaggio.DoWhile $2 $4 }
+  | 'for' LExpr ':=' RExpr 'to' RExpr 'do' Statement { AbsLinguaggio.ForTo $2 $4 $6 $8 }
+  | 'for' LExpr ':=' RExpr 'downto' RExpr 'do' Statement { AbsLinguaggio.ForDownTo $2 $4 $6 $8 }
   | 'if' RExpr 'then' Statement OptElse { AbsLinguaggio.If $2 $4 $5 }
+  | 'case' RExpr 'of' ListCaseItem 'end' { AbsLinguaggio.Case $2 $4 }
 
 OptElse :: { AbsLinguaggio.OptElse }
 OptElse
   : {- empty -} { AbsLinguaggio.NoElse }
   | 'else' Statement { AbsLinguaggio.Else $2 }
 
-ProdAndFunCall :: { AbsLinguaggio.ProdAndFunCall }
-ProdAndFunCall
-  : Ident '(' ListRExpr ')' { AbsLinguaggio.ProcedureAndFunctionCall $1 $3 }
+CaseItem :: { AbsLinguaggio.CaseItem }
+CaseItem : Constant ':' Statement { AbsLinguaggio.CaseItem $1 $3 }
+
+ListCaseItem :: { [AbsLinguaggio.CaseItem] }
+ListCaseItem
+  : {- empty -} { [] }
+  | CaseItem { (:[]) $1 }
+  | CaseItem ';' ListCaseItem { (:) $1 $3 }
+
+ListStatement :: { [AbsLinguaggio.Statement] }
+ListStatement
+  : Statement { (:[]) $1 }
+  | Statement ';' ListStatement { (:) $1 $3 }
 
 LExpr :: { AbsLinguaggio.LExpr }
 LExpr

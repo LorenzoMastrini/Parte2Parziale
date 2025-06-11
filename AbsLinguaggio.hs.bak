@@ -10,28 +10,40 @@ import Prelude (Char, Double, Integer, String)
 import qualified Prelude as C (Eq, Ord, Show, Read)
 import qualified Data.String
 
-data Program = ProgNoParam Ident Block | Prog Ident [Ident] Block
+data Program = ProgNoParams Ident Block | Prog Ident [Ident] Block
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Block = Block DeclarationPart CompoundStatement
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data DeclarationPart
-    = Decls ConstantDefinitionPart VariableDeclarationPart [ProcedureAndFunctionDeclaration]
+    = Decls ConstantDefinitionPart [VariableDeclarationPart] [ProcedureAndFunctionDeclaration]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data ConstantDefinitionPart
-    = NoConstDefs | ConstDefs [ConstantDefinition]
+data ConstantDefinitionPart = ConstDefs [ConstantDefinition]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data ConstantDefinition = ConstDef Ident Constant
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data VariableDeclarationPart
-    = NoVarDecls | VarDecls [VariableDeclaration]
+data VariableDeclarationPart = VarDecls [VariableDeclaration]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data VariableDeclaration = VarDecl [Ident] Type
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
+data ProcedureAndFunctionDeclaration
+    = ProcFunDecl ProcFunHeading Block
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
+data ProcFunHeading
+    = ProcDecl Ident [FormParam] | FunDecl Ident [FormParam] Type
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
+data FormParam = FormParam OptModality [Ident] Type
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
+data OptModality = ByVal | ByRef | ByValRes
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Type = Array [IndexType] Type | Pointer Type | Basic BasicType
@@ -58,35 +70,26 @@ data IdentOrNumber
 data OptSign = OptSign1 | OptSign2 | OptSign3
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data ProcedureAndFunctionDeclaration
-    = NoProcFunDecl | ProcFunDecl ProcFunHeading Block
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
-
-data ProcFunHeading
-    = ProcDecl Ident [FormParam] | FunDecl Ident [FormParam] Type
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
-
-data FormParam = FormParam OptModality [Ident] Type
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
-
-data OptModality = ByVal | ByRef | ByValRes
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
-
-data CompoundStatement
-    = CompoundStatement [Statement] | CompoundStatementNoStatements
+data CompoundStatement = CompoundStatement [Statement]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Statement
-    = AssignStatement LExpr RExpr
-    | ProcedureAndFunctionCallStatement ProdAndFunCall
-    | Stmts CompoundStatement
+    = Stmts CompoundStatement
+    | NoStatement
+    | RExprStatement RExpr
+    | AssignStatement LExpr RExpr
+    | While RExpr Statement
+    | DoWhile Statement RExpr
+    | ForTo LExpr RExpr RExpr Statement
+    | ForDownTo LExpr RExpr RExpr Statement
     | If RExpr Statement OptElse
+    | Case RExpr [CaseItem]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data OptElse = NoElse | Else Statement
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data ProdAndFunCall = ProcedureAndFunctionCall Ident [RExpr]
+data CaseItem = CaseItem Constant Statement
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data LExpr = LId Ident | LArr LExpr [RExpr] | LDeref LExpr

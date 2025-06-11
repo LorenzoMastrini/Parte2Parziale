@@ -166,32 +166,36 @@ eitherResIdent tv s = treeFind resWords
 -- | The keywords and symbols of the language organized as binary search tree.
 resWords :: BTree
 resWords =
-  b "]" 25
-    (b "<" 13
+  b "array" 28
+    (b "<=" 14
        (b "." 7
           (b "+" 4
              (b ")" 2 (b "(" 1 N N) (b "*" 3 N N)) (b "-" 6 (b "," 5 N N) N))
-          (b ":" 10 (b "/" 9 (b ".." 8 N N) N) (b ";" 12 (b ":=" 11 N N) N)))
-       (b "Boolean" 19
-          (b "=" 16
-             (b "<>" 15 (b "<=" 14 N N) N) (b ">=" 18 (b ">" 17 N N) N))
-          (b "Real" 22
-             (b "Integer" 21 (b "Character" 20 N N) N)
-             (b "[" 24 (b "String" 23 N N) N))))
-    (b "if" 37
-       (b "div" 31
-          (b "array" 28
-             (b "and" 27 (b "^" 26 N N) N) (b "const" 30 (b "begin" 29 N N) N))
-          (b "end" 34
-             (b "else" 33 (b "do" 32 N N) N)
-             (b "function" 36 (b "false" 35 N N) N)))
-       (b "program" 43
-          (b "of" 40
-             (b "not" 39 (b "mod" 38 N N) N)
-             (b "procedure" 42 (b "or" 41 N N) N))
-          (b "valres" 46
-             (b "true" 45 (b "then" 44 N N) N)
-             (b "while" 48 (b "var" 47 N N) N))))
+          (b ":=" 11
+             (b "/" 9 (b ".." 8 N N) (b ":" 10 N N))
+             (b "<" 13 (b ";" 12 N N) N)))
+       (b "Integer" 21
+          (b ">=" 18
+             (b "=" 16 (b "<>" 15 N N) (b ">" 17 N N))
+             (b "Character" 20 (b "Boolean" 19 N N) N))
+          (b "]" 25
+             (b "String" 23 (b "Real" 22 N N) (b "[" 24 N N))
+             (b "and" 27 (b "^" 26 N N) N))))
+    (b "not" 42
+       (b "else" 35
+          (b "div" 32
+             (b "case" 30 (b "begin" 29 N N) (b "const" 31 N N))
+             (b "downto" 34 (b "do" 33 N N) N))
+          (b "function" 39
+             (b "false" 37 (b "end" 36 N N) (b "for" 38 N N))
+             (b "mod" 41 (b "if" 40 N N) N)))
+       (b "to" 49
+          (b "program" 46
+             (b "or" 44 (b "of" 43 N N) (b "procedure" 45 N N))
+             (b "then" 48 (b "repeat" 47 N N) N))
+          (b "valres" 52
+             (b "until" 51 (b "true" 50 N N) N)
+             (b "while" 54 (b "var" 53 N N) N))))
   where
   b s n = B bs (TS bs n)
     where
