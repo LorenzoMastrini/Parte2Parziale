@@ -2,7 +2,7 @@
 
 -- | Program to test parser.
 
-module Main where
+module MainOld where
 
 import Prelude
   ( ($), (.)
@@ -64,7 +64,7 @@ usage = do
     , "  (files)         Parse content of files verbosely."
     , "  -s (files)      Silent mode. Parse content of files silently."
     ]
-
+{-
 main :: IO ()
 main = do
   args <- getArgs
@@ -73,4 +73,5 @@ main = do
     []         -> getContents >>= run 2 pProgram
     "-s":fs    -> mapM_ (runFile 0 pProgram) fs
     fs         -> mapM_ (runFile 2 pProgram) fs
+-}
 

@@ -22,6 +22,16 @@ import LexLinguaggio
 -- no lexer declaration
 %monad { Err } { (>>=) } { return }
 %tokentype {Token}
+
+-- Add precedence rules
+%left 'or'
+%left 'and'
+%left '=' '<>' '<' '<=' '>' '>='
+%left '+' '-'
+%left '*' '/' 'div' 'mod'
+%right 'not' Unary1 Unary2
+%right '^'
+
 %token
   '('         { PT _ (TS _ 1)  }
   ')'         { PT _ (TS _ 2)  }
@@ -259,8 +269,23 @@ LExpr
 
 RExpr :: { AbsLinguaggio.RExpr }
 RExpr
-  : RExpr Binary RExpr { AbsLinguaggio.Binary $1 $2 $3 }
-  | Unary RExpr { AbsLinguaggio.Unary $1 $2 }
+  : RExpr '+' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryPlus $3 }
+  | RExpr '-' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryMinus $3 }
+  | RExpr '*' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryMul $3 }
+  | RExpr '/' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryDiv $3 }
+  | RExpr 'div' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryIntDiv $3 }
+  | RExpr 'mod' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryMod $3 }
+  | RExpr 'or' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryOr $3 }
+  | RExpr 'and' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryAnd $3 }
+  | RExpr '=' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryEq $3 }
+  | RExpr '<>' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryNeq $3 }
+  | RExpr '<' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryLt $3 }
+  | RExpr '<=' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryLte $3 }
+  | RExpr '>' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryGt $3 }
+  | RExpr '>=' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryGte $3 }
+  | '+' RExpr %prec Unary1 { AbsLinguaggio.Unary AbsLinguaggio.Unary1 $2 }
+  | '-' RExpr %prec Unary2 { AbsLinguaggio.Unary AbsLinguaggio.Unary2 $2 }
+  | 'not' RExpr { AbsLinguaggio.Unary AbsLinguaggio.Unary_not $2 }
   | Literal { AbsLinguaggio.Lit $1 }
   | Ident '(' ListRExpr ')' { AbsLinguaggio.FCall $1 $3 }
   | '(' RExpr ')' { $2 }
@@ -280,23 +305,6 @@ Literal
   | String { AbsLinguaggio.LiteralString $1 }
   | 'true' { AbsLinguaggio.Literal_true }
   | 'false' { AbsLinguaggio.Literal_false }
-
-Binary :: { AbsLinguaggio.Binary }
-Binary
-  : '+' { AbsLinguaggio.Binary1 }
-  | '-' { AbsLinguaggio.Binary2 }
-  | '*' { AbsLinguaggio.Binary3 }
-  | '/' { AbsLinguaggio.Binary4 }
-  | 'div' { AbsLinguaggio.Binary_div }
-  | 'mod' { AbsLinguaggio.Binary_mod }
-  | 'or' { AbsLinguaggio.Binary_or }
-  | 'and' { AbsLinguaggio.Binary_and }
-  | '=' { AbsLinguaggio.Binary5 }
-  | '<>' { AbsLinguaggio.Binary6 }
-  | '<' { AbsLinguaggio.Binary7 }
-  | '<=' { AbsLinguaggio.Binary8 }
-  | '>' { AbsLinguaggio.Binary9 }
-  | '>=' { AbsLinguaggio.Binary10 }
 
 Unary :: { AbsLinguaggio.Unary }
 Unary

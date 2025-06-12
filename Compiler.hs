@@ -48,7 +48,7 @@ run v p s = let ts = myLLexer s in case p ts of
            Bad s    -> do putStrLn (colorRed "[PARSING]: FAIL" )
                           putStrLn $ errorMsg s
                           exitFailure
-           Ok tree  -> do putStrN v $ "\n" ++ colorGreen "[PARSING]: PASS\n" ++ printTree tree
+           Ok tree  -> do putStrN v $ "\n" ++ colorGreen "[PARSING]: PASS\n" ++ show tree
                           putStrNC v "\n[PARSING]: PASS"
                           --putStrT v (testingTAC (generateTAC tree) s)
                           --x <-testing tree s

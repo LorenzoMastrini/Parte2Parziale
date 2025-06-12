@@ -58,6 +58,7 @@ data BasicType
     | BasicType_Boolean
     | BasicType_Character
     | BasicType_String
+    | BasicType_Void
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data IndexType = IndexRange Constant Constant
@@ -116,20 +117,20 @@ data Literal
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Binary
-    = Binary1
-    | Binary2
-    | Binary3
-    | Binary4
-    | Binary_div
-    | Binary_mod
-    | Binary_or
-    | Binary_and
-    | Binary5
-    | Binary6
-    | Binary7
-    | Binary8
-    | Binary9
-    | Binary10
+    = BinaryPlus
+    | BinaryMinus
+    | BinaryMul
+    | BinaryDiv
+    | BinaryIntDiv
+    | BinaryMod
+    | BinaryOr
+    | BinaryAnd
+    | BinaryEq
+    | BinaryNeq
+    | BinaryLt
+    | BinaryLte
+    | BinaryGt
+    | BinaryGte
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Unary = Unary1 | Unary2 | Unary_not

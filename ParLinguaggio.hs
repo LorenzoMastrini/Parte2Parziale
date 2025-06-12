@@ -24,7 +24,6 @@ import Prelude
 
 import qualified AbsLinguaggio
 import LexLinguaggio
-import ErrM
 import qualified Data.Function as Happy_Prelude
 import qualified Data.Bool as Happy_Prelude
 import qualified Data.Function as Happy_Prelude
@@ -1131,7 +1130,7 @@ happyReduction_76 happy_x_3
          =  case happyOut40 happy_x_1 of { (HappyWrap40 happy_var_1) -> 
         case happyOut40 happy_x_3 of { (HappyWrap40 happy_var_3) -> 
         happyIn40
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.Binary1 happy_var_3
+                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryPlus happy_var_3
         )}}
 
 happyReduce_77 = happySpecReduce_3  35# happyReduction_77
@@ -1141,7 +1140,7 @@ happyReduction_77 happy_x_3
          =  case happyOut40 happy_x_1 of { (HappyWrap40 happy_var_1) -> 
         case happyOut40 happy_x_3 of { (HappyWrap40 happy_var_3) -> 
         happyIn40
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.Binary2 happy_var_3
+                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryMinus happy_var_3
         )}}
 
 happyReduce_78 = happySpecReduce_3  35# happyReduction_78
@@ -1151,7 +1150,7 @@ happyReduction_78 happy_x_3
          =  case happyOut40 happy_x_1 of { (HappyWrap40 happy_var_1) -> 
         case happyOut40 happy_x_3 of { (HappyWrap40 happy_var_3) -> 
         happyIn40
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.Binary3 happy_var_3
+                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryMul happy_var_3
         )}}
 
 happyReduce_79 = happySpecReduce_3  35# happyReduction_79
@@ -1161,7 +1160,7 @@ happyReduction_79 happy_x_3
          =  case happyOut40 happy_x_1 of { (HappyWrap40 happy_var_1) -> 
         case happyOut40 happy_x_3 of { (HappyWrap40 happy_var_3) -> 
         happyIn40
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.Binary4 happy_var_3
+                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryDiv happy_var_3
         )}}
 
 happyReduce_80 = happySpecReduce_3  35# happyReduction_80
@@ -1171,7 +1170,7 @@ happyReduction_80 happy_x_3
          =  case happyOut40 happy_x_1 of { (HappyWrap40 happy_var_1) -> 
         case happyOut40 happy_x_3 of { (HappyWrap40 happy_var_3) -> 
         happyIn40
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.Binary_div happy_var_3
+                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryIntDiv happy_var_3
         )}}
 
 happyReduce_81 = happySpecReduce_3  35# happyReduction_81
@@ -1181,7 +1180,7 @@ happyReduction_81 happy_x_3
          =  case happyOut40 happy_x_1 of { (HappyWrap40 happy_var_1) -> 
         case happyOut40 happy_x_3 of { (HappyWrap40 happy_var_3) -> 
         happyIn40
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.Binary_mod happy_var_3
+                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryMod happy_var_3
         )}}
 
 happyReduce_82 = happySpecReduce_3  35# happyReduction_82
@@ -1191,7 +1190,7 @@ happyReduction_82 happy_x_3
          =  case happyOut40 happy_x_1 of { (HappyWrap40 happy_var_1) -> 
         case happyOut40 happy_x_3 of { (HappyWrap40 happy_var_3) -> 
         happyIn40
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.Binary_or happy_var_3
+                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryOr happy_var_3
         )}}
 
 happyReduce_83 = happySpecReduce_3  35# happyReduction_83
@@ -1201,7 +1200,7 @@ happyReduction_83 happy_x_3
          =  case happyOut40 happy_x_1 of { (HappyWrap40 happy_var_1) -> 
         case happyOut40 happy_x_3 of { (HappyWrap40 happy_var_3) -> 
         happyIn40
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.Binary_and happy_var_3
+                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryAnd happy_var_3
         )}}
 
 happyReduce_84 = happySpecReduce_3  35# happyReduction_84
@@ -1211,7 +1210,7 @@ happyReduction_84 happy_x_3
          =  case happyOut40 happy_x_1 of { (HappyWrap40 happy_var_1) -> 
         case happyOut40 happy_x_3 of { (HappyWrap40 happy_var_3) -> 
         happyIn40
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.Binary5 happy_var_3
+                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryEq happy_var_3
         )}}
 
 happyReduce_85 = happySpecReduce_3  35# happyReduction_85
@@ -1221,7 +1220,7 @@ happyReduction_85 happy_x_3
          =  case happyOut40 happy_x_1 of { (HappyWrap40 happy_var_1) -> 
         case happyOut40 happy_x_3 of { (HappyWrap40 happy_var_3) -> 
         happyIn40
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.Binary6 happy_var_3
+                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryNeq happy_var_3
         )}}
 
 happyReduce_86 = happySpecReduce_3  35# happyReduction_86
@@ -1231,7 +1230,7 @@ happyReduction_86 happy_x_3
          =  case happyOut40 happy_x_1 of { (HappyWrap40 happy_var_1) -> 
         case happyOut40 happy_x_3 of { (HappyWrap40 happy_var_3) -> 
         happyIn40
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.Binary7 happy_var_3
+                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryLt happy_var_3
         )}}
 
 happyReduce_87 = happySpecReduce_3  35# happyReduction_87
@@ -1241,7 +1240,7 @@ happyReduction_87 happy_x_3
          =  case happyOut40 happy_x_1 of { (HappyWrap40 happy_var_1) -> 
         case happyOut40 happy_x_3 of { (HappyWrap40 happy_var_3) -> 
         happyIn40
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.Binary8 happy_var_3
+                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryLte happy_var_3
         )}}
 
 happyReduce_88 = happySpecReduce_3  35# happyReduction_88
@@ -1251,7 +1250,7 @@ happyReduction_88 happy_x_3
          =  case happyOut40 happy_x_1 of { (HappyWrap40 happy_var_1) -> 
         case happyOut40 happy_x_3 of { (HappyWrap40 happy_var_3) -> 
         happyIn40
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.Binary9 happy_var_3
+                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryGt happy_var_3
         )}}
 
 happyReduce_89 = happySpecReduce_3  35# happyReduction_89
@@ -1261,7 +1260,7 @@ happyReduction_89 happy_x_3
          =  case happyOut40 happy_x_1 of { (HappyWrap40 happy_var_1) -> 
         case happyOut40 happy_x_3 of { (HappyWrap40 happy_var_3) -> 
         happyIn40
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.Binary10 happy_var_3
+                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryGte happy_var_3
         )}}
 
 happyReduce_90 = happySpecReduce_2  35# happyReduction_90
@@ -1497,9 +1496,11 @@ pProgram tks = happySomeParser where
 happySeq = happyDontSeq
 
 
+type Err = Either String
+
 happyError :: [Token] -> Err a
-happyError ts =
-  Bad $ "syntax error at " ++ tokenPos ts ++
+happyError ts = Left $
+  "syntax error at " ++ tokenPos ts ++
   case ts of
     []      -> []
     [Err _] -> " due to lexer error"

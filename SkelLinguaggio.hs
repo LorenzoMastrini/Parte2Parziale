@@ -155,20 +155,20 @@ transLiteral x = case x of
 
 transBinary :: AbsLinguaggio.Binary -> Result
 transBinary x = case x of
-  AbsLinguaggio.Binary1 -> failure x
-  AbsLinguaggio.Binary2 -> failure x
-  AbsLinguaggio.Binary3 -> failure x
-  AbsLinguaggio.Binary4 -> failure x
-  AbsLinguaggio.Binary_div -> failure x
-  AbsLinguaggio.Binary_mod -> failure x
-  AbsLinguaggio.Binary_or -> failure x
-  AbsLinguaggio.Binary_and -> failure x
-  AbsLinguaggio.Binary5 -> failure x
-  AbsLinguaggio.Binary6 -> failure x
-  AbsLinguaggio.Binary7 -> failure x
-  AbsLinguaggio.Binary8 -> failure x
-  AbsLinguaggio.Binary9 -> failure x
-  AbsLinguaggio.Binary10 -> failure x
+  AbsLinguaggio.BinaryPlus -> failure x
+  AbsLinguaggio.BinaryMinus -> failure x
+  AbsLinguaggio.BinaryMul -> failure x
+  AbsLinguaggio.BinaryDiv -> failure x
+  AbsLinguaggio.BinaryIntDiv -> failure x
+  AbsLinguaggio.BinaryMod -> failure x
+  AbsLinguaggio.BinaryOr -> failure x
+  AbsLinguaggio.BinaryAnd -> failure x
+  AbsLinguaggio.BinaryEq -> failure x
+  AbsLinguaggio.BinaryNeq -> failure x
+  AbsLinguaggio.BinaryLt -> failure x
+  AbsLinguaggio.BinaryLte -> failure x
+  AbsLinguaggio.BinaryGt -> failure x
+  AbsLinguaggio.BinaryGte -> failure x
 
 transUnary :: AbsLinguaggio.Unary -> Result
 transUnary x = case x of

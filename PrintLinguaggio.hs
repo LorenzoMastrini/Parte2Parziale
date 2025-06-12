@@ -320,20 +320,20 @@ instance Print AbsLinguaggio.Literal where
 
 instance Print AbsLinguaggio.Binary where
   prt i = \case
-    AbsLinguaggio.Binary1 -> prPrec i 0 (concatD [doc (showString "+")])
-    AbsLinguaggio.Binary2 -> prPrec i 0 (concatD [doc (showString "-")])
-    AbsLinguaggio.Binary3 -> prPrec i 0 (concatD [doc (showString "*")])
-    AbsLinguaggio.Binary4 -> prPrec i 0 (concatD [doc (showString "/")])
-    AbsLinguaggio.Binary_div -> prPrec i 0 (concatD [doc (showString "div")])
-    AbsLinguaggio.Binary_mod -> prPrec i 0 (concatD [doc (showString "mod")])
-    AbsLinguaggio.Binary_or -> prPrec i 0 (concatD [doc (showString "or")])
-    AbsLinguaggio.Binary_and -> prPrec i 0 (concatD [doc (showString "and")])
-    AbsLinguaggio.Binary5 -> prPrec i 0 (concatD [doc (showString "=")])
-    AbsLinguaggio.Binary6 -> prPrec i 0 (concatD [doc (showString "<>")])
-    AbsLinguaggio.Binary7 -> prPrec i 0 (concatD [doc (showString "<")])
-    AbsLinguaggio.Binary8 -> prPrec i 0 (concatD [doc (showString "<=")])
-    AbsLinguaggio.Binary9 -> prPrec i 0 (concatD [doc (showString ">")])
-    AbsLinguaggio.Binary10 -> prPrec i 0 (concatD [doc (showString ">=")])
+    AbsLinguaggio.BinaryPlus -> prPrec i 0 (concatD [doc (showString "+")])
+    AbsLinguaggio.BinaryMinus -> prPrec i 0 (concatD [doc (showString "-")])
+    AbsLinguaggio.BinaryMul -> prPrec i 0 (concatD [doc (showString "*")])
+    AbsLinguaggio.BinaryDiv -> prPrec i 0 (concatD [doc (showString "/")])
+    AbsLinguaggio.BinaryIntDiv -> prPrec i 0 (concatD [doc (showString "div")])
+    AbsLinguaggio.BinaryMod -> prPrec i 0 (concatD [doc (showString "mod")])
+    AbsLinguaggio.BinaryOr -> prPrec i 0 (concatD [doc (showString "or")])
+    AbsLinguaggio.BinaryAnd -> prPrec i 0 (concatD [doc (showString "and")])
+    AbsLinguaggio.BinaryEq -> prPrec i 0 (concatD [doc (showString "=")])
+    AbsLinguaggio.BinaryNeq -> prPrec i 0 (concatD [doc (showString "<>")])
+    AbsLinguaggio.BinaryLt -> prPrec i 0 (concatD [doc (showString "<")])
+    AbsLinguaggio.BinaryLte -> prPrec i 0 (concatD [doc (showString "<=")])
+    AbsLinguaggio.BinaryGt -> prPrec i 0 (concatD [doc (showString ">")])
+    AbsLinguaggio.BinaryGte -> prPrec i 0 (concatD [doc (showString ">=")])
 
 instance Print AbsLinguaggio.Unary where
   prt i = \case
