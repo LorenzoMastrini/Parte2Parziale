@@ -18,7 +18,7 @@ all : TestLinguaggio
 
 # Rules for building the parser.
 
-AbsLinguaggio.hs LexLinguaggio.x ParLinguaggio.y PrintLinguaggio.hs TestLinguaggio.hs : linguaggio.cf
+AbsLinguaggio.hs LexLinguaggio.x ParLinguaggio.y PrettyPrinter.hs PrintLinguaggio.hs TestLinguaggioOld.hs: linguaggio.cf
 	bnfc --haskell linguaggio.cf
 
 %.hs : %.y
@@ -27,7 +27,7 @@ AbsLinguaggio.hs LexLinguaggio.x ParLinguaggio.y PrintLinguaggio.hs TestLinguagg
 %.hs : %.x
 	${ALEX} ${ALEX_OPTS} $<
 
-TestLinguaggio : AbsLinguaggio.hs LexLinguaggio.hs ParLinguaggio.hs PrintLinguaggio.hs TestLinguaggio.hs
+TestLinguaggio : AbsLinguaggio.hs LexLinguaggio.hs ParLinguaggio.hs PrettyPrinter.hs PrintLinguaggio.hs TestLinguaggioOld.hs
 	${GHC} ${GHC_OPTS} $@
 
 # Rules for cleaning generated files.
@@ -36,7 +36,7 @@ clean :
 	-rm -f *.hi *.o *.log *.aux *.dvi
 
 distclean : clean
-	-rm -f AbsLinguaggio.hs AbsLinguaggio.hs.bak ComposOp.hs ComposOp.hs.bak DocLinguaggio.txt DocLinguaggio.txt.bak ErrM.hs ErrM.hs.bak LayoutLinguaggio.hs LayoutLinguaggio.hs.bak LexLinguaggio.x LexLinguaggio.x.bak ParLinguaggio.y ParLinguaggio.y.bak PrintLinguaggio.hs PrintLinguaggio.hs.bak SkelLinguaggio.hs SkelLinguaggio.hs.bak TestLinguaggio.hs TestLinguaggio.hs.bak XMLLinguaggio.hs XMLLinguaggio.hs.bak ASTLinguaggio.agda ASTLinguaggio.agda.bak ParserLinguaggio.agda ParserLinguaggio.agda.bak IOLib.agda IOLib.agda.bak Main.agda Main.agda.bak linguaggio.dtd linguaggio.dtd.bak TestLinguaggio LexLinguaggio.hs ParLinguaggio.hs ParLinguaggio.info ParDataLinguaggio.hs Makefile
+	-rm -f AbsLinguaggio.hs AbsLinguaggio.hs.bak ComposOp.hs ComposOp.hs.bak DocLinguaggio.txt DocLinguaggio.txt.bak ErrM.hs ErrM.hs.bak LayoutLinguaggio.hs LayoutLinguaggio.hs.bak LexLinguaggio.x LexLinguaggio.x.bak ParLinguaggio.y ParLinguaggio.y.bak PrintLinguaggio.hs PrintLinguaggio.hs.bak SkelLinguaggio.hs SkelLinguaggio.hs.bak TestLinguaggioOld.hs TestLinguaggioOld.hs.bak XMLLinguaggio.hs XMLLinguaggio.hs.bak ASTLinguaggio.agda ASTLinguaggio.agda.bak ParserLinguaggio.agda ParserLinguaggio.agda.bak IOLib.agda IOLib.agda.bak Main.agda Main.agda.bak linguaggio.dtd linguaggio.dtd.bak TestLinguaggio LexLinguaggio.hs ParLinguaggio.hs ParLinguaggio.info ParDataLinguaggio.hs Makefile
 
 
 # EOF

@@ -24,6 +24,7 @@ import Prelude
 
 import qualified AbsLinguaggio
 import LexLinguaggio
+import ErrM
 import qualified Data.Function as Happy_Prelude
 import qualified Data.Bool as Happy_Prelude
 import qualified Data.Function as Happy_Prelude
@@ -1496,11 +1497,9 @@ pProgram tks = happySomeParser where
 happySeq = happyDontSeq
 
 
-type Err = Either String
-
 happyError :: [Token] -> Err a
-happyError ts = Left $
-  "syntax error at " ++ tokenPos ts ++
+happyError ts =
+  Bad $ "syntax error at " ++ tokenPos ts ++
   case ts of
     []      -> []
     [Err _] -> " due to lexer error"

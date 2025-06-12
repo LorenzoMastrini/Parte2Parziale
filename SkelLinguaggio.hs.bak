@@ -8,12 +8,12 @@ module SkelLinguaggio where
 
 import Prelude (($), Either(..), String, (++), Show, show)
 import qualified AbsLinguaggio
+import ErrM
 
-type Err = Either String
 type Result = Err String
 
 failure :: Show a => a -> Result
-failure x = Left $ "Undefined case: " ++ show x
+failure x = Bad $ "Undefined case: " ++ show x
 
 transIdent :: AbsLinguaggio.Ident -> Result
 transIdent x = case x of
@@ -30,10 +30,11 @@ transBlock x = case x of
 
 transDeclarationPart :: AbsLinguaggio.DeclarationPart -> Result
 transDeclarationPart x = case x of
-  AbsLinguaggio.Decls constantdefinitionpart variabledeclarationparts procedureandfunctiondeclarations -> failure x
+  AbsLinguaggio.Decls constantdefinitionpart variabledeclarationpart procedureandfunctiondeclarations -> failure x
 
 transConstantDefinitionPart :: AbsLinguaggio.ConstantDefinitionPart -> Result
 transConstantDefinitionPart x = case x of
+  AbsLinguaggio.NoConstDefs -> failure x
   AbsLinguaggio.ConstDefs constantdefinitions -> failure x
 
 transConstantDefinition :: AbsLinguaggio.ConstantDefinition -> Result
@@ -42,6 +43,7 @@ transConstantDefinition x = case x of
 
 transVariableDeclarationPart :: AbsLinguaggio.VariableDeclarationPart -> Result
 transVariableDeclarationPart x = case x of
+  AbsLinguaggio.NoVarDecls -> failure x
   AbsLinguaggio.VarDecls variabledeclarations -> failure x
 
 transVariableDeclaration :: AbsLinguaggio.VariableDeclaration -> Result
@@ -50,15 +52,15 @@ transVariableDeclaration x = case x of
 
 transProcedureAndFunctionDeclaration :: AbsLinguaggio.ProcedureAndFunctionDeclaration -> Result
 transProcedureAndFunctionDeclaration x = case x of
-  AbsLinguaggio.ProcFunDecl procfunheading block -> failure x
+  AbsLinguaggio.ProcFunDecl procedureandfunctionheading block -> failure x
 
-transProcFunHeading :: AbsLinguaggio.ProcFunHeading -> Result
-transProcFunHeading x = case x of
-  AbsLinguaggio.ProcDecl ident formparams -> failure x
-  AbsLinguaggio.FunDecl ident formparams type_ -> failure x
+transProcedureAndFunctionHeading :: AbsLinguaggio.ProcedureAndFunctionHeading -> Result
+transProcedureAndFunctionHeading x = case x of
+  AbsLinguaggio.ProcDecl ident formalparameterss -> failure x
+  AbsLinguaggio.FunDecl ident formalparameterss type_ -> failure x
 
-transFormParam :: AbsLinguaggio.FormParam -> Result
-transFormParam x = case x of
+transFormalParameters :: AbsLinguaggio.FormalParameters -> Result
+transFormalParameters x = case x of
   AbsLinguaggio.FormParam optmodality idents type_ -> failure x
 
 transOptModality :: AbsLinguaggio.OptModality -> Result
@@ -87,7 +89,7 @@ transIndexType x = case x of
 
 transConstant :: AbsLinguaggio.Constant -> Result
 transConstant x = case x of
-  AbsLinguaggio.Const1 optsign identornumber -> failure x
+  AbsLinguaggio.Const optsign identornumber -> failure x
   AbsLinguaggio.ConstStr string -> failure x
 
 transIdentOrNumber :: AbsLinguaggio.IdentOrNumber -> Result
@@ -104,14 +106,14 @@ transOptSign x = case x of
 
 transCompoundStatement :: AbsLinguaggio.CompoundStatement -> Result
 transCompoundStatement x = case x of
-  AbsLinguaggio.CompoundStatement statements -> failure x
+  AbsLinguaggio.CompStmt statements -> failure x
 
 transStatement :: AbsLinguaggio.Statement -> Result
 transStatement x = case x of
   AbsLinguaggio.Stmts compoundstatement -> failure x
-  AbsLinguaggio.NoStatement -> failure x
-  AbsLinguaggio.RExprStatement rexpr -> failure x
-  AbsLinguaggio.AssignStatement lexpr rexpr -> failure x
+  AbsLinguaggio.NoStmt -> failure x
+  AbsLinguaggio.RExprStmt rexpr -> failure x
+  AbsLinguaggio.Assign lexpr rexpr -> failure x
   AbsLinguaggio.While rexpr statement -> failure x
   AbsLinguaggio.DoWhile statement rexpr -> failure x
   AbsLinguaggio.ForTo lexpr rexpr1 rexpr2 statement -> failure x
