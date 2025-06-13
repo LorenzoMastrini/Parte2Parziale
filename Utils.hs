@@ -12,7 +12,7 @@ import Data.List
 --------------------------------------------------------------------
 
 type Pos = (Int, Int)
-{-
+
 type Id = String
 
 data TACAddr  = Addr String | PointAddr String
@@ -31,7 +31,7 @@ data TAC
   | TACAddLabel TACLabel                          -- l :
   | TACIf TACAddr TACLabel                        -- if a goto l
   | TACIfFalse TACAddr TACLabel                   -- ifFalse a goto l
-  | TACIfRel TACAddr Rel Type TACAddr TACLabel    -- if a1 op a2 goto l
+  | TACIfBinary TACAddr Binary Type TACAddr TACLabel    -- if a1 op a2 goto l
   | TACParam TACAddr                              -- param a
   | TACCallProc TACLabel                          -- call p / n
   | TACCallFunc TACAddr Type TACLabel             -- a = call f / n
@@ -55,20 +55,20 @@ data TAC
 leqType :: Type -> Type -> Bool
 leqType ty1 ty2 =
     case ty1 of
-        BasicType b1 ->
+        Basic b1 ->
             case ty2 of
-                BasicType b2 -> leqBType b1 b2 
+                Basic b2 -> leq b1 b2 
                 ErrorType    -> True
                 otherwise    -> False
-        Array aty1 adim1 ->
+        ArrayTest aty1 adim1 ->
             case ty2 of
-                Array aty2 adim2 -> (leqType aty1 aty2 && adim2==adim1) ||
+                ArrayTest aty2 adim2 -> (leqType aty1 aty2 && adim2==adim1) ||
                                     containsError aty1 || containsError aty2
                 ErrorType    -> True
                 otherwise    -> False
-        PointerType b1 ->
+        Pointer b1 ->
             case ty2 of
-                PointerType b2 ->  b1 == b2
+                Pointer b2 ->  b1 == b2
                 ErrorType    -> True
                 otherwise      -> False
         ErrorType -> True
@@ -78,28 +78,28 @@ containsError :: Type -> Bool
 containsError ty =
   case ty of
       ErrorType   -> True
-      Array tty _ -> containsError tty
+      ArrayTest tty _ -> containsError tty
       otherwise   -> False
 
 
 equalitySupport :: Type -> Bool
 equalitySupport typeE1 = case typeE1 of 
-                                ArrayType _ _ _ -> False
-                                Array _ _ -> False
-                                PointerType _ -> False
+                                ArrayTest _ _ _ -> False
+                                ArrayTest _ _ -> False
+                                Pointer _ -> False
                                 otherwise -> True
 
-leqBType :: BType -> BType -> Bool
-leqBType ty1 ty2 | ty1 == ty2 = True
-                 | ty1 == TypeInt && ty2 == TypeReal = True
-                 | ty1 == TypeChar && ty2 == TypeInt = True
-                 | ty1 == TypeChar && ty2 == TypeString = True
-                 | ty1 == TypeChar && ty2 == TypeReal = True
+leq :: BasicType -> BasicType -> Bool
+leq ty1 ty2 | ty1 == ty2 = True
+                 | ty1 == BasicType_Integer && ty2 == BasicType_Real = True
+                 | ty1 == BasicType_Character && ty2 == BasicType_Integer = True
+                 | ty1 == BasicType_Character && ty2 == BasicType_String = True
+                 | ty1 == BasicType_Character && ty2 == BasicType_Real = True
                  | otherwise = False
 
-getMaxBType :: BType -> BType -> BType
-getMaxBType ty1 ty2 | leqBType ty1 ty2 = ty2
-                    | leqBType ty2 ty2 = ty1
+getMax :: BasicType -> BasicType -> BasicType
+getMax ty1 ty2 | leqBasicType ty1 ty2 = ty2
+                    | leq ty2 ty2 = ty1
 
 getMaxType :: Type -> Type -> Type
 getMaxType ty1 ty2 | leqType ty1 ty2 = ty2
@@ -111,112 +111,113 @@ areCompatibleTypes ty1 ty2 | leqType ty1 ty2 = True
                            | otherwise = False
 
 isAddressType :: Type -> Bool
-isAddressType (BasicType TypeString) = True
-isAddressType (PointerType _) = True
-isAddressType (Array _ _) = True
+isAddressType (Basic BasicType_String) = True
+isAddressType (Pointer _) = True
+isAddressType (ArrayTest _ _) = True
 isAddressType _ = False
 
 derefType :: Type -> Type
-derefType (PointerType ty) = ty
+derefType (Pointer ty) = ty
 
 pointerToType :: Type -> Type
-pointerToType ty = PointerType ty
+pointerToType ty = Pointer ty
 
-getArrayElemType :: Type -> Type
-getArrayElemType (Array ty _) = ty
-getArrayElemType t = error (show t)
+getArrayTestElemType :: Type -> Type
+getArrayTestElemType (ArrayTest ty _) = ty
+getArrayTestElemType t = error (show t)
 
-getBasicType :: Type -> Type
-getBasicType ty = case ty of
-  BasicType _ -> ty
-  ArrayType _ t _ -> getBasicType t
-  ArrayDimType _ t _ _ -> getBasicType t
-  PointerType t -> getBasicType t
+getBasic :: Type -> Type
+getBasic ty = case ty of
+  Basic _ -> ty
+  ArrayTest _ t _ -> getBasic t
+  -- ArrayTestDimType _ t _ _ -> getBasic t
 
-isBasicType :: Type -> Bool
-isBasicType (BasicType _) = True
-isBasicType _ = False
+  Pointer t -> getBasic t
+
+isBasic :: Type -> Bool
+isBasic (Basic _) = True
+isBasic _ = False
 
 areErrors :: Type -> Type -> Bool
 areErrors ty1 ty2 = isError ty1 || isError ty2
 
 isError :: Type -> Bool
 isError ty1  = (ty1 == ErrorType) || case ty1 of 
-                                     Array ErrorType _ ->True
+                                     ArrayTest ErrorType _ ->True
                                      otherwise -> False
 
 numericalComp :: Type -> Bool
 numericalComp ty1
-          | areCompatibleTypes (BasicType TypeInt) ty1 &&
+          | areCompatibleTypes (Basic BasicType_Integer) ty1 &&
             ty1 /= ErrorType  = True
           | otherwise = False
 
 comparableTypes :: Type -> Type -> Bool
 comparableTypes ty1 ty2
             | areCompatibleTypes ty1 ty2  &&
-              isBTypeTy1 && isBTypeTy2 = True
-            | ty1 == (BasicType TypeChar) && ty2 == ty1 = True
+              isTy1 && isBasicTypeTy2 = True
+            | ty1 == (Basic BasicType_Character) && ty2 == ty1 = True
             | otherwise = False
-            where isBTypeTy1 = case ty1 of
-                            (BasicType TypeInt) -> True
-                            (BasicType TypeReal) -> True
-                            (BasicType TypeChar) -> True
+            where isTy1 = case ty1 of
+                            (Basic BasicType_Integer) -> True
+                            (Basic BasicType_Real) -> True
+                            (Basic BasicType_Character) -> True
                             otherwise -> False
-                  isBTypeTy2 = case ty2 of
-                            (BasicType TypeInt) -> True
-                            (BasicType TypeReal) -> True
-                            (BasicType TypeChar) -> True
+                  isTy2 = case ty2 of
+                            (Basic BasicType_Integer) -> True
+                            (Basic BasicType_Real) -> True
+                            (Basic BasicType_Character) -> True
                             otherwise -> False
 
 
 operationReturnType :: Type -> Type -> String -> Type
 operationReturnType ty1 ty2 op
-    | op == "/" = BasicType TypeReal
-    | op == "^" && (leqType ty1 (BasicType TypeInt)) &&
-                   (leqType ty2 (BasicType TypeInt))
-                   = BasicType TypeInt
-    | op == "%" && (leqType ty1 (BasicType TypeInt)) &&
-                   (leqType ty2 (BasicType TypeInt))
-                   = BasicType TypeInt
+    | op == "/" = Basic BasicType_Real
+    | op == "^" && (leqType ty1 (Basic BasicType_Integer)) &&
+                   (leqType ty2 (Basic BasicType_Integer))
+                   = Basic BasicType_Integer
+    | op == "%" && (leqType ty1 (Basic BasicType_Integer)) &&
+                   (leqType ty2 (Basic BasicType_Integer))
+                   = Basic BasicType_Integer
     | op == "%" = ErrorType
     | op == "^" = ErrorType
-    | op == "+" = getMaxType (getMaxType ty1 ty2) (BasicType TypeInt)
-    | op == "-" = getMaxType (getMaxType ty1 ty2) (BasicType TypeInt)
-    | op == "*" = getMaxType (getMaxType ty1 ty2) (BasicType TypeInt)
+    | op == "+" = getMaxType (getMaxType ty1 ty2) (Basic BasicType_Integer)
+    | op == "-" = getMaxType (getMaxType ty1 ty2) (Basic BasicType_Integer)
+    | op == "*" = getMaxType (getMaxType ty1 ty2) (Basic BasicType_Integer)
     | otherwise = getMaxType ty1 ty2 
 
 --------------------------
 
 sizeOfType :: Type -> Int
 sizeOfType ty = case ty of
-  BasicType TypeInt -> 4
-  BasicType TypeReal -> 8
-  BasicType TypeChar -> 2
-  BasicType TypeBool -> 1
-  BasicType TypeString -> 4
-  PointerType _ -> 4
-  Array t n -> n * (sizeOfType t)
+  Basic BasicType_Integer -> 4
+  Basic BasicType_Real -> 8
+  Basic BasicType_Character -> 2
+  Basic BasicType_Boolean -> 1
+  Basic BasicType_String -> 4
+  Pointer _ -> 4
+  ArrayTest t n -> n * (sizeOfType t)
 
-expr_sizeOfType :: Type -> Expr
-expr_sizeOfType ty = ExprVal $ IntVal $ BInteger ((0,0), v)
+expr_sizeOfType :: Type -> RExpr
+expr_sizeOfType ty = Lit $ IntVal $ BInteger ((0,0), v)
   where v = show $ sizeOfType ty
 
 unityAddr :: Type -> TACAddr
 unityAddr ty = case ty of
-  BasicType TypeInt -> ValAddr "1"
-  BasicType TypeReal -> ValAddr "1.0"
+  Basic BasicType_Integer -> ValAddr "1"
+  Basic BasicType_Real -> ValAddr "1.0"
 
 ---------------------------
 
-defaultValue :: Type -> Expr
+defaultValue :: Type -> RExpr
 defaultValue ty = case ty of
-  BasicType TypeInt -> ExprVal $ IntVal $ BInteger ((0,0),"0")
-  BasicType TypeReal -> ExprVal $ RealVal $ BReal ((0,0),"0.0")
-  BasicType TypeChar -> ExprVal $ CharVal $ BChar ((0,0),"'\\u0000'")
-  BasicType TypeBool -> ExprVal $ BoolVal $ BBool ((0,0),"False")
-  BasicType TypeString -> ExprVal $ StringVal $ BString ((0,0), "\"\"")
+  Basic BasicType_Integer -> Lit $ IntVal $ BInteger ((0,0),"0")
+  Basic BasicType_Real -> Lit $ RealVal $ BReal ((0,0),"0.0")
+  Basic BasicType_Character -> Lit $ CharVal $ BChar ((0,0),"'\\u0000'")
+  Basic BasicType_Boolean -> Lit $ BoolVal $ BBool ((0,0),"False")
+  Basic BasicType_String -> Lit $ StringVal $ BString ((0,0), "\"\"")
 
-defaultValsList :: Type -> Int -> [Expr]
+defaultValsList :: Type -> Int -> [RExpr]
 defaultValsList _ n | n <= 0 = [] -- safety check
 defaultValsList ty n = take n (repeat $ defaultValue ty)
 
@@ -241,10 +242,10 @@ maybeConvertValAddr a ty1 ty2 = convertValAddr a ty1 ty2
 
 convertValAddr :: TACAddr -> Type -> Type -> TACAddr
 convertValAddr addr@(ValAddr a) tyFrom tyTo = case (tyFrom, tyTo) of
-  (BasicType TypeInt, BasicType TypeReal) -> ValAddr $ show $ getRealValue addr
-  (BasicType TypeChar, BasicType TypeInt) -> ValAddr $ show $ ord $ good
+  (Basic BasicType_Integer, Basic BasicType_Real) -> ValAddr $ show $ getRealValue addr
+  (Basic BasicType_Character, Basic BasicType_Integer) -> ValAddr $ show $ ord $ good
           where good = read (Data.ByteString.Char8.unpack (Data.ByteString.Char8.pack a)) :: Char
-  (BasicType TypeChar, BasicType TypeReal) -> convertValAddr addr1 int_ real_
+  (Basic BasicType_Character, Basic BasicType_Real) -> convertValAddr addr1 int_ real_
     where addr1 = convertValAddr addr char_ int_
   otherwise -> NoAddr
 convertValAddr _ _ _ = NoAddr
@@ -307,75 +308,75 @@ boolUOp _ _ = NoAddr
 
 ------------
 
-boolIntRel :: Rel -> TACAddr -> TACAddr -> TACAddr
-boolIntRel op x@(ValAddr _) y@(ValAddr _) = ValAddr res
+boolIntBinary :: Binary -> TACAddr -> TACAddr -> TACAddr
+boolIntBinary op x@(ValAddr _) y@(ValAddr _) = ValAddr res
   where res = case op of
-          RelLess _ -> show ((getIntValue x) < (getIntValue y))
-          RelLessEq _ -> show ((getIntValue x) <= (getIntValue y))
-          RelGreater _ -> show ((getIntValue x) > (getIntValue y))
-          RelGreaterEq _ -> show ((getIntValue x) >= (getIntValue y))
-          RelNotEq _ -> show ((getIntValue x) /= (getIntValue y))
-          RelEq _ -> show ((getIntValue x) == (getIntValue y))
-boolIntRel _ _ _ = NoAddr
+          BinaryLt _ -> show ((getIntValue x) < (getIntValue y))
+          BinaryLte _ -> show ((getIntValue x) <= (getIntValue y))
+          BinaryGt _ -> show ((getIntValue x) > (getIntValue y))
+          BinaryGte _ -> show ((getIntValue x) >= (getIntValue y))
+          BinaryNeq _ -> show ((getIntValue x) /= (getIntValue y))
+          BinaryEq _ -> show ((getIntValue x) == (getIntValue y))
+boolIntBinary _ _ _ = NoAddr
 
-boolRealRel :: Rel -> TACAddr -> TACAddr -> TACAddr
-boolRealRel op x@(ValAddr _) y@(ValAddr _) = ValAddr res
+boolRealBinary :: Binary -> TACAddr -> TACAddr -> TACAddr
+boolRealBinary op x@(ValAddr _) y@(ValAddr _) = ValAddr res
   where res = case op of
-          RelLess _ -> show ((getRealValue x) < (getRealValue y))
-          RelLessEq _ -> show ((getRealValue x) <= (getRealValue y))
-          RelGreater _ -> show ((getRealValue x) > (getRealValue y))
-          RelGreaterEq _ -> show ((getRealValue x) >= (getRealValue y))
-          RelNotEq _ -> show ((getRealValue x) /= (getRealValue y))
-          RelEq _ -> show ((getRealValue x) == (getRealValue y))
-boolRealRel _ _ _ = NoAddr
+          BinaryLt _ -> show ((getRealValue x) < (getRealValue y))
+          BinaryLte _ -> show ((getRealValue x) <= (getRealValue y))
+          BinaryGt _ -> show ((getRealValue x) > (getRealValue y))
+          BinaryGte _ -> show ((getRealValue x) >= (getRealValue y))
+          BinaryNeq _ -> show ((getRealValue x) /= (getRealValue y))
+          BinaryEq _ -> show ((getRealValue x) == (getRealValue y))
+boolRealBinary _ _ _ = NoAddr
 
-boolCharRel :: Rel -> TACAddr -> TACAddr -> TACAddr
-boolCharRel op x@(ValAddr _) y@(ValAddr _) = ValAddr res
+boolCharBinary :: Binary -> TACAddr -> TACAddr -> TACAddr
+boolCharBinary op x@(ValAddr _) y@(ValAddr _) = ValAddr res
   where res = case op of
-          RelLess _ -> show ((getCharValue x) < (getCharValue y))
-          RelLessEq _ -> show ((getCharValue x) <= (getCharValue y))
-          RelGreater _ -> show ((getCharValue x) > (getCharValue y))
-          RelGreaterEq _ -> show ((getCharValue x) >= (getCharValue y))
-          RelNotEq _ -> show ((getCharValue x) /= (getCharValue y))
-          RelEq _ -> show ((getCharValue x) == (getCharValue y))
-boolCharRel _ _ _ = NoAddr
+          BinaryLt _ -> show ((getCharValue x) < (getCharValue y))
+          BinaryLte _ -> show ((getCharValue x) <= (getCharValue y))
+          BinaryGt _ -> show ((getCharValue x) > (getCharValue y))
+          BinaryGte _ -> show ((getCharValue x) >= (getCharValue y))
+          BinaryNeq _ -> show ((getCharValue x) /= (getCharValue y))
+          BinaryEq _ -> show ((getCharValue x) == (getCharValue y))
+boolCharBinary _ _ _ = NoAddr
 
-boolStringRel :: Rel -> TACAddr -> TACAddr -> TACAddr
-boolStringRel op (ValAddr x) (ValAddr y) = ValAddr res
+boolStringBinary :: Binary -> TACAddr -> TACAddr -> TACAddr
+boolStringBinary op (ValAddr x) (ValAddr y) = ValAddr res
   where res = case op of
-          RelNotEq _ -> show (x /= y)
-          RelEq _ -> show (x == y)
-boolStringRel _ _ _ = NoAddr
+          BinaryNeq _ -> show (x /= y)
+          BinaryEq _ -> show (x == y)
+boolStringBinary _ _ _ = NoAddr
 
 
-boolRel :: Rel -> TACAddr -> TACAddr -> TACAddr
-boolRel op (ValAddr x) (ValAddr y) = ValAddr res
+boolBinary :: Binary -> TACAddr -> TACAddr -> TACAddr
+boolBinary op (ValAddr x) (ValAddr y) = ValAddr res
   where res = case op of
-          RelNotEq _ -> show (x /= y)
-          RelEq _ -> show (x == y)
-boolRel _ _ _ = NoAddr
+          BinaryNeq _ -> show (x /= y)
+          BinaryEq _ -> show (x == y)
+boolBinary _ _ _ = NoAddr
 
 -------------------
 
 dispatchBOp :: Type -> TACOp -> TACAddr -> TACAddr -> TACAddr
 dispatchBOp ty op eVal1 eVal2 = case ty of
-  BasicType TypeInt -> intBOp op eVal1 eVal2
-  BasicType TypeReal -> realBOp op eVal1 eVal2
-  BasicType TypeChar -> intBOp op (convertValAddr eVal1 ty int_) (convertValAddr eVal2 ty int_)
+  Basic BasicType_Integer -> intBOp op eVal1 eVal2
+  Basic BasicType_Real -> realBOp op eVal1 eVal2
+  Basic BasicType_Character -> intBOp op (convertValAddr eVal1 ty int_) (convertValAddr eVal2 ty int_)
 
 dispatchUOp :: Type -> TACOp -> TACAddr -> TACAddr
 dispatchUOp ty op eVal1 = case ty of
-  BasicType TypeInt -> intUOp op eVal1
-  BasicType TypeReal -> realUOp op eVal1
-  BasicType TypeChar -> intUOp op (convertValAddr eVal1 ty int_)
+  Basic BasicType_Integer -> intUOp op eVal1
+  Basic BasicType_Real -> realUOp op eVal1
+  Basic BasicType_Character -> intUOp op (convertValAddr eVal1 ty int_)
 
-dispatchBoolRel :: Type -> Rel -> TACAddr -> TACAddr -> TACAddr
-dispatchBoolRel ty rel eVal1 eVal2 = case ty of
-  BasicType TypeInt -> boolIntRel rel eVal1 eVal2
-  BasicType TypeReal -> boolRealRel rel eVal1 eVal2
-  BasicType TypeChar -> boolCharRel rel eVal1 eVal2
-  BasicType TypeBool -> boolRel rel eVal1 eVal2
-  BasicType TypeString -> boolStringRel rel eVal1 eVal2
+dispatchBoolBinary :: Type -> Binary -> TACAddr -> TACAddr -> TACAddr
+dispatchBoolBinary ty rel eVal1 eVal2 = case ty of
+  Basic BasicType_Integer -> boolIntBinary rel eVal1 eVal2
+  Basic BasicType_Real -> boolRealBinary rel eVal1 eVal2
+  Basic BasicType_Character -> boolCharBinary rel eVal1 eVal2
+  Basic BasicType_Boolean -> boolBinary rel eVal1 eVal2
+  Basic BasicType_String -> boolStringBinary rel eVal1 eVal2
 
 
 
@@ -383,22 +384,22 @@ dispatchBoolRel ty rel eVal1 eVal2 = case ty of
 ---------------------------- NAMES ---------------------------------
 
 -- Extract the BIdent of a *simple* left expression.
-getBId :: LeftExpr -> BIdent
+getBId :: LExpr -> BIdent
 getBId lexpr = case lexpr of
   LEId bIdent ->  bIdent
   LEDeref lexpr1 -> getBId lexpr1
-  LEArray lexpr1 _ -> getBId lexpr1
+  LEArrayTest lexpr1 _ -> getBId lexpr1
   LEBra lexpr1 -> getBId lexpr1
   LEPreIncrem lexpr1 -> getBId lexpr1
   LEPreDecr lexpr1 -> getBId lexpr1
 
 
 -- Extract the name of a *simple* left expression.
-getName :: LeftExpr -> Id
+getName :: LExpr -> Id
 getName lexpr = case lexpr of
   LEId (BIdent ((_,_), id)) -> id
   LEDeref lexpr1 -> getName lexpr1
-  LEArray lexpr1 _ -> getName lexpr1
+  LEArrayTest lexpr1 _ -> getName lexpr1
   LEBra lexpr1 -> getName lexpr1
   LEPreIncrem lexpr1 -> getName lexpr1
   LEPreDecr lexpr1 -> getName lexpr1
@@ -419,14 +420,14 @@ getAddressName (Addr name) = name
 --------------------------------------------------------------------
 --------------------------- POSITIONS ------------------------------
 
-relPos :: Rel -> Pos
+relPos :: Binary -> Pos
 relPos rel = case rel of
-  RelLess (BLe (pos,_))         -> pos
-  RelLessEq (BLeEq (pos,_))     -> pos
-  RelGreater (BGr (pos,_))      -> pos
-  RelGreaterEq (BGrEq (pos,_))  -> pos
-  RelNotEq (BNotEq (pos,_))     -> pos
-  RelEq (BEq (pos,_))           -> pos
+  BinaryLt (BLe (pos,_))         -> pos
+  BinaryLte (BLeEq (pos,_))     -> pos
+  BinaryGt (BGr (pos,_))      -> pos
+  BinaryGte (BGrEq (pos,_))  -> pos
+  BinaryNeq (BNotEq (pos,_))     -> pos
+  BinaryEq (BEq (pos,_))           -> pos
   
 firstStmtPos :: LoopCmd -> (Pos,String)
 firstStmtPos stmt =
@@ -435,45 +436,45 @@ firstStmtPos stmt =
         LoopExit (BExit (pos,s))         -> (pos,s)
         LoopContinue (BContinue (pos,s)) -> (pos,s)
 
-firstExprPos :: Expr -> Pos
-firstExprPos ev =
+firstRExprPos :: RExpr -> Pos
+firstRExprPos ev =
     case ev of
-        ExprVal v ->
+        Lit v ->
             case v of
                 IntVal (BInteger (pos,_))  -> pos
                 RealVal (BReal (pos,_))    -> pos
                 CharVal (BChar(pos,_))     -> pos
                 BoolVal (BBool(pos,_))     -> pos
                 StringVal (BString(pos,_)) -> pos
-        ExprLeft v ->
+        RExprLeft v ->
             case v of
                 LEId id@(BIdent(pos,_))    -> pos
-                LEDeref le                 -> firstExprPos (ExprLeft le)
-                LEArray le _               -> firstExprPos (ExprLeft le)
-                LEBra le                   -> firstExprPos (ExprLeft le)
-                LEPreIncrem le             -> firstExprPos (ExprLeft le)
-                LEPreDecr le               -> firstExprPos (ExprLeft le)
-        ExprArray _ (e:_) -> firstExprPos e
-        ExprIf e _ _ -> firstExprPos e
-        ExprArray (BLBra (pos,_)) _ -> pos
-        ExprCreate _ _ _ e -> firstExprPos e
-        ExprAddress le -> firstExprPos (ExprLeft le)
-        ExprCall id@(BIdent(pos,_)) _ -> pos
-        ExprBrack e -> firstExprPos e
-        ExprPostIncr le -> firstExprPos (ExprLeft le)
-        ExprPostDecr le -> firstExprPos (ExprLeft le)
-        ExprPow e _ _  -> firstExprPos e
-        ExprMul e _ _-> firstExprPos e
-        ExprMod e _ _-> firstExprPos e
-        ExprDiv e _ _-> firstExprPos e
-        ExprSum e _ _-> firstExprPos e
-        ExprMinus e _ _-> firstExprPos e
-        ExprUnaryMinus _ e -> firstExprPos e
-        ExprUnaryPlus _ e -> firstExprPos e
-        ExprAnd e _ _ -> firstExprPos e
-        ExprOr e _ _ -> firstExprPos e
-        ExprNot _ e -> firstExprPos e
-        ExprRel e _ _  -> firstExprPos e
+                LEDeref le                 -> firstRExprPos (RExprLeft le)
+                LEArrayTest le _               -> firstRExprPos (RExprLeft le)
+                LEBra le                   -> firstRExprPos (RExprLeft le)
+                LEPreIncrem le             -> firstRExprPos (RExprLeft le)
+                LEPreDecr le               -> firstRExprPos (RExprLeft le)
+        RExprArrayTest _ (e:_) -> firstRExprPos e
+        RExprIf e _ _ -> firstRExprPos e
+        RExprArrayTest (BLBra (pos,_)) _ -> pos
+        RExprCreate _ _ _ e -> firstRExprPos e
+        RExprAddress le -> firstRExprPos (RExprLeft le)
+        RExprCall id@(BIdent(pos,_)) _ -> pos
+        RExprBrack e -> firstRExprPos e
+        RExprPostIncr le -> firstRExprPos (RExprLeft le)
+        RExprPostDecr le -> firstRExprPos (RExprLeft le)
+        RExprPow e _ _  -> firstRExprPos e
+        RExprMul e _ _-> firstRExprPos e
+        RExprMod e _ _-> firstRExprPos e
+        RExprDiv e _ _-> firstRExprPos e
+        RExprSum e _ _-> firstRExprPos e
+        RExprMinus e _ _-> firstRExprPos e
+        RExprUnaryMinus _ e -> firstRExprPos e
+        RExprUnaryPlus _ e -> firstRExprPos e
+        RExprAnd e _ _ -> firstRExprPos e
+        RExprOr e _ _ -> firstRExprPos e
+        RExprNot _ e -> firstRExprPos e
+        RExprBinary e _ _  -> firstRExprPos e
 
 
 --------------------------------------------------------------------
@@ -486,47 +487,48 @@ showFunction out (t:types) =
 
 showType :: Type -> String
 showType ty = case ty of
-  BasicType TypeInt -> "int"
-  BasicType TypeBool -> "bool"
-  BasicType TypeChar -> "char"
-  BasicType TypeReal -> "real"
-  BasicType TypeString -> "string"
+  Basic BasicType_Integer -> "int"
+  Basic BasicType_Boolean -> "bool"
+  Basic BasicType_Character -> "char"
+  Basic BasicType_Real -> "real"
+  Basic BasicType_String -> "string"
   ErrorType -> "error"
   VoidType -> "void"
-  PointerType t -> ('°':(showType t))
-  ArrayType _ t _ ->  "Array <" ++ (showType t) ++ ">"
-  ArrayDimType _ t _ _ ->  "Array <" ++ (showType t) ++ ">"
-  Array t 0 -> "Array <" ++ (showType t) ++ ">(" ++ "?" ++")"
-  Array t n -> "Array <" ++ (showType t) ++ ">(" ++ (show n) ++")"
+  Pointer t -> ('°':(showType t))
+  ArrayTest _ t _ ->  "ArrayTest <" ++ (showType t) ++ ">"
+  -- ArrayTestDimType _ t _ _ ->  "ArrayTest <" ++ (showType t) ++ ">"
+  ArrayTest _ t _ _ ->  "ArrayTest <" ++ (showType t) ++ ">"
+  ArrayTest t 0 -> "ArrayTest <" ++ (showType t) ++ ">(" ++ "?" ++")"
+  ArrayTest t n -> "ArrayTest <" ++ (showType t) ++ ">(" ++ (show n) ++")"
 
 showAssignType :: Type -> String
 showAssignType ty = case ty of
-  BasicType TypeInt -> "int"
-  BasicType TypeBool -> "bool"
-  BasicType TypeChar -> "char"
-  BasicType TypeReal -> "real"
-  BasicType TypeString -> "addr"
+  Basic BasicType_Integer -> "int"
+  Basic BasicType_Boolean -> "bool"
+  Basic BasicType_Character -> "char"
+  Basic BasicType_Real -> "real"
+  Basic BasicType_String -> "addr"
   ErrorType -> error $ "showing ErrorType"
   VoidType -> error $ "showing VoidType"
   otherwise -> "addr"
 
-showTACRel :: Rel -> String
-showTACRel rel = case rel of
-  RelLess _ -> "less"
-  RelLessEq _-> "less_eq"
-  RelGreater _ -> "gr"
-  RelGreaterEq _ -> "gr_eq"
-  RelNotEq _-> "not_eq"
-  RelEq _-> "equal"
+showTACBinary :: Binary -> String
+showTACBinary rel = case rel of
+  BinaryLt _ -> "less"
+  BinaryLte _-> "less_eq"
+  BinaryGt _ -> "gr"
+  BinaryGte _ -> "gr_eq"
+  BinaryNeq _-> "not_eq"
+  BinaryEq _-> "equal"
 
-showRel :: Rel -> String
-showRel rel = case rel of
-  RelLess _ -> "<"
-  RelLessEq _-> "<="
-  RelGreater _ -> ">"
-  RelGreaterEq _ -> ">="
-  RelNotEq _-> "<>"
-  RelEq _-> "="
+showBinary :: Binary -> String
+showBinary rel = case rel of
+  BinaryLt _ -> "<"
+  BinaryLte _-> "<="
+  BinaryGt _ -> ">"
+  BinaryGte _ -> ">="
+  BinaryNeq _-> "<>"
+  BinaryEq _-> "="
 
 builtIn :: String -> TACLabel
 builtIn name = Label ("built_in_"++name)
@@ -544,34 +546,34 @@ isFuncDecl (StmtDecl (ProcDef _ _ _ _)) = True
 isFuncDecl _ = False
 
 
-notRel :: Rel -> Rel
-notRel rel = case rel of
-  RelLess (BLe (pos,_))         -> RelGreaterEq (BGrEq(pos,">="))
-  RelLessEq (BLeEq (pos,_))     -> RelGreater (BGr (pos,">"))
-  RelGreater (BGr (pos,_))      -> RelLessEq (BLeEq (pos,"<="))
-  RelGreaterEq (BGrEq (pos,_))  -> RelLess (BLe (pos,"<"))
-  RelNotEq (BNotEq (pos,_))     -> RelEq (BEq (pos,"=")) 
-  RelEq (BEq (pos,_))           -> RelNotEq (BNotEq (pos,"<>"))
+notBinary :: Binary -> Binary
+notBinary rel = case rel of
+  BinaryLt (BLe (pos,_))         -> BinaryGte (BGrEq(pos,">="))
+  BinaryLte (BLeEq (pos,_))     -> BinaryGt (BGr (pos,">"))
+  BinaryGt (BGr (pos,_))      -> BinaryLte (BLeEq (pos,"<="))
+  BinaryGte (BGrEq (pos,_))  -> BinaryLt (BLe (pos,"<"))
+  BinaryNeq (BNotEq (pos,_))     -> BinaryEq (BEq (pos,"=")) 
+  BinaryEq (BEq (pos,_))           -> BinaryNeq (BNotEq (pos,"<>"))
 
 -------------------------------------------------------------------
 -- Private aliases:
 
-int_ = (BasicType TypeInt)
-real_ = (BasicType TypeReal)
-char_ = (BasicType TypeChar)
-bool_ = (BasicType TypeBool)
-string_ = (BasicType TypeString)
+int_ = (Basic BasicType_Integer)
+real_ = (Basic BasicType_Real)
+char_ = (Basic BasicType_Character)
+bool_ = (Basic BasicType_Boolean)
+string_ = (Basic BasicType_String)
 void_ = VoidType
-addr_ = (BasicType TypeString) -- only for prints.
+addr_ = (Basic BasicType_String) -- only for prints.
 
-negExpr_ cond = ExprNot not_ cond
+-- negRExpr_ cond = RExprNot not_ cond
 exitOnStmt_ cond = StmtLoopCmd $ LoopExitOn exiton_ cond
-preIncr_ bId = ExprLeft $ LEPreIncrem $ LEId bId
-preDecr_ bId = ExprLeft $ LEPreDecr $ LEId bId
-relGEq_ = RelGreaterEq greateq_
-relLEq_ = RelLessEq lesseq_
-relLess_ = RelLess less_
-zeroExpr_ = ExprVal $ IntVal $ BInteger ((0,0), "0")
+preIncr_ bId = RExprLeft $ LEPreIncrem $ LEId bId
+preDecr_ bId = RExprLeft $ LEPreDecr $ LEId bId
+relGEq_ = BinaryGte greateq_
+relLEq_ = BinaryLte lesseq_
+relLess_ = BinaryLt less_
+zeroRExpr_ = Lit $ IntVal $ BInteger ((0,0), "0")
 
 eq_ = BEq ((0,0),"=")
 neq_ = BNotEq ((0,0),"<>")
@@ -582,5 +584,5 @@ lesseq_ = BLeEq ((0,0),"<=")
 less_ = BLe ((0,0),"<")
 greateq_ = BGrEq ((0,0),">=")
 exiton_  = BExitOn ((0,0), "exiton")
-not_ = BNot ((0,0),"not")-}
+not_ = BNot ((0,0),"not")
 

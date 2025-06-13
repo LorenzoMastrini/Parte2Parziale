@@ -11,6 +11,7 @@ import SkelLinguaggio
 import AbsLinguaggio
 import PrettyPrinter
 import PrintLinguaggio
+import TACGenerator
 --import StaticAnalysis
 --import TACGenerator
 import Utils
@@ -50,7 +51,7 @@ run v p s = let ts = myLLexer s in case p ts of
                           exitFailure
            Ok tree  -> do putStrN v $ "\n" ++ colorGreen "[PARSING]: PASS\n" ++ show tree
                           putStrNC v "\n[PARSING]: PASS"
-                          --putStrT v (testingTAC (generateTAC tree) s)
+                          putStrT v (testingTAC (generateTAC tree) s)
                           --x <-testing tree s
                           --putStrC v x
                           putStrV v typ
