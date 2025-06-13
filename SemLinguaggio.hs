@@ -10,6 +10,6 @@ data EnvEntry
     = Evar Loc Type
     | Efun Loc [Parameter] Type
     | Econst Type
-data Paramenter = Parameter Loc OptModality Type Ident
+data Parameter = Parameter Loc OptModality Type Ident
 data Loc = Loc {line, column :: Int}
 
