@@ -12,9 +12,9 @@ import Data.List
 --------------------------------------------------------------------
 
 type Pos = (Int, Int)
-{-
-type Id = String
 
+type Id = String
+{-
 data TACAddr  = Addr String | PointAddr String
   | DerefAddr String | AddrAt String TACAddr
   | ValAddr String
@@ -483,22 +483,22 @@ showFunction :: String -> [Type] -> String
 showFunction out [] = (init out) ++ ")"
 showFunction out (t:types) =
     showFunction (out++(showType t )++",") types
-
-showType :: Type -> String
+-}
+showType :: BasicType -> String
 showType ty = case ty of
-  BasicType TypeInt -> "int"
-  BasicType TypeBool -> "bool"
-  BasicType TypeChar -> "char"
-  BasicType TypeReal -> "real"
-  BasicType TypeString -> "string"
-  ErrorType -> "error"
-  VoidType -> "void"
-  PointerType t -> ('°':(showType t))
-  ArrayType _ t _ ->  "Array <" ++ (showType t) ++ ">"
-  ArrayDimType _ t _ _ ->  "Array <" ++ (showType t) ++ ">"
-  Array t 0 -> "Array <" ++ (showType t) ++ ">(" ++ "?" ++")"
-  Array t n -> "Array <" ++ (showType t) ++ ">(" ++ (show n) ++")"
-
+  BasicType_Integer -> "int"
+  BasicType_Boolean -> "bool"
+  BasicType_Character -> "char"
+  BasicType_Real -> "real"
+  BasicType_String -> "string"
+  --ErrorType -> "error"
+  --VoidType -> "void"
+  --PointerType t -> ('°':(showType t))
+  --ArrayType _ t _ ->  "Array <" ++ (showType t) ++ ">"
+  --ArrayDimType _ t _ _ ->  "Array <" ++ (showType t) ++ ">"
+  --Array t 0 -> "Array <" ++ (showType t) ++ ">(" ++ "?" ++")"
+  --Array t n -> "Array <" ++ (showType t) ++ ">(" ++ (show n) ++")"
+{-
 showAssignType :: Type -> String
 showAssignType ty = case ty of
   BasicType TypeInt -> "int"

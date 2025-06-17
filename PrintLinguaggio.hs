@@ -151,16 +151,14 @@ instance Print [AbsLinguaggio.Ident] where
 
 instance Print AbsLinguaggio.Block where
   prt i = \case
-    AbsLinguaggio.Block declarationpart compoundstatement -> prPrec i 0 (concatD [prt 0 declarationpart, prt 0 compoundstatement])
+    AbsLinguaggio.Block constantdefinitions variabledeclarations procedureandfunctiondeclarations compoundstatement -> 
+      prPrec i 0 (concatD [
+        prt 0 constantdefinitions,
+        prt 0 variabledeclarations,
+        prt 0 procedureandfunctiondeclarations,
+        prt 0 compoundstatement
+      ])
 
-instance Print AbsLinguaggio.DeclarationPart where
-  prt i = \case
-    AbsLinguaggio.Decls constantdefinitionpart variabledeclarationpart procedureandfunctiondeclarations -> prPrec i 0 (concatD [prt 0 constantdefinitionpart, prt 0 variabledeclarationpart, prt 0 procedureandfunctiondeclarations])
-
-instance Print AbsLinguaggio.ConstantDefinitionPart where
-  prt i = \case
-    AbsLinguaggio.NoConstDefs -> prPrec i 0 (concatD [])
-    AbsLinguaggio.ConstDefs constantdefinitions -> prPrec i 0 (concatD [doc (showString "const"), prt 0 constantdefinitions])
 
 instance Print AbsLinguaggio.ConstantDefinition where
   prt i = \case
@@ -171,10 +169,6 @@ instance Print [AbsLinguaggio.ConstantDefinition] where
   prt _ [x] = concatD [prt 0 x, doc (showString ";")]
   prt _ (x:xs) = concatD [prt 0 x, doc (showString ";"), prt 0 xs]
 
-instance Print AbsLinguaggio.VariableDeclarationPart where
-  prt i = \case
-    AbsLinguaggio.NoVarDecls -> prPrec i 0 (concatD [])
-    AbsLinguaggio.VarDecls variabledeclarations -> prPrec i 0 (concatD [doc (showString "var"), prt 0 variabledeclarations])
 
 instance Print AbsLinguaggio.VariableDeclaration where
   prt i = \case
@@ -254,22 +248,15 @@ instance Print AbsLinguaggio.OptSign where
     AbsLinguaggio.OptSign2 -> prPrec i 0 (concatD [doc (showString "+")])
     AbsLinguaggio.OptSign3 -> prPrec i 0 (concatD [doc (showString "-")])
 
-instance Print AbsLinguaggio.CompoundStatement where
-  prt i = \case
-    AbsLinguaggio.CompStmt statements -> prPrec i 0 (concatD [doc (showString "begin"), prt 0 statements, doc (showString "end")])
-
 instance Print AbsLinguaggio.Statement where
-  prt i = \case
-    AbsLinguaggio.Stmts compoundstatement -> prPrec i 0 (concatD [prt 0 compoundstatement])
-    AbsLinguaggio.NoStmt -> prPrec i 0 (concatD [])
-    AbsLinguaggio.RExprStmt rexpr -> prPrec i 0 (concatD [prt 0 rexpr])
-    AbsLinguaggio.Assign lexpr rexpr -> prPrec i 0 (concatD [prt 0 lexpr, doc (showString ":="), prt 0 rexpr])
-    AbsLinguaggio.While rexpr statement -> prPrec i 0 (concatD [doc (showString "while"), prt 0 rexpr, doc (showString "do"), prt 0 statement])
-    AbsLinguaggio.DoWhile statement rexpr -> prPrec i 0 (concatD [doc (showString "repeat"), prt 0 statement, doc (showString "until"), prt 0 rexpr])
-    AbsLinguaggio.ForTo lexpr rexpr1 rexpr2 statement -> prPrec i 0 (concatD [doc (showString "for"), prt 0 lexpr, doc (showString ":="), prt 0 rexpr1, doc (showString "to"), prt 0 rexpr2, doc (showString "do"), prt 0 statement])
-    AbsLinguaggio.ForDownTo lexpr rexpr1 rexpr2 statement -> prPrec i 0 (concatD [doc (showString "for"), prt 0 lexpr, doc (showString ":="), prt 0 rexpr1, doc (showString "downto"), prt 0 rexpr2, doc (showString "do"), prt 0 statement])
-    AbsLinguaggio.If rexpr statement optelse -> prPrec i 0 (concatD [doc (showString "if"), prt 0 rexpr, doc (showString "then"), prt 0 statement, prt 0 optelse])
-    AbsLinguaggio.Case rexpr caseitems -> prPrec i 0 (concatD [doc (showString "case"), prt 0 rexpr, doc (showString "of"), prt 0 caseitems, doc (showString "end")])
+  prt i (AbsLinguaggio.RExprStmt expr) = prPrec i 0 (concatD [prt 0 expr])
+  prt i (AbsLinguaggio.Assign lexpr expr) = prPrec i 0 (concatD [prt 0 lexpr, doc (showString ":="), prt 0 expr])
+  prt i (AbsLinguaggio.While expr stmt) = prPrec i 0 (concatD [doc (showString "while"), prt 0 expr, doc (showString "do"), prt 0 stmt])
+  prt i (AbsLinguaggio.DoWhile stmt expr) = prPrec i 0 (concatD [doc (showString "repeat"), prt 0 stmt, doc (showString "until"), prt 0 expr])
+  prt i (AbsLinguaggio.ForTo lexpr expr1 expr2 stmt) = prPrec i 0 (concatD [doc (showString "for"), prt 0 lexpr, doc (showString ":="), prt 0 expr1, doc (showString "to"), prt 0 expr2, doc (showString "do"), prt 0 stmt])
+  prt i (AbsLinguaggio.ForDownTo lexpr expr1 expr2 stmt) = prPrec i 0 (concatD [doc (showString "for"), prt 0 lexpr, doc (showString ":="), prt 0 expr1, doc (showString "downto"), prt 0 expr2, doc (showString "do"), prt 0 stmt])
+  prt i (AbsLinguaggio.If expr stmt1 stmt2) = prPrec i 0 (concatD [doc (showString "if"), prt 0 expr, doc (showString "then"), prt 0 stmt1, prt 0 stmt2])
+  prt i (AbsLinguaggio.Case expr items) = prPrec i 0 (concatD [doc (showString "case"), prt 0 expr, doc (showString "of"), prt 0 items, doc (showString "end")])
 
 instance Print AbsLinguaggio.OptElse where
   prt i = \case
@@ -289,6 +276,9 @@ instance Print [AbsLinguaggio.Statement] where
   prt _ [] = concatD []
   prt _ [x] = concatD [prt 0 x]
   prt _ (x:xs) = concatD [prt 0 x, doc (showString ";"), prt 0 xs]
+
+instance Print AbsLinguaggio.CompoundStatement where
+  prt i (AbsLinguaggio.CompStmt statements) = prPrec i 0 (concatD [doc (showString "begin"), prt 0 statements, doc (showString "end")])
 
 instance Print AbsLinguaggio.LExpr where
   prt i = \case
@@ -337,6 +327,6 @@ instance Print AbsLinguaggio.Binary where
 
 instance Print AbsLinguaggio.Unary where
   prt i = \case
-    AbsLinguaggio.Unary1 -> prPrec i 0 (concatD [doc (showString "+")])
-    AbsLinguaggio.Unary2 -> prPrec i 0 (concatD [doc (showString "-")])
-    AbsLinguaggio.Unary_not -> prPrec i 0 (concatD [doc (showString "not")])
+    AbsLinguaggio.UnaryPlus -> prPrec i 0 (concatD [doc (showString "+")])
+    AbsLinguaggio.UnaryMinus -> prPrec i 0 (concatD [doc (showString "-")])
+    AbsLinguaggio.UnaryNot -> prPrec i 0 (concatD [doc (showString "not")])

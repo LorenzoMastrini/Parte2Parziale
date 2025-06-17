@@ -13,22 +13,10 @@ import qualified Data.String
 data Program = ProgNoParams Ident Block | Prog Ident [Ident] Block
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data Block = Block DeclarationPart CompoundStatement
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
-
-data DeclarationPart
-    = Decls ConstantDefinitionPart VariableDeclarationPart [ProcedureAndFunctionDeclaration]
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
-
-data ConstantDefinitionPart
-    = NoConstDefs | ConstDefs [ConstantDefinition]
+data Block = Block [ConstantDefinition] [VariableDeclaration] [ProcedureAndFunctionDeclaration] CompoundStatement
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data ConstantDefinition = ConstDef Ident Constant
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
-
-data VariableDeclarationPart
-    = NoVarDecls | VarDecls [VariableDeclaration]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data VariableDeclaration = VarDecl [Ident] Type
@@ -79,7 +67,6 @@ data CompoundStatement = CompStmt [Statement]
 
 data Statement
     = Stmts CompoundStatement
-    | NoStmt
     | RExprStmt RExpr
     | Assign LExpr RExpr
     | While RExpr Statement
@@ -93,7 +80,8 @@ data Statement
 data OptElse = NoElse | Else Statement
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data CaseItem = CaseItem Constant Statement
+data CaseItem
+  = CaseItem Constant Statement
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data LExpr = LId Ident | LArr LExpr [RExpr] | LDeref LExpr
@@ -133,7 +121,10 @@ data Binary
     | BinaryGte
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data Unary = Unary1 | Unary2 | Unary_not
+data Unary
+  = UnaryPlus
+  | UnaryMinus
+  | UnaryNot
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 newtype Ident = Ident String

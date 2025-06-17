@@ -26,25 +26,11 @@ transProgram x = case x of
 
 transBlock :: AbsLinguaggio.Block -> Result
 transBlock x = case x of
-  AbsLinguaggio.Block declarationpart compoundstatement -> failure x
-
-transDeclarationPart :: AbsLinguaggio.DeclarationPart -> Result
-transDeclarationPart x = case x of
-  AbsLinguaggio.Decls constantdefinitionpart variabledeclarationpart procedureandfunctiondeclarations -> failure x
-
-transConstantDefinitionPart :: AbsLinguaggio.ConstantDefinitionPart -> Result
-transConstantDefinitionPart x = case x of
-  AbsLinguaggio.NoConstDefs -> failure x
-  AbsLinguaggio.ConstDefs constantdefinitions -> failure x
+  AbsLinguaggio.Block constantdefinitions variabledeclarations procedureandfunctiondeclarations compoundstatement -> failure x
 
 transConstantDefinition :: AbsLinguaggio.ConstantDefinition -> Result
 transConstantDefinition x = case x of
   AbsLinguaggio.ConstDef ident constant -> failure x
-
-transVariableDeclarationPart :: AbsLinguaggio.VariableDeclarationPart -> Result
-transVariableDeclarationPart x = case x of
-  AbsLinguaggio.NoVarDecls -> failure x
-  AbsLinguaggio.VarDecls variabledeclarations -> failure x
 
 transVariableDeclaration :: AbsLinguaggio.VariableDeclaration -> Result
 transVariableDeclaration x = case x of
@@ -104,14 +90,8 @@ transOptSign x = case x of
   AbsLinguaggio.OptSign2 -> failure x
   AbsLinguaggio.OptSign3 -> failure x
 
-transCompoundStatement :: AbsLinguaggio.CompoundStatement -> Result
-transCompoundStatement x = case x of
-  AbsLinguaggio.CompStmt statements -> failure x
-
 transStatement :: AbsLinguaggio.Statement -> Result
 transStatement x = case x of
-  AbsLinguaggio.Stmts compoundstatement -> failure x
-  AbsLinguaggio.NoStmt -> failure x
   AbsLinguaggio.RExprStmt rexpr -> failure x
   AbsLinguaggio.Assign lexpr rexpr -> failure x
   AbsLinguaggio.While rexpr statement -> failure x
@@ -172,6 +152,6 @@ transBinary x = case x of
 
 transUnary :: AbsLinguaggio.Unary -> Result
 transUnary x = case x of
-  AbsLinguaggio.Unary1 -> failure x
-  AbsLinguaggio.Unary2 -> failure x
-  AbsLinguaggio.Unary_not -> failure x
+  AbsLinguaggio.UnaryPlus -> failure x
+  AbsLinguaggio.UnaryMinus -> failure x
+  AbsLinguaggio.UnaryNot -> failure x

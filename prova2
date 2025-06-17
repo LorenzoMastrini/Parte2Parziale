@@ -1,0 +1,16 @@
+program prova;
+
+begin
+    x := 2;
+    y := 8;
+
+    if x <= 2 then
+        x = 5 + 9
+    else begin
+        y := 9;
+        z := 0;
+        end;
+    
+    
+    z := 8;
+end.

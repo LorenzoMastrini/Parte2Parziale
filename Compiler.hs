@@ -10,8 +10,7 @@ import ParLinguaggio
 import SkelLinguaggio
 import AbsLinguaggio
 import PrettyPrinter
-import PrintLinguaggio
---import StaticAnalysis
+import StaticAnalysis
 --import TACGenerator
 import Utils
 import ErrM
@@ -23,22 +22,7 @@ myLLexer = myLexer
 type Verbosity = Int
 
 putStrV :: Verbosity -> String -> IO ()
-putStrV v s = when (v < 1) $ putStrLn s
-
-putStrC :: Verbosity -> String -> IO ()
-putStrC v s = when (v == 6) $ putStrLn s
-
-putStrN :: Verbosity -> String -> IO ()
-putStrN v s = when (v < 3) $ putStrLn s
-
-putStrS :: Verbosity -> String -> IO ()
-putStrS v s = when (v == 4 ) $ putStrLn s
-
-putStrT :: Verbosity -> String -> IO ()
-putStrT v s = when (v == 5) $ putStrLn s
-
-putStrNC :: Verbosity -> String -> IO()
-putStrNC v s = when (v==7) $ putStrLn s
+putStrV v s = when (v > 1) $ putStrLn s
 
 compile :: Verbosity -> ParseFun Program -> FilePath -> IO ()
 compile v p f = putStrLn f >> readFile f >>= run v p
@@ -48,19 +32,18 @@ run v p s = let ts = myLLexer s in case p ts of
            Bad s    -> do putStrLn (colorRed "[PARSING]: FAIL" )
                           putStrLn $ errorMsg s
                           exitFailure
-           Ok tree  -> do putStrN v $ "\n" ++ colorGreen "[PARSING]: PASS\n" ++ show tree
-                          putStrNC v "\n[PARSING]: PASS"
+           Ok tree  -> do putStrV v $ "\n" ++ colorGreen "[PARSING]: PASS\n" ++ show tree
                           --putStrT v (testingTAC (generateTAC tree) s)
                           --x <-testing tree s
                           --putStrC v x
                           putStrV v typ
-                          putStrN v err
+                          putStrV v err
                           --putStrNC v $ removeAnsi typ
                           --putStrNC v $ removeAnsi err
-                          --putStrN v ( StaticAnalysis.printEnv ( rnbStaticAnalysis tree))
+                          putStrV v (StaticAnalysis.printEnv (staticAnalysis tree))
                           if nErr == 0 then
                              do
-                             putStrS v silentAnalysis
+                             putStrV v silentAnalysis
                              --putStrN v $ (infoMsg "TAC Generator\n")++(prettyTAC (generateTAC tree))
                              --putStrNC v $ removeAnsi ((infoMsg "TAC Generator\n")++(prettyTAC (generateTAC tree)))
                              --putStrV v $ (infoMsg "TAC State\n")++(printState $ genProgram tree)
@@ -99,13 +82,16 @@ sortErr (_,(_,p1)) (_,(_,p2)) = sortPos p1 p2
 
 countError ::   [(String,Pos)] -> Int
 countError [] = 0
-countError ((x,_):xs) = case isInfixOf "[Error]:" x of
-  True -> 1 + countError xs
-  False -> countError xs
+countError ((x,_):xs) = if "[Error]:" `isInfixOf` x
+                        then 1 + countError xs
+                        else countError xs
 
 
 showTree :: Program -> String -> (String,String,String,Int)
 showTree  tree s= (("\n" ++ infoMsg "Abstract Syntax Tree\n" ++
+                   {-prettyTree tree-}
+                   {-prettyTree tree-}
+                   {-prettyTree tree-}
                    {-prettyTree tree-} "qua va il prettyTree") ++"\n", unlines (printErrs (sortBy sortErr (listPosition ["l", "i"] {-listTree-} [("error", (1,1))]{-envErrorsPos-})))++"\n" ++
                    "numOfErrors", "silentAnalysis", 1 {-numOfErrors,silentAnalysis,errCount-})
         {-where envErrorsPos = errors (rnbStaticAnalysis tree)
@@ -122,13 +108,11 @@ showTree  tree s= (("\n" ++ infoMsg "Abstract Syntax Tree\n" ++
 usage :: IO ()
 usage = do
   putStrLn $ unlines
-    [ "  --help                Display this help message."
+    [ "usage: Call with one of the following argument combinations:"
+    , "  --help                Display this help message."
     , "  (files)               Parse content of files verbosely."
-    , "  --check (files)       Check the correctness of the RNBStaticAnalysis with the powerful Test-Suite."
-    , "  --verbose (files)     Show all prints.  "
-    , "  --silent (files)      Remove all prints. "
+    , "  --s (files)           Silent mode. Parse content of files silently."
     , "  --checkTAC (files)    Check if the generated TAC is equal to the expected TAC."
-    , "  --nocolor (files)     Print output without colors."
     ]
   exitFailure
 
@@ -141,25 +125,12 @@ main :: IO ()
 main = do
   args <- getArgs
   case args of
-    ["--help"] -> usage
-    [] -> emptyInputError
-    "--check":fs | checkExtension fs -> mapM_ (compile 6 pProgram) fs
-                 | otherwise -> putStrLn (errorMsg "Unrecognized extension.")
-    "--checkTAC":fs | checkExtension fs -> mapM_ (compile 5 pProgram) fs
-                    | otherwise -> putStrLn (errorMsg "Unrecognized extension.")
-    "--verbose":fs | checkExtension fs -> mapM_ (compile 0 pProgram) fs
-                   | otherwise -> putStrLn (errorMsg "Unrecognized extension.")
-    "--silent":fs | checkExtension fs -> mapM_ (compile 4 pProgram) fs
-                  | otherwise -> putStrLn (errorMsg "Unrecognized extension.")
-    "--nocolor":fs | checkExtension fs -> mapM_ (compile 7 pProgram) fs
-                   | otherwise -> putStrLn (errorMsg "Unrecognized extension.")
-    fs | checkExtension fs -> mapM_ (compile 2 pProgram) fs
-       | otherwise -> putStrLn (errorMsg "Unrecognized extension.")
+    ["--help"]      -> usage
+    []              -> emptyInputError
+    --"--checkTAC":fs -> mapM_ (compile 5 pProgram) fs
+    "-s":fs         -> mapM_ (compile 4 pProgram) fs
+    fs              -> mapM_ (compile 2 pProgram) fs
 
-checkExtension:: [String] -> Bool
-checkExtension [] = True
-checkExtension (f:fs) |  ".ling" == drop (length f - 5) f = checkExtension fs
-                      | otherwise = False
 {-
 ------------------------------------------------------
 -- TESTING UNIT

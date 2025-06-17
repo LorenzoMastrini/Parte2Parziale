@@ -29,8 +29,9 @@ import LexLinguaggio
 %left '=' '<>' '<' '<=' '>' '>='
 %left '+' '-'
 %left '*' '/' 'div' 'mod'
-%right 'not' Unary1 Unary2
+%right 'not' UnaryPlus UnaryMinus
 %right '^'
+
 
 %token
   '('         { PT _ (TS _ 1)  }
@@ -120,16 +121,7 @@ ListIdent : Ident { (:[]) $1 } | Ident ',' ListIdent { (:) $1 $3 }
 
 Block :: { AbsLinguaggio.Block }
 Block
-  : DeclarationPart CompoundStatement { AbsLinguaggio.Block $1 $2 }
-
-DeclarationPart :: { AbsLinguaggio.DeclarationPart }
-DeclarationPart
-  : ConstantDefinitionPart VariableDeclarationPart ListProcedureAndFunctionDeclaration { AbsLinguaggio.Decls $1 $2 $3 }
-
-ConstantDefinitionPart :: { AbsLinguaggio.ConstantDefinitionPart }
-ConstantDefinitionPart
-  : {- empty -} { AbsLinguaggio.NoConstDefs }
-  | 'const' ListConstantDefinition { AbsLinguaggio.ConstDefs $2 }
+  : ListConstantDefinition ListVariableDeclaration ListProcedureAndFunctionDeclaration CompoundStatement { AbsLinguaggio.Block $1 $2 $3 $4 }
 
 ConstantDefinition :: { AbsLinguaggio.ConstantDefinition }
 ConstantDefinition
@@ -137,13 +129,9 @@ ConstantDefinition
 
 ListConstantDefinition :: { [AbsLinguaggio.ConstantDefinition] }
 ListConstantDefinition
-  : ConstantDefinition ';' { (:[]) $1 }
-  | ConstantDefinition ';' ListConstantDefinition { (:) $1 $3 }
-
-VariableDeclarationPart :: { AbsLinguaggio.VariableDeclarationPart }
-VariableDeclarationPart
-  : {- empty -} { AbsLinguaggio.NoVarDecls }
-  | 'var' ListVariableDeclaration { AbsLinguaggio.VarDecls $2 }
+  : {- empty -} { [] }
+  | 'const' ConstantDefinition ';' ListConstantDefinition { $2 : $4 }
+  | ConstantDefinition ';' ListConstantDefinition { $1 : $3 }
 
 VariableDeclaration :: { AbsLinguaggio.VariableDeclaration }
 VariableDeclaration
@@ -151,8 +139,9 @@ VariableDeclaration
 
 ListVariableDeclaration :: { [AbsLinguaggio.VariableDeclaration] }
 ListVariableDeclaration
-  : VariableDeclaration ';' { (:[]) $1 }
-  | VariableDeclaration ';' ListVariableDeclaration { (:) $1 $3 }
+  : {- empty -} { [] }
+  | 'var' VariableDeclaration ';' ListVariableDeclaration { $2 : $4 }
+  | VariableDeclaration ';' ListVariableDeclaration { $1 : $3 }
 
 ProcedureAndFunctionDeclaration :: { AbsLinguaggio.ProcedureAndFunctionDeclaration }
 ProcedureAndFunctionDeclaration
@@ -229,10 +218,14 @@ CompoundStatement :: { AbsLinguaggio.CompoundStatement }
 CompoundStatement
   : 'begin' ListStatement 'end' { AbsLinguaggio.CompStmt $2 }
 
+ListStatement :: { [AbsLinguaggio.Statement] }
+ListStatement
+  : Statement ';' { (:[]) $1 }
+  | Statement ';' ListStatement { (:) $1 $3 }
+
 Statement :: { AbsLinguaggio.Statement }
 Statement
   : CompoundStatement { AbsLinguaggio.Stmts $1 }
-  | {- empty -} { AbsLinguaggio.NoStmt }
   | RExpr { AbsLinguaggio.RExprStmt $1 }
   | LExpr ':=' RExpr { AbsLinguaggio.Assign $1 $3 }
   | 'while' RExpr 'do' Statement { AbsLinguaggio.While $2 $4 }
@@ -248,18 +241,14 @@ OptElse
   | 'else' Statement { AbsLinguaggio.Else $2 }
 
 CaseItem :: { AbsLinguaggio.CaseItem }
-CaseItem : Constant ':' Statement { AbsLinguaggio.CaseItem $1 $3 }
+CaseItem
+  : Constant ':' Statement { AbsLinguaggio.CaseItem $1 $3 }
 
 ListCaseItem :: { [AbsLinguaggio.CaseItem] }
 ListCaseItem
   : {- empty -} { [] }
   | CaseItem { (:[]) $1 }
   | CaseItem ';' ListCaseItem { (:) $1 $3 }
-
-ListStatement :: { [AbsLinguaggio.Statement] }
-ListStatement
-  : Statement { (:[]) $1 }
-  | Statement ';' ListStatement { (:) $1 $3 }
 
 LExpr :: { AbsLinguaggio.LExpr }
 LExpr
@@ -269,23 +258,23 @@ LExpr
 
 RExpr :: { AbsLinguaggio.RExpr }
 RExpr
-  : RExpr '+' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryPlus $3 }
-  | RExpr '-' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryMinus $3 }
-  | RExpr '*' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryMul $3 }
-  | RExpr '/' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryDiv $3 }
-  | RExpr 'div' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryIntDiv $3 }
-  | RExpr 'mod' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryMod $3 }
-  | RExpr 'or' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryOr $3 }
-  | RExpr 'and' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryAnd $3 }
-  | RExpr '=' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryEq $3 }
-  | RExpr '<>' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryNeq $3 }
-  | RExpr '<' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryLt $3 }
-  | RExpr '<=' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryLte $3 }
-  | RExpr '>' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryGt $3 }
-  | RExpr '>=' RExpr { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryGte $3 }
-  | '+' RExpr %prec Unary1 { AbsLinguaggio.Unary AbsLinguaggio.Unary1 $2 }
-  | '-' RExpr %prec Unary2 { AbsLinguaggio.Unary AbsLinguaggio.Unary2 $2 }
-  | 'not' RExpr { AbsLinguaggio.Unary AbsLinguaggio.Unary_not $2 }
+  : RExpr '+' RExpr %prec '+' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryPlus $3 }
+  | RExpr '-' RExpr %prec '-' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryMinus $3 }
+  | RExpr '*' RExpr %prec '*' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryMul $3 }
+  | RExpr '/' RExpr %prec '/' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryDiv $3 }
+  | RExpr 'div' RExpr %prec 'div' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryIntDiv $3 }
+  | RExpr 'mod' RExpr %prec 'mod' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryMod $3 }
+  | RExpr 'or' RExpr %prec 'or' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryOr $3 }
+  | RExpr 'and' RExpr %prec 'and' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryAnd $3 }
+  | RExpr '=' RExpr %prec '=' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryEq $3 }
+  | RExpr '<>' RExpr %prec '<>' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryNeq $3 }
+  | RExpr '<' RExpr %prec '<' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryLt $3 }
+  | RExpr '<=' RExpr %prec '<=' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryLte $3 }
+  | RExpr '>' RExpr %prec '>' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryGt $3 }
+  | RExpr '>=' RExpr %prec '>=' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryGte $3 }
+  | '+' RExpr %prec UnaryPlus { AbsLinguaggio.Unary AbsLinguaggio.UnaryPlus $2 }
+  | '-' RExpr %prec UnaryMinus { AbsLinguaggio.Unary AbsLinguaggio.UnaryMinus $2 }
+  | 'not' RExpr %prec 'not' { AbsLinguaggio.Unary AbsLinguaggio.UnaryNot $2 }
   | Literal { AbsLinguaggio.Lit $1 }
   | Ident '(' ListRExpr ')' { AbsLinguaggio.FCall $1 $3 }
   | '(' RExpr ')' { $2 }
@@ -293,9 +282,9 @@ RExpr
 
 ListRExpr :: { [AbsLinguaggio.RExpr] }
 ListRExpr
-  : {- empty -} { [] }
-  | RExpr { (:[]) $1 }
+  : RExpr { (:[]) $1 }
   | RExpr ',' ListRExpr { (:) $1 $3 }
+  | {- empty -} { [] }
 
 Literal :: { AbsLinguaggio.Literal }
 Literal
@@ -308,9 +297,9 @@ Literal
 
 Unary :: { AbsLinguaggio.Unary }
 Unary
-  : '+' { AbsLinguaggio.Unary1 }
-  | '-' { AbsLinguaggio.Unary2 }
-  | 'not' { AbsLinguaggio.Unary_not }
+  : '+' { AbsLinguaggio.UnaryPlus }
+  | '-' { AbsLinguaggio.UnaryMinus }
+  | 'not' { AbsLinguaggio.UnaryNot }
 
 {
 
