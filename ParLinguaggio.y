@@ -88,7 +88,7 @@ import LexLinguaggio
   'valres'    { PT _ (TS _ 52) }
   'var'       { PT _ (TS _ 53) }
   'while'     { PT _ (TS _ 54) }
-  L_Ident     { PT _ (TV $$)   }
+  L_Ident     { PT pos (TV $$) }
   L_charac    { PT _ (TC $$)   }
   L_doubl     { PT _ (TD $$)   }
   L_integ     { PT _ (TI $$)   }
@@ -97,7 +97,7 @@ import LexLinguaggio
 %%
 
 Ident :: { AbsLinguaggio.Ident }
-Ident  : L_Ident { AbsLinguaggio.Ident $1 }
+Ident  : L_Ident { AbsLinguaggio.Ident $1 (posToLoc pos)}
 
 Char    :: { Char }
 Char     : L_charac { (read $1) :: Char }
@@ -113,11 +113,13 @@ String   : L_quoted { $1 }
 
 Program :: { AbsLinguaggio.Program }
 Program
-  : 'program' Ident ';' Block '.' { AbsLinguaggio.ProgNoParams $2 $4 }
-  | 'program' Ident '(' ListIdent ')' ';' Block '.' { AbsLinguaggio.Prog $2 $4 $7 }
+  : 'program' Ident '(' ListIdent ')' ';' Block '.' { AbsLinguaggio.Prog $2 $4 $7 }
 
 ListIdent :: { [AbsLinguaggio.Ident] }
-ListIdent : Ident { (:[]) $1 } | Ident ',' ListIdent { (:) $1 $3 }
+ListIdent
+  : Ident { (:[]) $1 }
+  | Ident ',' ListIdent { (:) $1 $3 }
+  | {-empty-} { [] }
 
 Block :: { AbsLinguaggio.Block }
 Block

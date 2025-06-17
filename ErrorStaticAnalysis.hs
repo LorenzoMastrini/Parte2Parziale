@@ -154,6 +154,8 @@ errorType x =
 
         ReturnInForLoop (l,c) stmt-> errorMsg "Cannot use the statement '"++ stmt++ "' inside a deterministic 'for' loop. " ++ (lineAndColumn l c) ++  " [ControlFlowAnalysis]."
 
+        CustomError msg -> errorMsg msg
+
 -------------------------------------------------
 ------------------ WARNINGS ---------------------
 -------------------------------------------------
@@ -221,5 +223,6 @@ data Error = RedeclaredVar Ident |
              InfiniteLoop Pos |
              IncompatibleExprs Pos Type Type| 
              FunctionAsIdentifier Pos |
-             ReturnInForLoop Pos String
+             ReturnInForLoop Pos String |
+             CustomError String
              

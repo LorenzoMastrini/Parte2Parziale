@@ -17,11 +17,10 @@ failure x = Left $ "Undefined case: " ++ show x
 
 transIdent :: AbsLinguaggio.Ident -> Result
 transIdent x = case x of
-  AbsLinguaggio.Ident string -> failure x
+  AbsLinguaggio.Ident string loc -> failure x
 
 transProgram :: AbsLinguaggio.Program -> Result
 transProgram x = case x of
-  AbsLinguaggio.ProgNoParams ident block -> failure x
   AbsLinguaggio.Prog ident idents block -> failure x
 
 transBlock :: AbsLinguaggio.Block -> Result

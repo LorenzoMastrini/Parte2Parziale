@@ -13,11 +13,11 @@
 module LexLinguaggio where
 
 import Prelude
-
 import qualified Data.Bits
 import Data.Char     (ord)
 import Data.Function (on)
 import Data.Word     (Word8)
+import AbsLinguaggio (Loc(..))
 #include "ghcconfig.h"
 import qualified Data.Array
 import Data.Array.Base (unsafeAt)
@@ -407,6 +407,11 @@ tokenPos []    = "end of file"
 tokenPosn :: Token -> Posn
 tokenPosn (PT p _) = p
 tokenPosn (Err p)  = p
+
+posToLoc :: Posn -> Loc
+posToLoc pos = Loc line col
+  where
+    Pn _ line col = pos
 
 -- | Get line and column of a token.
 tokenLineCol :: Token -> (Int, Int)

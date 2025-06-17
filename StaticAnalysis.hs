@@ -3,7 +3,8 @@ module StaticAnalysis where
 import AbsLinguaggio
 import PrettyPrinter
 import ErrorStaticAnalysis
-import Utils
+import Utils (Pos)
+import LexLinguaggio (Token(..), Posn(..), tokenPosn, Tok(..), TokSymbol(..))
 import Data.Char (ord, readLitChar)
 import Data.Map (Map, member,lookup,toList)
 import Data.ByteString.Char8 (unpack, ByteString, pack)
@@ -13,9 +14,6 @@ import Data.List (intercalate)
 -------------------------------------------------
 ----------------- DATA & TYPE -------------------
 -------------------------------------------------
-
--- Definizione della posizione
-data Loc = Loc {line, column :: Int} deriving (Eq, Show)
 
 type CTime = Bool
 --type Names = Map Id EnvRecord
@@ -72,29 +70,29 @@ data EnvEntry = VarEntry Type Bool Loc                        -- (tipo, è costa
 
 --Funzioni di default
 defaultFuncList :: [(Ident, EnvEntry)]
-defaultFuncList =  [(Ident "writeInt", ProcEntry [FormParam ByVal [Ident "valInt"] (Basic BasicType_Integer)] (Just (Basic BasicType_Void)) (Loc 0 0)),
-                   (Ident "writeReal", ProcEntry [FormParam ByVal [Ident "valReal"] (Basic BasicType_Real)] (Just (Basic BasicType_Void)) (Loc 0 0)),
-                   (Ident "writeChar", ProcEntry [FormParam ByVal [Ident "valChar"] (Basic BasicType_Character)] (Just (Basic BasicType_Void)) (Loc 0 0)),
-                   (Ident "writeString", ProcEntry [FormParam ByVal [Ident "valString"] (Basic BasicType_String)] (Just (Basic BasicType_Void)) (Loc 0 0)),
-                   (Ident "readInt", ProcEntry [] (Just (Basic BasicType_Integer)) (Loc 0 0)),
-                   (Ident "readReal", ProcEntry [] (Just (Basic BasicType_Real)) (Loc 0 0)),
-                   (Ident "readChar", ProcEntry [] (Just (Basic BasicType_Character)) (Loc 0 0)),
-                   (Ident "readString", ProcEntry [] (Just (Basic BasicType_String)) (Loc 0 0))]
+defaultFuncList =  [(Ident "writeInt" (Loc 0 0),    ProcEntry [FormParam ByVal [Ident "valInt" (Loc 0 0)] (Basic BasicType_Integer)]    (Just (Basic BasicType_Void))      (Loc 0 0)),
+                    (Ident "writeReal" (Loc 0 0),   ProcEntry [FormParam ByVal [Ident "valReal" (Loc 0 0)] (Basic BasicType_Real)]      (Just (Basic BasicType_Void))      (Loc 0 0)),
+                    (Ident "writeChar" (Loc 0 0),   ProcEntry [FormParam ByVal [Ident "valChar" (Loc 0 0)] (Basic BasicType_Character)] (Just (Basic BasicType_Void))      (Loc 0 0)),
+                    (Ident "writeString" (Loc 0 0), ProcEntry [FormParam ByVal [Ident "valString" (Loc 0 0)] (Basic BasicType_String)]  (Just (Basic BasicType_Void))      (Loc 0 0)),
+                    (Ident "readInt" (Loc 0 0),     ProcEntry []                                                              (Just (Basic BasicType_Integer))   (Loc 0 0)),
+                    (Ident "readReal" (Loc 0 0),    ProcEntry []                                                              (Just (Basic BasicType_Real))      (Loc 0 0)),
+                    (Ident "readChar" (Loc 0 0),    ProcEntry []                                                              (Just (Basic BasicType_Character)) (Loc 0 0)),
+                    (Ident "readString" (Loc 0 0),  ProcEntry []                                                              (Just (Basic BasicType_String))    (Loc 0 0))]
 
 defaultEnv :: Env
-defaultEnv = (Map.fromList defaultFuncList, [])  -- (symbol table, empty error list)
+defaultEnv = ((Map.fromList defaultFuncList), []) -- (symbol table, empty error list)
 
 -------------------------------------------------
 -------- MAIN CATEGORIES HANDLER ----------------
 -------------------------------------------------
---Program entry point. Called by Compiler.hs. In the env structure there are all the possible errors.
+
+--Program entry point. Chiamato in Compiler.hs. In the env structure there are all the possible errors.
 staticAnalysis :: Program -> Env
-staticAnalysis (Prog _ params block) = saBlock (addFuncsFromParams defaultEnv params) block
+staticAnalysis (Prog _ params block) = saBlock (addProgramParams defaultEnv params) block
 
 saBlock :: Env -> Block -> Env
 --saBlock env (Block declPart compStmt) = checkMain env
 saBlock env (Block saConstDefs saVarDecls procFunDecls compStmt) = env
-  --saDecls (saDecls env decls) decls --saCompStmt (saCompStmt env compStmts)
 
 saConstDefs :: Env -> [ConstantDefinition] -> Env
 --saConstDefs env [] = checkMain env
@@ -109,6 +107,13 @@ saVarDecls env (d:ds) = saVarDecls (saVarDecl env d) ds
 
 saVarDecl :: Env -> VariableDeclaration -> Env
 saVarDecl env (VarDecl ids ty) = foldl (\e id -> handlerVarDecl e id ty) env ids
+
+saProcFunDecls :: Env -> [ProcedureAndFunctionDeclaration] -> Env
+--saProcFunDecls env [] = checkMain env
+saProcFunDecls env (d:ds) = saProcFunDecls (saProcFunDecl env d) ds
+
+saProcFunDecl :: Env -> ProcedureAndFunctionDeclaration -> Env
+saProcFunDecl env (ProcFunDecl id val) = addSymbol env (Ident "procedura" (Loc 0 0)) (VarEntry (Basic BasicType_Void) True (Loc 0 0))
 {-
 saProcFunDecls :: Env -> [ProcedureAndFunctionDeclaration] -> Env
 --saProcFunDecls env [] = checkMain env
@@ -476,13 +481,12 @@ handlerStmtExpr env expr =
   case saExpr env expr of
     (exprEnv, (ExprRes ErrorType _ _ _)) -> exprEnv
     (exprEnv, (ExprRes VoidType _ _ _))  -> exprEnv
-    (exprEnv, (ExprRes _ _ _ _)) ->
-        case expr of
-          ExprPostIncr _                    -> exprEnv
-          ExprPostDecr _                    -> exprEnv
-          ExprLeft (LEPreDecr _)              -> exprEnv
-          ExprLeft  (LEPreIncrem _ )           -> exprEnv
-          otherwise -> addError exprEnv (UnsusedValue (pos),pos)
+    (exprEnv, (ExprRes _ _ _ _))         -> case expr of
+          ExprPostIncr _             -> exprEnv
+          ExprPostDecr _             -> exprEnv
+          ExprLeft (LEPreDecr _)     -> exprEnv
+          ExprLeft  (LEPreIncrem _ ) -> exprEnv
+          otherwise                  -> addError exprEnv (UnsusedValue (pos),pos)
   where pos = firstExprPos expr
 
 
@@ -850,11 +854,21 @@ copyEnvInfo dest source Nothing =
 -------------------- FOR CO-DEFINITIONS ------------------------------
 ----------------------------------------------------------------------
 
+-- Aggiungi i parametri all'ambiente
+addProgramParams :: Env -> [Ident] -> Env
+addProgramParams env [] = env
+addProgramParams env (id:ids) = addProgramParams env' ids
+    where env' = addSymbol env id (VarEntry (Basic BasicType_String) False (getIdentLoc id))
+    
+
 addFuncToEnv :: Env -> ProcedureAndFunctionHeading -> Env
 addFuncToEnv env (FunDecl id params retTy) =
     addIfNotDeclared env id 2 (ProcEntry params (Just retTy) (Loc 0 0))
 addFuncToEnv env (ProcDecl id params) =
     addIfNotDeclared env id 2 (ProcEntry params Nothing (Loc 0 0))
+
+addFuncs :: Env -> Env
+addFuncs env = env
 
 addFuncsFromParams :: Env -> [Ident] -> Env
 addFuncsFromParams env [] = env
@@ -872,9 +886,10 @@ envWithoutErrors env = env {errors = []}
 ----------------------------------------------------------------------
 -------------------- PRETTY-ENV (PRINTER) ----------------------------
 ----------------------------------------------------------------------
+
 printEnv :: Env -> String
 printEnv (env, errs) = 
-    "Symbol Table:\n" ++ showNames (Map.toList env) ++
+    "\nSymbol Table:" ++ showNames (Map.toList env) ++
     "\nErrors:\n" ++ showErrors errs
 
 showNames :: [(Ident, EnvEntry)] -> String
@@ -884,10 +899,13 @@ showNames ((id, entry):s) = "\n\t" ++ show id ++ ": " ++ showEnvEntry entry ++ s
 showEnvEntry :: EnvEntry -> String
 showEnvEntry entry = case entry of
     VarEntry ty isConst loc -> 
-        "Var " ++ show ty ++ " (const: " ++ show isConst ++ ") at " ++ show loc
+        "Var " ++ show ty ++ " (const: " ++ show isConst ++ ") at " ++ showLoc loc
     ProcEntry params retTy loc ->
         "Proc/Function " ++ showParams params ++ 
-        " returns: " ++ show retTy ++ " at " ++ show loc
+        " returns: " ++ show retTy ++ " at " ++ showLoc loc
+
+showLoc :: Loc -> String
+showLoc (Loc line col) = "(" ++ show line ++ ", " ++ show col ++ ")"
 
 showParams :: [FormalParameters] -> String
 showParams [] = "()"
@@ -900,4 +918,122 @@ showParam (FormParam mod ids ty) =
 showErrors :: [(String, Loc)] -> String
 showErrors [] = "No errors"
 showErrors errs = intercalate "\n" (map showError errs)
-    where showError (msg, loc) = show loc ++ ": " ++ msg
+    where showError (msg, loc) = showLoc loc ++ ": " ++ msg
+
+
+
+
+
+
+
+
+-------------------------------------------------
+----------------- POSITION HELPERS --------------
+-------------------------------------------------
+
+-- Convert Posn to Loc
+posnToLoc :: Posn -> Loc
+posnToLoc (Pn _ line col) = Loc line col
+
+-- Convert Posn to Pos (line, column tuple)
+posnToPos :: Posn -> Pos
+posnToPos (Pn _ line col) = (line, col)
+
+-- Convert Loc to Pos
+locToPos :: Loc -> Pos
+locToPos (Loc line col) = (line, col)
+
+-- Convert Pos to Loc
+posToLoc :: Pos -> Loc
+posToLoc (line, col) = Loc line col
+
+-- Extract position from Token
+tokenToLoc :: Token -> Loc
+tokenToLoc = posnToLoc . tokenPosn
+
+-- Extract position from Token as Pos
+tokenToPos :: Token -> Pos
+tokenToPos = posnToPos . tokenPosn
+
+-- Helper to get position from AST nodes that might have position info
+-- This will need to be extended based on your AST structure
+getNodePos :: (Show a) => a -> Loc
+getNodePos _ = Loc 0 0  -- Default position, should be overridden for specific AST nodes
+
+-- Extract position from various AST elements
+-- These functions assume the AST elements contain position information
+-- You may need to adjust these based on your actual AST structure
+
+-- Estrae la posizione di un identificatore
+getIdentLoc :: Ident -> Loc
+getIdentLoc (Ident name loc) = loc  -- Default, should be overridden if Ident contains position
+
+-- Extract position from a constant (assuming it has position info)
+getConstPos :: Constant -> Loc
+getConstPos (Const _ _) = Loc 0 0  -- Default, should be overridden if Constant contains position
+getConstPos (ConstStr _) = Loc 0 0
+
+-- Extract position from a type (assuming it has position info)
+getTypePos :: Type -> Loc
+getTypePos _ = Loc 0 0  -- Default, should be overridden if Type contains position
+
+-- Extract position from a statement (assuming it has position info)
+getStmtPos :: Statement -> Loc
+getStmtPos _ = Loc 0 0  -- Default, should be overridden if Statement contains position
+
+-- Extract position from an expression (assuming it has position info)
+getExprPos :: RExpr -> Loc
+getExprPos _ = Loc 0 0  -- Default, should be overridden if RExpr contains position
+
+-- Helper function to create an error with position information
+createErrorWithPos :: String -> Loc -> (String, Loc)
+createErrorWithPos msg pos = (msg, pos)
+
+-- Helper function to add an error with position information
+addErrorWithPos :: Env -> String -> Loc -> Env
+addErrorWithPos env msg pos = addError env (CustomError msg, pos)
+
+-------------------------------------------------
+----------------- PRACTICAL EXAMPLES -------------
+-------------------------------------------------
+
+-- Example: Check if a variable is declared with position information
+checkVarDeclarationWithPos :: Env -> Ident -> Loc -> Env
+checkVarDeclarationWithPos env id pos
+    | isSymbolDeclared env id = env
+    | otherwise = addErrorWithPos env ("Variable '" ++ show id ++ "' is not declared") pos
+
+-- Example: Check type compatibility with position information
+checkTypeCompatibilityWithPos :: Env -> Type -> Type -> Loc -> Env
+checkTypeCompatibilityWithPos env t1 t2 pos
+    | t1 == t2 = env
+    | otherwise = addErrorWithPos env ("Type mismatch: expected " ++ show t1 ++ ", got " ++ show t2) pos
+
+-- Example: Check array bounds with position information
+checkArrayBoundsWithPos :: Env -> Int -> Int -> Loc -> Env
+checkArrayBoundsWithPos env index size pos
+    | index >= 0 && index < size = env
+    | otherwise = addErrorWithPos env ("Array index " ++ show index ++ " out of bounds [0.." ++ show (size-1) ++ "]") pos
+
+-- Example: Process a token and extract its position
+processTokenWithPos :: Env -> Token -> Env
+processTokenWithPos env token = 
+    let pos = tokenToLoc token
+        tokenText = case token of
+            PT _ (TK (TokSymbol s _)) -> s
+            PT _ (TL s) -> show s
+            PT _ (TI s) -> s
+            PT _ (TV s) -> s
+            PT _ (TD s) -> s
+            PT _ (TC s) -> s
+            Err _ -> "#error"
+    in addErrorWithPos env ("Processing token: " ++ tokenText) pos
+
+-- Example: Validate constant definition with position
+validateConstDefWithPos :: Env -> ConstantDefinition -> Loc -> Env
+validateConstDefWithPos env (ConstDef id val) pos = 
+    let env1 = checkVarDeclarationWithPos env id pos
+        env2 = case val of
+            Const _ _ -> env1  -- Valid constant
+            ConstStr _ -> env1 -- Valid string constant
+    in env2

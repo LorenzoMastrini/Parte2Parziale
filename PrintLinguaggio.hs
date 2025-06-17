@@ -138,10 +138,9 @@ instance Print Double where
   prt _ x = doc (shows x)
 
 instance Print AbsLinguaggio.Ident where
-  prt _ (AbsLinguaggio.Ident i) = doc $ showString i
+  prt _ (AbsLinguaggio.Ident i loc) = doc $ showString i
 instance Print AbsLinguaggio.Program where
   prt i = \case
-    AbsLinguaggio.ProgNoParams id_ block -> prPrec i 0 (concatD [doc (showString "program"), prt 0 id_, doc (showString ";"), prt 0 block, doc (showString ".")])
     AbsLinguaggio.Prog id_ ids block -> prPrec i 0 (concatD [doc (showString "program"), prt 0 id_, doc (showString "("), prt 0 ids, doc (showString ")"), doc (showString ";"), prt 0 block, doc (showString ".")])
 
 instance Print [AbsLinguaggio.Ident] where

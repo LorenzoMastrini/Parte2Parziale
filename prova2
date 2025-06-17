@@ -1,4 +1,7 @@
-program prova;
+program prova(args);
+
+const
+    x = 0;
 
 begin
     x := 2;
