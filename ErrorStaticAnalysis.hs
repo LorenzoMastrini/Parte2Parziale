@@ -1,158 +1,216 @@
 module ErrorStaticAnalysis where
+
 import AbsLinguaggio
 import Utils
 import PrettyPrinter
 
 
-tabSpace :: String
-tabSpace = "         "
 
-errorType :: Error -> String
+tabSpace :: String
+tabSpace = "    "
+
+data Error ty
+    = RedeclaredVar (Ident ())
+    | RedeclaredConst (Ident ())
+    | RedeclaredProcFun (Ident ())
+
+    | RedeclaredFunction (Ident ty)
+    | RedeclaredParameter (Ident ty)
+    | TypeMismatch Loc (Type ty) (Type ty)
+    | FunctionNameMismatch Loc Id
+    | NonOmogeneusArray Loc
+    | NonConstantExpr Loc
+    | NonIntegerExpr Loc
+    | NonIntegerExprInArrayAccess Loc
+    | NotDeclared (Ident ty)
+    | DereferenceExcess (Ident ty)
+    | NotAnArray Loc
+    | PointerArithmetic Loc
+    | NonNumericValue Loc
+    | ArithmeticError (Type ty) (Type ty) Loc String 
+    | DifferentLenght Loc
+    | EmptyList Loc
+    | NegativeSize Loc
+    | NegativeSizeIndex Loc
+    | DivideByZero Loc
+    | NonBasicType Loc (Type ty)
+--  | RelError Loc (Type ty) (Type ty) Rel
+    | BoolOpError Loc (Type ty) (Type ty) String
+    | BoolNotError Loc (Type ty) String
+    | FuncArgsMismatch [Type ty] [Type ty] (Ident ty)
+    | FuncTypesMismatch [Type ty] [Type ty] (Ident ty) Loc
+    | AssignConstToVar Loc
+    | ChangingConstVar (Ident ty)
+    | NotInLoop Loc String
+    | NonBooleanExpr Loc (Type ty)
+    | NonConstPass Loc Int (Ident ty)
+    | NonCompExpr (Type ty) (Type ty) Loc
+    | NonRefLeft Loc Int (Ident ty)
+    | NonEqRefTypes Loc Int (Ident ty) (Type ty) (Type ty)
+    | PassingRefOfConst Loc
+    | CaseExprNotEq Loc (Type ty)
+    | ErrorDeclaration (Ident ty) String
+    | FunctionWithoutDimension (Ident ty)
+    | NotAnArrayForEach Loc
+    | NotIntegerType Loc (Type ty)
+    | NotCompileTime Loc
+    | IncompatibleExprs Loc (Type ty) (Type ty)
+    | FunctionAsIdentifier Loc
+    | ReturnInForLoop Loc String
+    | CustomError String
+    -- warnings
+    | WarVarNameUsedForFunc (Ident ty)
+    | WarEmptyCase Loc
+    | UnsusedValue Loc
+    | UnitializedVariable (Ident ty)
+    | DeathCode Loc
+    | NoMain Loc
+    | InfiniteLoop Loc
+
+errorType :: Error ty -> String
 errorType x =
     case x of 
-        --RedeclaredVar (Ident ((l,c),name)) -> 
-        --    errorMsg "Symbol name '"++ name ++ "' for variable declaration already used. " 
-        --    ++ (lineAndColumn l c) ++  " [DeclError]."
+        RedeclaredVar (Ident name loc _) -> 
+            errorMsg "The identifier '" ++ name ++ "' has already been used for a variable." ++ " [DeclError]."
+
+        RedeclaredConst (Ident name loc _) -> 
+            errorMsg "The identifier '" ++ name ++ "' has already been used for a constant." ++ " [DeclError]."
+
+        RedeclaredProcFun (Ident name loc _) -> 
+            errorMsg "The identifier '" ++ name ++ "' has already been used for a procedure/function." ++ " [DeclError]."
             
-        --RedeclaredFunction (Ident ((l,c),name)) -> 
+        --RedeclaredFunction (Ident ((loc),name)) -> 
         --    errorMsg "Symbol name '"++ name ++ "' for function declaration already used. " 
         --    ++ (lineAndColumn l c) ++  " [DeclError]."
 
-        --RedeclaredParameter (Ident ((l,c),name)) -> 
+        --RedeclaredParameter (Ident ((loc),name)) -> 
         --    errorMsg "Symbol name '"++ name ++ "' for parameter declaration already used. " 
         --    ++ (lineAndColumn l c) ++  " [DeclError]."
         
-        --TypeMismatch (l,c)  ty1 ty2 -> 
+        --TypeMismatch (loc)  ty1 ty2 -> 
         --    errorMsg "Incompatible conversion from '"++ (showType ty1)++
         --    "' to '" ++ (showType ty2)++"'."++ (lineAndColumn l c)  ++  " [TypeError]."
         
-        FunctionNameMismatch (l,c) nameBegin ->
-            errorMsg "Maybe you meant '"++ nameBegin ++ "'. The ending name should be equal to the function identifier."++ (lineAndColumn l c)  ++  " [DeclError]."
+        FunctionNameMismatch loc nameBegin ->
+            errorMsg "Maybe you meant '" ++ nameBegin ++ "'. The ending name should be equal to the function identifier." ++ " [DeclError]."
         
-        NonOmogeneusArray (l,c) ->
-            errorMsg "Non homogeneous array initialization."++ (lineAndColumn l c)  ++  " [TypeError]."
+        NonOmogeneusArray loc ->
+            errorMsg "Non homogeneous array initialization."++ showLoc loc  ++ " [TypeError]."
     
-        NonConstantExpr (l,c) ->
-            errorMsg "Array dimension must be constant and known at compile time in array initialization."++ (lineAndColumn l c)  ++  " [DeclError]."
+        NonConstantExpr loc ->
+            errorMsg "Array dimension must be constant and known at compile time in array initialization." ++ " [DeclError]."
         
-        NonIntegerExpr (l,c) ->
-            errorMsg "Array dimension must be an integer value in array initialization."++ (lineAndColumn l c)  ++  " [TypeError]."
+        NonIntegerExpr loc ->
+            errorMsg "Array dimension must be an integer value in array initialization." ++ " [TypeError]."
        
-        NonIntegerExprInArrayAccess (l,c)->
-            errorMsg "Array access requires an integer value."++ (lineAndColumn l c)  ++  " [TypeError]."
+        NonIntegerExprInArrayAccess loc->
+            errorMsg "Array access requires an integer value." ++ " [TypeError]."
 
-        --NotDeclared (Ident ((l,c),name)) ->
+        --NotDeclared (Ident ((loc),name)) ->
         --    errorMsg "Use of undeclared identifier '"
         --    ++ name ++ "'." ++ (lineAndColumn l c) ++  " [DeclError]."
             
-        --DereferenceExcess (Ident ((l,c),_)) -> 
+        --DereferenceExcess (Ident ((loc),_)) -> 
         --    errorMsg "Dereferencing requires pointer operand."  
         --    ++ (lineAndColumn l c) ++  " [TypeError]."
         
-        NotAnArray (l,c) -> 
-            errorMsg "Operator [] requires an Array."  
-            ++ (lineAndColumn l c) ++  " [TypeError]."
+        NotAnArray loc -> 
+            errorMsg "Operator [] requires an Array." ++ " [TypeError]."
             
-        PointerArithmetic (l,c) -> 
-            errorMsg "Pointer arithmetic is not allowed in RNB."  
-            ++ (lineAndColumn l c) ++  " [TypeError]."
+        PointerArithmetic loc -> 
+            errorMsg "Pointer arithmetic is not allowed." ++ " [TypeError]."
             
-        NonNumericValue (l,c)  -> 
-            errorMsg "Required a numerical value."
-            ++ (lineAndColumn l c) ++  " [TypeError]."
+        NonNumericValue loc -> 
+            errorMsg "Required a numerical value." ++ " [TypeError]."
             
-        DifferentLenght (l,c) -> 
-            errorMsg "All initialization list elements must have the same lenght."
-            ++ (lineAndColumn l c) ++  " [DeclError]."
+        DifferentLenght loc -> 
+            errorMsg "All initialization list elements must have the same lenght." ++ " [DeclError]."
             
-        EmptyList (l,c) -> 
-            errorMsg "Initialization lists must have at least one element."
-            ++ (lineAndColumn l c) ++  " [DeclError]."
+        EmptyList loc -> 
+            errorMsg "Initialization lists must have at least one element." ++ " [DeclError]."
             
-        NegativeSize (l,c) -> 
-            errorMsg "Array size requires a positive integer."
-            ++ (lineAndColumn l c) ++  " [TypeError]."
+        NegativeSize loc -> 
+            errorMsg "Array size requires a positive integer." ++ " [TypeError]."
 
-        NegativeSizeIndex (l,c) -> 
-            errorMsg "Array index must be a positive integer."
-            ++ (lineAndColumn l c) ++  " [TypeError]."
+        NegativeSizeIndex loc -> 
+            errorMsg "Array index must be a positive integer." ++ " [TypeError]."
 
-        DivideByZero (l,c) -> 
-            errorMsg "Division by zero."
-            ++ (lineAndColumn l c) ++  " [ArithmeticError]."
+        DivideByZero loc -> 
+            errorMsg "Division by zero." ++ " [ArithmeticError]."
             
-        --NonBasicType (l,c) typ-> 
+        --NonBasicType (loc) typ-> 
         --    errorMsg "Expected a basic type but found '" ++ showType typ ++ "'. \n"++tabSpace ++ "E.g., 'int', 'real', 'string', 'char' and 'bool'."
         --    ++ (lineAndColumn l c) ++  " [DeclError]."
         
-        --ArithmeticError ty1 ty2 (l,c) op 
+        --ArithmeticError ty1 ty2 (loc) op 
         --    | op == "^" || op == "%" -> errorMsg "Undefined operator '"++ op ++" : "++ showType ty1 ++" x "++ showType ty2 ++" -> Int'.\n"++tabSpace ++ "Maybe you want to use '"++op++": int x int -> int'" ++ (lineAndColumn l c) ++  " [TypeError]."
         --    | op == "/" -> errorMsg "Undefined operator '"++ op ++" : "++ showType ty1 ++" x "++ showType ty2 ++" -> τ'.\n"++tabSpace ++ "Maybe you want to use '"++op++": τ_1 x τ_2 -> real'.\n" ++tabSpace ++"Where τ_1, τ_2 ∈ {'int','real'}.\n"++tabSpace++"More details can be found in the documentation." ++ (lineAndColumn l c) ++  " [TypeError]."
         --    | otherwise -> errorMsg "Undefined operator '"++ op ++" : "++ showType ty1 ++" x "++ showType ty2 ++" -> τ'.\n"++tabSpace ++ "Maybe you want to use '"++op++": τ_1 x τ_2 -> τ3'.\n" ++tabSpace ++"Where τ_1, τ_2 ∈ {'int','real'}  and τ_3 is the max between τ_1 and τ_2.\n"++tabSpace++"More details can be found in the documentation." ++ (lineAndColumn l c) ++  " [TypeError]."
         
-        --RelError (l,c) ty1 ty2 rel -> 
+        --RelError (loc) ty1 ty2 rel -> 
         --    errorMsg "Undefined operator '"++ showRel rel ++" : "++ showType ty1 ++" x "++ showType ty2 ++" -> Bool'."++{-\n++tabSpace ++ "Expected 2 numerical values, e.g., 'int' or 'real'."++ -}(lineAndColumn l c) ++  " [TypeError]."
             
-        --BoolOpError (l,c) ty1 ty2 op -> errorMsg "Undefined operator '"++ op ++" : "++ showType ty1 ++" x "++ showType ty2 ++" -> Bool'.\n"++tabSpace ++ "Expected 2 boolean values."++ (lineAndColumn l c) ++  " [TypeError]."
+        --BoolOpError (loc) ty1 ty2 op -> errorMsg "Undefined operator '"++ op ++" : "++ showType ty1 ++" x "++ showType ty2 ++" -> Bool'.\n"++tabSpace ++ "Expected 2 boolean values."++ (lineAndColumn l c) ++  " [TypeError]."
         
-        --BoolNotError (l,c) ty1 op -> errorMsg "Undefined operator '"++ op ++" : "++ showType ty1 ++" -> Bool'.\n"++tabSpace ++ "Expected a boolean value."++ (lineAndColumn l c) ++  " [TypeError]."
+        --BoolNotError (loc) ty1 op -> errorMsg "Undefined operator '"++ op ++" : "++ showType ty1 ++" -> Bool'.\n"++tabSpace ++ "Expected a boolean value."++ (lineAndColumn l c) ++  " [TypeError]."
         
-        --FuncArgsMismatch exprs params (Ident ((l,c),_)) ->
+        --FuncArgsMismatch exprs params (Ident ((loc),_)) ->
         --    errorMsg "Mismatch in number of arguments. "++ (lineAndColumn l c) ++  " [TypeError].\n"++ tabSpace ++"The call function has "++ show( length exprs) ++" arguments while " ++ show (length params)++ " are required." 
             
-        --FuncTypesMismatch exprs params (Ident ((l,c),name)) (ld, cd)->
+        --FuncTypesMismatch exprs params (Ident ((loc),name)) (ld, cd)->
         --    errorMsg "Mismatch in argument types."++ (lineAndColumn l c) ++  " [TypeError].\n" ++ tabSpace ++ "In function call: '" ++ (showFunction ( name ++ "(" ) exprs)++ "'.\n"++tabSpace ++
         --        "Function definition found at <l:" ++ (show ld) ++ ",c:" ++ (show cd) ++ "> with signature: '" ++ ( showFunction (name++"(") params) ++
         --        "'."
-        AssignConstToVar (l,c) ->
-            errorMsg "You cannot assign the address of a constant variable to a variable."  
-                ++ (lineAndColumn l c) ++  " [TypeError]."
+        AssignConstToVar loc ->
+            errorMsg "You cannot assign the address of a constant variable to a variable." ++ " [TypeError]."
 
-        PassingRefOfConst (l,c) ->
-            errorMsg "Passing the address of a const qualified variable."  
-                ++ (lineAndColumn l c) ++  " [TypeError]."
+        PassingRefOfConst loc ->
+            errorMsg "Passing the address of a const qualified variable." ++ " [TypeError]."
         
-        --ChangingConstVar (Ident ((l,c),name)) ->
+        --ChangingConstVar (Ident ((loc),name)) ->
         --    errorMsg "Cannot change the value of the const variable '"++ name ++ "'."
         --    ++ (lineAndColumn l c) ++  " [TypeError]."
             
-        NotInLoop (l,c) s ->
-            errorMsg  "'"++s ++"' statement not in a loop statement."
-            ++ (lineAndColumn l c) ++  " [ContextError]."
+        NotInLoop loc stmt ->
+            errorMsg  "'" ++ stmt ++ "' statement not in a loop statement." ++ " [ContextError]."
         
-        --NonBooleanExpr (l,c)  ty-> 
+        --NonBooleanExpr (loc)  ty-> 
         --    errorMsg "Expected a boolean expression but found '" ++ showType ty  ++ "'."
         --    ++ (lineAndColumn l c) ++  " [TypeError]."
         
-        --NonConstPass (l,c) parNum (Ident (_,name)) -> errorMsg "Cannot pass a const variable if the formal parameter is  not 'const' qualified.\n"++ tabSpace ++ "The "++(show parNum)  ++ "° parameter of the function '"++name++ "' is not const qualified." ++ (lineAndColumn l c) ++  " [TypeError]."
+        --NonConstPass (loc) parNum (Ident (_,name)) -> errorMsg "Cannot pass a const variable if the formal parameter is  not 'const' qualified.\n"++ tabSpace ++ "The "++(show parNum)  ++ "° parameter of the function '"++name++ "' is not const qualified." ++ (lineAndColumn l c) ++  " [TypeError]."
         
-        --NonRefLeft (l,c) parNum (Ident (_,name)) -> errorMsg "The "++(show parNum)  ++ "° parameter of the function '"++name++ "' requires a Left Expression." ++ (lineAndColumn l c) ++  " [TypeError]."
+        --NonRefLeft (loc) parNum (Ident (_,name)) -> errorMsg "The "++(show parNum)  ++ "° parameter of the function '"++name++ "' requires a Left Expression." ++ (lineAndColumn l c) ++  " [TypeError]."
         
-        --NonEqRefTypes (l,c) parNum (Ident (_,name)) typReq typFound -> errorMsg "The "++(show parNum)  ++ "° parameter of the function '"++name++ "' requires exactly the type '" ++ showType typReq++ "' but found '" ++ showType typFound ++"'." ++ (lineAndColumn l c) ++  " [TypeError]."
+        --NonEqRefTypes (loc) parNum (Ident (_,name)) typReq typFound -> errorMsg "The "++(show parNum)  ++ "° parameter of the function '"++name++ "' requires exactly the type '" ++ showType typReq++ "' but found '" ++ showType typFound ++"'." ++ (lineAndColumn l c) ++  " [TypeError]."
 
-        --NonCompExpr baseType exprType (l,c) -> errorMsg "Non compatible types in 'case' statement. Expected '" ++ showType baseType  ++ "' but found '" ++ showType exprType ++ "'." ++ (lineAndColumn l c) ++  " [TypeError]."
+        --NonCompExpr baseType exprType (loc) -> errorMsg "Non compatible types in 'case' statement. Expected '" ++ showType baseType  ++ "' but found '" ++ showType exprType ++ "'." ++ (lineAndColumn l c) ++  " [TypeError]."
         
-        --CaseExprNotEq (l,c) ty->errorMsg "Illegal expression of type '" ++ showType ty ++ "' inside the statement 'case'.\n"++
+        --CaseExprNotEq (loc) ty->errorMsg "Illegal expression of type '" ++ showType ty ++ "' inside the statement 'case'.\n"++
         --    tabSpace ++ "The operator '= :"++showType ty++ " x "++ showType ty ++ " -> bool' is not defined." 
         --    ++ (lineAndColumn l c) ++  " [TypeError]."
 
-        --ErrorDeclaration (Ident ((l,c),_)) kind -> errorMsg kind++" declaration must be also definition."
+        --ErrorDeclaration (Ident ((loc),_)) kind -> errorMsg kind++" declaration must be also definition."
         --    ++ (lineAndColumn l c) ++  " [DeclError]."
 
-        --FunctionWithoutDimension (Ident ((l,c),name)) -> errorMsg "The array dimension for the parameter '"++ name ++ "' must be specified."
+        --FunctionWithoutDimension (Ident ((loc),name)) -> errorMsg "The array dimension for the parameter '"++ name ++ "' must be specified."
         --    ++ (lineAndColumn l c) ++  " [TypeError]."
 
-        NotAnArrayForEach (l,c) -> errorMsg "The 'foreach' statement requires an array type."++ (lineAndColumn l c) ++  " [TypeError]."
+        NotAnArrayForEach loc ->
+            errorMsg "The 'foreach' statement requires an array type." ++ " [TypeError]."
 
-        --NotIntegerType (l,c) ty -> errorMsg "Expected an integer value but found '" ++ showType ty ++"'." ++ (lineAndColumn l c) ++  " [TypeError]."
+        --NotIntegerType (loc) ty -> errorMsg "Expected an integer value but found '" ++ showType ty ++"'." ++ (lineAndColumn l c) ++  " [TypeError]."
 
-        NotCompileTime (l,c) -> errorMsg "The expression must be evaluable at compile time. "++ (lineAndColumn l c) ++  " [TypeError]."
+        NotCompileTime loc ->
+            errorMsg "The expression must be evaluable at compile time. " ++ " [TypeError]."
 
-        --IncompatibleExprs (l,c) ty1 ty2 -> errorMsg "The two types '"++ showType ty1 ++ "' and '"++ showType ty2 ++ "''  in '("++ showType ty1 ++ ") if (·) else ("++  showType ty2 ++")' must coincide."++ (lineAndColumn l c) ++  " [TypeError]."
+        --IncompatibleExprs (loc) ty1 ty2 -> errorMsg "The two types '"++ showType ty1 ++ "' and '"++ showType ty2 ++ "''  in '("++ showType ty1 ++ ") if (·) else ("++  showType ty2 ++")' must coincide."++ (lineAndColumn l c) ++  " [TypeError]."
 
-        FunctionAsIdentifier (l,c) -> errorMsg "Cannot use a function as a variable."++ (lineAndColumn l c) ++  " [TypeError]."
+        FunctionAsIdentifier loc ->
+            errorMsg "Cannot use a function as a variable." ++ " [TypeError]."
 
-        ReturnInForLoop (l,c) stmt-> errorMsg "Cannot use the statement '"++ stmt++ "' inside a deterministic 'for' loop. " ++ (lineAndColumn l c) ++  " [ControlFlowAnalysis]."
+        ReturnInForLoop loc stmt ->
+            errorMsg "Cannot use the statement '" ++ stmt ++ "' inside a deterministic 'for' loop. " ++ " [ControlFlowAnalysis]."
 
         CustomError msg -> errorMsg msg
 
@@ -160,69 +218,23 @@ errorType x =
 ------------------ WARNINGS ---------------------
 -------------------------------------------------
 
-        WarEmptyCase (l,c) -> warningMsg "Empty 'case' statement." ++ (lineAndColumn l c) ++  " [ControlFlowAnalysis]."
+        WarVarNameUsedForFunc (Ident name loc _) ->
+            warningMsg "The identifier '" ++ name ++ "' has already been used for a function." ++ " [DeclError]."
 
-        UnsusedValue (l,c) -> warningMsg "Expression result unused." ++ (lineAndColumn l c) ++  " [ControlFlowAnalysis]."  
 
-        --UnitializedVariable (Ident ((l,c),name)) -> warningMsg "The return variable '"++ name ++"' may be never initialized."++ (lineAndColumn l c) ++  " [ControlFlowAnalysis]." 
+        WarEmptyCase loc ->
+            warningMsg "Empty 'case' statement." ++ " [ControlFlowAnalysis]."
 
-        DeathCode (l,c) -> warningMsg "Dead code after 'return' statement." ++ (lineAndColumn l c) ++  " [ControlFlowAnalysis]."
+        UnsusedValue loc ->
+            warningMsg "Expression result unused." ++ " [ControlFlowAnalysis]."  
+
+        --UnitializedVariable (Ident ((loc),name)) -> warningMsg "The return variable '"++ name ++"' may be never initialized."++ (lineAndColumn l c) ++  " [ControlFlowAnalysis]." 
+
+        DeathCode loc ->
+            warningMsg "Dead code after 'return' statement." ++ " [ControlFlowAnalysis]."
         
-        NoMain (l,c) ->warningMsg "Declaration of 'main' not found."
+        NoMain loc ->
+            warningMsg "Declaration of 'main' not found."
 
-        InfiniteLoop (l,c) -> warningMsg "Infinite loop." ++ (lineAndColumn l c) ++  " [ControlFlowAnalysis]."
-
-
-        
-data Error = RedeclaredVar Ident |
-             RedeclaredFunction Ident |
-             RedeclaredParameter Ident |
-             TypeMismatch Pos Type Type |
-             FunctionNameMismatch Pos Id |
-             NonOmogeneusArray Pos |
-             NonConstantExpr Pos |
-             NonIntegerExpr Pos |
-             NonIntegerExprInArrayAccess Pos |
-             NotDeclared Ident |
-             DereferenceExcess Ident |
-             NotAnArray Pos |
-             PointerArithmetic Pos |
-             NonNumericValue Pos |
-             ArithmeticError Type Type Pos String| 
-             DifferentLenght Pos |
-             EmptyList Pos |
-             NegativeSize Pos |
-             NegativeSizeIndex Pos |
-             DivideByZero Pos |
-             NonBasicType Pos Type |
-             --RelError Pos Type Type Rel |
-             BoolOpError Pos Type Type String |
-             BoolNotError Pos Type String |
-             FuncArgsMismatch [Type] [Type] Ident |
-             FuncTypesMismatch [Type] [Type] Ident Pos |
-             AssignConstToVar Pos |
-             ChangingConstVar Ident |
-             NotInLoop Pos String |
-             NonBooleanExpr Pos Type |
-             NonConstPass Pos Int Ident |
-             WarEmptyCase Pos |
-             NonCompExpr Type Type Pos|
-             NonRefLeft Pos Int Ident |
-             NonEqRefTypes Pos Int Ident Type Type|
-             UnsusedValue Pos |
-             PassingRefOfConst Pos |
-             CaseExprNotEq Pos Type |
-             ErrorDeclaration Ident String |
-             FunctionWithoutDimension Ident |
-             UnitializedVariable Ident |
-             DeathCode Pos|
-             NoMain Pos |
-             NotAnArrayForEach Pos |
-             NotIntegerType Pos Type |
-             NotCompileTime Pos |
-             InfiniteLoop Pos |
-             IncompatibleExprs Pos Type Type| 
-             FunctionAsIdentifier Pos |
-             ReturnInForLoop Pos String |
-             CustomError String
-             
+        InfiniteLoop loc ->
+            warningMsg "Infinite loop." ++ " [ControlFlowAnalysis]."

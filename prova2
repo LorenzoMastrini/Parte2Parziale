@@ -1,19 +1,27 @@
-program prova(args);
+program prova();
 
 const
     x = 0;
+    y = "stringa";
+    z = 8.9;
+    z = 0;
+
+var
+    a, b: Integer;
+    b: Real;
+    c: Character;
+    d: String;
+
+procedure a(var i:Integer);
+    var
+        e: String;
+        b: Integer;
+
+    begin
+        x := y;
+    end; 
+
 
 begin
     x := 2;
-    y := 8;
-
-    if x <= 2 then
-        x = 5 + 9
-    else begin
-        y := 9;
-        z := 0;
-        end;
-    
-    
-    z := 8;
 end.

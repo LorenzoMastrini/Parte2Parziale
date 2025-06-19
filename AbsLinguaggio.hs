@@ -8,94 +8,114 @@ import Prelude (Char, Double, Integer, String, Int)
 import qualified Prelude as C (Eq, Ord, Show, Read)
 import qualified Data.String
 
--- Definizione della posizione
-data Loc = Loc {line, column :: Int} deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 
-
-data Program = Prog Ident [Ident] Block
+-- Definition of the position of the tokens
+data Loc = Loc {line, column :: Int}
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data Block = Block [ConstantDefinition] [VariableDeclaration] [ProcedureAndFunctionDeclaration] CompoundStatement
+
+data Program ty
+  = Prog (Ident ty) [FormalParameters ty] (Block ty)
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data ConstantDefinition = ConstDef Ident Constant
+data Block ty
+  = Block [ConstantDefinition ty] [VariableDeclaration ty] [ProcedureAndFunctionDeclaration ty] (CompoundStatement ty)
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data VariableDeclaration = VarDecl [Ident] Type
+data ConstantDefinition ty
+  = ConstDef (Ident ty) (Constant ty)
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data ProcedureAndFunctionDeclaration
-    = ProcFunDecl ProcedureAndFunctionHeading Block
+data VariableDeclaration ty
+  = VarDecl [Ident ty] (Type ty)
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data ProcedureAndFunctionHeading
-    = ProcDecl Ident [FormalParameters]
-    | FunDecl Ident [FormalParameters] Type
+data ProcedureAndFunctionDeclaration ty
+    = ProcFunDecl (ProcedureAndFunctionHeading ty) (Block ty)
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data FormalParameters = FormParam OptModality [Ident] Type
+data ProcedureAndFunctionHeading ty
+    = ProcHead (Ident ty) [FormalParameters ty]
+    | FunHead (Ident ty) [FormalParameters ty] (Type ty)
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
+data FormalParameters ty
+  = FormParam OptModality [Ident ty] (Type ty)
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data OptModality = ByVal | ByRef | ByValRes
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data Type = Array [IndexType] Type | Pointer Type | Basic BasicType
+data Type ty
+  = Array [IndexType ty] (Type ty)
+  | Pointer (Type ty)
+  | BasicType BasicType
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data BasicType
-    = BasicType_Integer
-    | BasicType_Real
-    | BasicType_Boolean
-    | BasicType_Character
-    | BasicType_String
-    | BasicType_Void
+    = Integer
+    | Real
+    | Boolean
+    | Character
+    | String
+    | Void
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data IndexType = IndexRange Constant Constant
+data IndexType ty
+  = IndexRange (Constant ty) (Constant ty)
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data Constant = Const OptSign IdentOrNumber | ConstStr String
+data Constant ty
+  = ConstId OptSign (Ident ty)
+  | ConstInt OptSign Integer
+  | ConstDouble OptSign Double
+  | ConstStr String
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data IdentOrNumber
-    = ConstId Ident | ConstInt Integer | ConstFloat Double
+data OptSign
+  = NoOptSign
+  | OptSignPlus
+  | OptSignMinus
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data OptSign = OptSign1 | OptSign2 | OptSign3
+data CompoundStatement ty
+  = CompStmt [Statement ty]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data CompoundStatement = CompStmt [Statement]
+data Statement ty
+    = Stmts (CompoundStatement ty)
+    | RExprStmt (RExpr ty)
+    | Assign (LExpr ty) (RExpr ty)
+    | While (RExpr ty) (Statement ty)
+    | DoWhile (Statement ty) (RExpr ty)
+    | ForTo (LExpr ty) (RExpr ty) (RExpr ty) (Statement ty)
+    | ForDownTo (LExpr ty) (RExpr ty) (RExpr ty) (Statement ty)
+    | If (RExpr ty) (Statement ty) (OptElse ty)
+    | Case (RExpr ty) [CaseItem ty]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data Statement
-    = Stmts CompoundStatement
-    | RExprStmt RExpr
-    | Assign LExpr RExpr
-    | While RExpr Statement
-    | DoWhile Statement RExpr
-    | ForTo LExpr RExpr RExpr Statement
-    | ForDownTo LExpr RExpr RExpr Statement
-    | If RExpr Statement OptElse
-    | Case RExpr [CaseItem]
+data OptElse ty
+  = NoElse
+  | Else (Statement ty)
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data OptElse = NoElse | Else Statement
+data CaseItem ty
+  = CaseItem (Constant ty) (Statement ty)
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data CaseItem
-  = CaseItem Constant Statement
+data LExpr ty =
+  LId (Ident ty)
+  | LArr (LExpr ty) [RExpr ty]
+  | LDeref (LExpr ty)
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data LExpr = LId Ident | LArr LExpr [RExpr] | LDeref LExpr
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
-
-data RExpr
-    = Binary RExpr Binary RExpr
-    | Unary Unary RExpr
+data RExpr ty
+    = Binary (RExpr ty) Binary (RExpr ty)
+    | Unary Unary (RExpr ty)
     | Lit Literal
-    | FCall Ident [RExpr]
-    | LExpr LExpr
+    | FCall (Ident ty) [RExpr ty]
+    | LExpr (LExpr ty)
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Literal
@@ -130,5 +150,6 @@ data Unary
   | UnaryNot
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data Ident = Ident String Loc
+data Ident ty
+  = Ident String Loc ty
   deriving (C.Eq, C.Ord, C.Show, C.Read)

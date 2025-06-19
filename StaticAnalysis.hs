@@ -3,7 +3,6 @@ module StaticAnalysis where
 import AbsLinguaggio
 import PrettyPrinter
 import ErrorStaticAnalysis
-import Utils (Pos)
 import LexLinguaggio (Token(..), Posn(..), tokenPosn, Tok(..), TokSymbol(..))
 import Data.Char (ord, readLitChar)
 import Data.Map (Map, member,lookup,toList)
@@ -11,13 +10,18 @@ import Data.ByteString.Char8 (unpack, ByteString, pack)
 import qualified Data.Map as Map
 import Data.List (intercalate)
 
+-- Tipo di annotazione per l'analisi statica
+
+data TypeInfo = TInteger | TReal | TBoolean | TCharacter | TString | TVoid | TUnknown
+  deriving (Eq, Ord, Show)
+
 -------------------------------------------------
 ----------------- DATA & TYPE -------------------
 -------------------------------------------------
-
-type CTime = Bool
---type Names = Map Id EnvRecord
 {-
+--type CTime = Bool
+--type Names = Map Id EnvRecord
+
 data EnvRecord =
     VarInfo {
         typ :: Type,                -- Variable Type.
@@ -45,21 +49,21 @@ data Env =  Env {
                 Bool),              -- True if there is a Default case.
   loopFor :: Bool                   -- True if a for stmt is found.           
 } deriving (Eq, Show)
--}
+
 data ExprRes = ExprRes{             --ExprRes incapsulate the result of the comutation of an Expression
     eTyp :: Type,                   --Result Type
     eCTime :: CTime,                --True if the result is known at compile time
     eVal :: Maybe Int,              --The integer value that the Static Analysis module can calculate at compile time
     eConst ::  Bool                 --If the right expression is Constant
 } deriving (Eq, Show)
+-}
 
+-- Semantic environment definition
+type Env = (Map.Map (Ident ()) EnvEntry, [(String, Loc)])  -- (symbol table, error list)
 
--- Definizione dell'ambiente semantico
-type Env = (Map.Map Ident EnvEntry, [(String, Loc)])  -- (symbol table, error list)
-
-data EnvEntry = VarEntry Type Bool Loc                        -- (tipo, è costante, posizione)
-              | ProcEntry [FormalParameters] (Maybe Type) Loc -- (parametri, tipo di ritorno per funzioni, posizione)
-              deriving (Eq, Show)
+data EnvEntry = ConstVarEntry (Type ()) Bool Loc -- (type, is constant, location)
+                  | ProcFunEntry [FormalParameters ()] (Type ()) Loc -- (parameters, return type, location)
+                  deriving (Eq, Show)
 
 -------------------------------------------------
 ----------------- DEFAULT VALUES ----------------
@@ -68,132 +72,138 @@ data EnvEntry = VarEntry Type Bool Loc                        -- (tipo, è costa
 --exprError :: ExprRes
 --exprError = ExprRes ErrorType False Nothing False
 
---Funzioni di default
-defaultFuncList :: [(Ident, EnvEntry)]
-defaultFuncList =  [(Ident "writeInt" (Loc 0 0),    ProcEntry [FormParam ByVal [Ident "valInt" (Loc 0 0)] (Basic BasicType_Integer)]    (Just (Basic BasicType_Void))      (Loc 0 0)),
-                    (Ident "writeReal" (Loc 0 0),   ProcEntry [FormParam ByVal [Ident "valReal" (Loc 0 0)] (Basic BasicType_Real)]      (Just (Basic BasicType_Void))      (Loc 0 0)),
-                    (Ident "writeChar" (Loc 0 0),   ProcEntry [FormParam ByVal [Ident "valChar" (Loc 0 0)] (Basic BasicType_Character)] (Just (Basic BasicType_Void))      (Loc 0 0)),
-                    (Ident "writeString" (Loc 0 0), ProcEntry [FormParam ByVal [Ident "valString" (Loc 0 0)] (Basic BasicType_String)]  (Just (Basic BasicType_Void))      (Loc 0 0)),
-                    (Ident "readInt" (Loc 0 0),     ProcEntry []                                                              (Just (Basic BasicType_Integer))   (Loc 0 0)),
-                    (Ident "readReal" (Loc 0 0),    ProcEntry []                                                              (Just (Basic BasicType_Real))      (Loc 0 0)),
-                    (Ident "readChar" (Loc 0 0),    ProcEntry []                                                              (Just (Basic BasicType_Character)) (Loc 0 0)),
-                    (Ident "readString" (Loc 0 0),  ProcEntry []                                                              (Just (Basic BasicType_String))    (Loc 0 0))]
+-- Default functions
+-- Ora monomorfa su TypeInfo
+defaultFuncList :: [(Ident (), EnvEntry)]
+defaultFuncList =  [ (Ident "writeInt"    (Loc 0 0) (), ProcFunEntry [FormParam ByVal [Ident "valInt" (Loc 0 0) ()] (BasicType Integer)]    (BasicType Void)      (Loc 0 0))
+                   , (Ident "writeReal"   (Loc 0 0) (), ProcFunEntry [FormParam ByVal [Ident "valReal" (Loc 0 0) ()] (BasicType Real)]      (BasicType Void)      (Loc 0 0))
+                   , (Ident "writeChar"   (Loc 0 0) (), ProcFunEntry [FormParam ByVal [Ident "valChar" (Loc 0 0) ()] (BasicType Character)] (BasicType Void)      (Loc 0 0))
+                   , (Ident "writeString" (Loc 0 0) (), ProcFunEntry [FormParam ByVal [Ident "valString" (Loc 0 0) ()] (BasicType String)]  (BasicType Void)      (Loc 0 0))
+                   , (Ident "readInt"     (Loc 0 0) (), ProcFunEntry [FormParam ByRef [Ident "valInt" (Loc 0 0) ()] (BasicType String)]     (BasicType Integer)   (Loc 0 0))
+                   , (Ident "readReal"    (Loc 0 0) (), ProcFunEntry [FormParam ByRef [Ident "valReal" (Loc 0 0) ()] (BasicType String)]    (BasicType Real)      (Loc 0 0))
+                   , (Ident "readChar"    (Loc 0 0) (), ProcFunEntry [FormParam ByRef [Ident "valChar" (Loc 0 0) ()] (BasicType String)]    (BasicType Character) (Loc 0 0))
+                   , (Ident "readString"  (Loc 0 0) (), ProcFunEntry [FormParam ByRef [Ident "valString" (Loc 0 0) ()] (BasicType String)]  (BasicType String)    (Loc 0 0))]
 
 defaultEnv :: Env
-defaultEnv = ((Map.fromList defaultFuncList), []) -- (symbol table, empty error list)
+defaultEnv = (Map.fromList defaultFuncList, []) -- (symbol table, empty errors list)
 
 -------------------------------------------------
 -------- MAIN CATEGORIES HANDLER ----------------
 -------------------------------------------------
 
---Program entry point. Chiamato in Compiler.hs. In the env structure there are all the possible errors.
-staticAnalysis :: Program -> Env
-staticAnalysis (Prog _ params block) = saBlock (addProgramParams defaultEnv params) block
+-- The static analysis updates the informations of the AST needed in subsequent step like TAC generation
 
-saBlock :: Env -> Block -> Env
---saBlock env (Block declPart compStmt) = checkMain env
-saBlock env (Block saConstDefs saVarDecls procFunDecls compStmt) = env
+-- Called in Compiler.hs. In the environment structure there are all the possible errors.
+checkProgram :: Program () -> (Env, Program TypeInfo)
+checkProgram prog@(Prog ident params block) =
+    let
+    env = addFormalParams defaultEnv params
+    (env1, paramsEnriched) = checkFormalParametersList env params
+    (env2, blockEnriched) = checkBlock env1 block
+    in (env2, Prog (enrichIdentUnknown ident) paramsEnriched blockEnriched)
 
-saConstDefs :: Env -> [ConstantDefinition] -> Env
---saConstDefs env [] = checkMain env
-saConstDefs env (d:ds) = saConstDefs (saConstDef env d) ds
+checkFormalParametersList :: Env -> [FormalParameters ()] -> (Env, [FormalParameters TypeInfo])
+checkFormalParametersList env [] = (env, [])
+checkFormalParametersList env (params:paramsList) =
+    let
+    (env1, paramsEnriched) = checkFormalParameters env params
+    (env2, paramsListEnriched) = checkFormalParametersList env paramsList
+    in (env2, paramsEnriched:paramsListEnriched)
 
-saConstDef :: Env -> ConstantDefinition -> Env
-saConstDef env (ConstDef id val) = handlerConstDef env id val
+checkFormalParameters :: Env -> FormalParameters () -> (Env, FormalParameters TypeInfo)
+checkFormalParameters env (FormParam mod idents ty) =
+      let
+        identsEnriched = map (`enrichIdent` ty) idents
+        tyEnriched = enrichType ty
+        env1 = foldl (\e i -> addSymbol e i (ConstVarEntry ty False (getIdentLoc i))) env idents
+      in (env1, FormParam mod identsEnriched tyEnriched)
 
-saVarDecls :: Env -> [VariableDeclaration] -> Env
---saConstDefs env [] = checkMain env
-saVarDecls env (d:ds) = saVarDecls (saVarDecl env d) ds
+checkBlock :: Env -> Block () -> (Env, Block TypeInfo)
+checkBlock env (Block constDefList varDeclList procFunDeclList compStmt) =
+    let
+        (env1, constDefListEnriched) = checkConstDefList env constDefList
+        (env2, varDeclListEnriched) = checkVarDeclList env1 varDeclList
+        (env3, procFunDeclListEnriched) = checkProcFunDeclList env2 procFunDeclList
+        compStmtEnriched = enrichCompoundStatement compStmt
+    in (env2, Block constDefListEnriched varDeclListEnriched procFunDeclListEnriched compStmtEnriched)
 
-saVarDecl :: Env -> VariableDeclaration -> Env
-saVarDecl env (VarDecl ids ty) = foldl (\e id -> handlerVarDecl e id ty) env ids
+-- Iterate the list of constant definitions 
+checkConstDefList :: Env -> [ConstantDefinition ()] -> (Env, [ConstantDefinition TypeInfo])
+checkConstDefList env [] = (env, [])
+checkConstDefList env (d:ds) =
+    let
+        (env1, dEnr) = checkConstDef env d
+        (env2, dsEnr) = checkConstDefList env1 ds
+    in (env2, dEnr:dsEnr)
 
-saProcFunDecls :: Env -> [ProcedureAndFunctionDeclaration] -> Env
---saProcFunDecls env [] = checkMain env
-saProcFunDecls env (d:ds) = saProcFunDecls (saProcFunDecl env d) ds
+-- Check if the constant identifier is already used inside the environment
+checkConstDef :: Env -> ConstantDefinition () -> (Env, ConstantDefinition TypeInfo)
+checkConstDef env def@(ConstDef ident@(Ident name loc ty) constVal) = case lookupByName env name of
+    Just (ConstVarEntry {}) ->
+        (addError env (RedeclaredVar ident, getIdentLoc ident), ConstDef (enrichIdentUnknown ident) (enrichConst constVal))
+    Just (ProcFunEntry {}) ->
+        (addError env (WarVarNameUsedForFunc ident, getIdentLoc ident), ConstDef (enrichIdentUnknown ident) (enrichConst constVal))
+    Nothing ->
+        let
+            ty = inferConstantType constVal
+            newEnv = addSymbol env ident (ConstVarEntry ty True (getIdentLoc ident))
+        in (newEnv, ConstDef (enrichIdent ident ty) (enrichConst constVal))
 
-saProcFunDecl :: Env -> ProcedureAndFunctionDeclaration -> Env
-saProcFunDecl env (ProcFunDecl id val) = addSymbol env (Ident "procedura" (Loc 0 0)) (VarEntry (Basic BasicType_Void) True (Loc 0 0))
-{-
-saProcFunDecls :: Env -> [ProcedureAndFunctionDeclaration] -> Env
---saProcFunDecls env [] = checkMain env
-saProcFunDecls env (d:ds) = saProcFunDecls (saProcFunDecl env d) ds
+-- Iterate the list of variable declarations
+checkVarDeclList :: Env -> [VariableDeclaration ()] -> (Env, [VariableDeclaration TypeInfo])
+checkVarDeclList env [] = (env, [])
+checkVarDeclList env (d:ds) =
+    let
+        (env1, dEnr) = checkVarDecl env d
+        (env2, dsEnr) = checkVarDeclList env1 ds
+    in (env2, dEnr:dsEnr)
 
-saProcFunDecl :: Env -> ProcedureAndFunctionDeclaration -> Env
-saProcFunDecl env (ProcFunDecl id val) = handlerProcFunDecl env id val
+checkVarDecl :: Env -> VariableDeclaration () -> (Env, VariableDeclaration TypeInfo)
+checkVarDecl env (VarDecl ids ty) = checkVarDeclSequence env ids ty
 
+-- Iterate the sequence of variable declarations that has the same type (ex. a, b, c: Integer)
+checkVarDeclSequence :: Env -> [Ident ()] -> Type () -> (Env, VariableDeclaration TypeInfo)
+checkVarDeclSequence env (id:ids) ty =
+    let
+        (env1, idEnr) = checkIdent env id ty
+        (env2, VarDecl idsEnr tyEnr) = checkVarDeclSequence env1 ids ty
+    in (env2, VarDecl (idEnr:idsEnr) tyEnr)
 
-saExpr :: Env -> Expr -> (Env, ExprRes)
-saExpr env expr =
-    case expr of
-        ExprVal val                        -> handlerExprVal env val
-        ExprCreate _ ty _ expr             -> handlerExprCreate env expr ty
-        ExprLeft le                        -> handlerLeftExpr env le
-        ExprAddress le                     -> handlerExprAddress env le
-        ExprCall id exprs                  -> handlerExprCall env id exprs
-        ExprBrack expr                     -> saExpr env expr
-        ExprUnaryMinus _ expr              -> handlerUnaryExpr env expr "-"
-        ExprUnaryPlus _ expr               -> handlerUnaryExpr env expr "+"
-        ExprPostIncr le                    -> handlerUnaryLeftExpr env le
-        ExprPostDecr le                    -> handlerUnaryLeftExpr env le
-        ExprPow ex1 (BUpTo (pos,s)) ex2    -> handlerBinaryExpr env ex1 ex2 (pos,s)
-        ExprMul ex1 (BMul (pos,s)) ex2     -> handlerBinaryExpr env ex1 ex2 (pos,s)
-        ExprMod ex1 (BMod (pos,s)) ex2     -> handlerExprDiv env ex1 ex2 (pos,s)
-        ExprDiv ex1 (BDiv (pos,s)) ex2     -> handlerExprDiv env ex1 ex2 (pos,s)
-        ExprSum ex1 (BPlus (pos,s)) ex2    -> handlerBinaryExpr env ex1 ex2 (pos,s)
-        ExprMinus ex1 (BMinus (pos,s)) ex2 -> handlerBinaryExpr env ex1 ex2 (pos,s)
-        ExprAnd ex1 (BAnd (pos,s)) ex2     -> handlerBinaryBool env ex1 ex2 (pos,s)
-        ExprOr ex1 (BOr (pos,s)) ex2       -> handlerBinaryBool env ex1 ex2 (pos,s)
-        ExprNot (BNot (pos,s)) ex          -> handlerUnaryBool env ex (pos,s)
-        ExprRel ex1 rel ex2                -> handlerRelExpr env ex1 ex2 rel
-        ExprIf expr1 exprBool expr2              -> handlerExprIf env expr1 exprBool expr2
-        ExprArray (BLBra (pos,_)) (e:expr) -> handlerExprArray env (e:expr) inductiveType pos (length (e:expr),len)
-            where (inductiveEnv, eRes@(ExprRes inductiveType cTimeE valE constE)) = saExpr env e
-                  len = getExprLen env e
-        ExprArray (BLBra (pos,_)) []       -> handlerEmptyList env pos
+-- check if the variable identifier is already been used inside the environment
+checkIdent :: Env -> Ident () -> Type () -> (Env, Ident TypeInfo)
+checkIdent env ident@(Ident name loc _) ty =
+    let
+        name = getIdentName ident
+        existing = lookupByName env name
+    in case existing of
+        Just (ConstVarEntry _ isConst loc) ->
+            if isConst then
+                (addError env (RedeclaredConst ident, getIdentLoc ident), enrichIdentUnknown ident)
+            else
+                (addError env (RedeclaredVar ident, getIdentLoc ident), enrichIdentUnknown ident)
+        Just (ProcFunEntry _ _ loc) ->
+            (addError env (RedeclaredProcFun ident, getIdentLoc ident), enrichIdentUnknown ident)
+        Nothing ->
+            (addSymbol env ident (ConstVarEntry ty False (getIdentLoc ident)), enrichIdent ident ty)
 
-saStmts :: Env -> [Stmt] -> Env
-saStmts env [] = env
-saStmts env (s@(StmtReturn (BReturn (pos, _))):ss:sss) =saStmts (saStmt (addError env  (DeathCode pos ,pos)) s ) (ss:sss)
-saStmts env (s:stmts) = saStmts (saStmt env s) stmts
+-- Iterate the list of procedures and functions declarations
+checkProcFunDeclList :: Env -> [ProcedureAndFunctionDeclaration ()] -> (Env, [ProcedureAndFunctionDeclaration TypeInfo])
+checkProcFunDeclList env [] = (env, [])
+checkProcFunDeclList env (d:ds) =
+    let (env', dEnr) = checkProcFunDecl env d
+        (env'', dsEnr) = checkProcFunDeclList env' ds
+    in (env'', dEnr:dsEnr)
 
-saStmt ::Env -> Stmt ->Env
-saStmt env s =
-    case s of
-        StmtAssign le (BAss (posA,_)) expr -> handlerStmtAssign env (ExprLeft le) expr posA
-        StmtDecl decl -> saDecl env decl
-        StmtExpr expr -> handlerStmtExpr env expr
-        StmtLoop (BLoop (pos,_)) stmts _-> copyEnvInfo env sonEnv Nothing
-            where sonEnv  = checkDetLoop (saStmts (addFuncsFromStmts ((createEnv env) {loop = True})  stmts) stmts) pos
-        StmtLoopCmd loopStmts -> handlerStmtLoopCmd env loopStmts
-        StmtReturn (BReturn (pos,_))-> handlerStmtReturn env {funcCheck = (name, id, retBool, boolFather, False, def)} pos
-            where (name, id, retBool, boolFather,_, def) = funcCheck env
-        StmtLocal stmts -> copyEnvInfo env sonEnv Nothing
-            where sonEnv  = saStmts (addFuncsFromStmts (createEnv env)  stmts) stmts
-        StmtIf expr stmts elseStmts -> copyEnvInfo env sonEnv (Just sonEnv2)
-            where sonEnv  = saStmts (addFuncsFromStmts (createEnv env)  stmts) stmts
-                  sonEnv2 = handlerElseStmts (checkBooleanCondition (createEnv env) expr) elseStmts
-        StmtCase (BCase (pos,_)) expr cases _ -> handlerStmtCase nEnv exprType cases 0 pos
-            where (exprEnv, eRes@(ExprRes exprType cTime valE constE)) = saExpr env expr
-                  nEnv = checkCaseExpr exprEnv exprType expr
-        StmtFor sId sTy (BAss (pos,s)) sExpr dir lExpr stmts -> copyEnvInfo env sonEnv Nothing
-            where sonEnv  = saStmts (addFuncsFromStmts  (handlerStmtFor (createEnv env){loop = False, loopFor = True} sId (BasicType sTy) pos sExpr lExpr stmts dir) stmts) stmts
-        StmtTryCatch _ stmtsTry _ stmtsCatch _ -> copyEnvInfo env sonEnv (Just sonEnv2)
-            where sonEnv  = saStmts (addFuncsFromStmts (createEnv env)  stmtsTry) stmtsTry
-                  sonEnv2 = saStmts (addFuncsFromStmts (createEnv env)  stmtsCatch) stmtsCatch
--}
+checkProcFunDecl :: Env -> ProcedureAndFunctionDeclaration () -> (Env, ProcedureAndFunctionDeclaration TypeInfo)
+checkProcFunDecl env (ProcFunDecl heading block) =
+    let env' = addProcFun env heading
+    in (env', ProcFunDecl (enrichProcFunHeading heading) (enrichBlock block))
+
 -------------------------------------------------
 ---------------- DECLARATIONS -------------------
 -------------------------------------------------
-
-handlerConstDef :: Env -> Ident -> Constant -> Env
-handlerConstDef env id val = addSymbol env id (VarEntry (Basic BasicType_Integer) True (Loc 0 0))
-
-handlerVarDecl:: Env -> Ident -> Type -> Env
-handlerVarDecl env id val = addSymbol env id (VarEntry (Basic BasicType_Integer) False (Loc 0 0))
-
-
 {-
+
 handlerVarDef :: Env -> Ident -> Type -> Expr -> Pos -> Env
 handlerVarDef env id@(Ident (pos,name)) ty expr posA
     | redecl    = addressEnv
@@ -311,9 +321,6 @@ handlerUnaryExpr env expr op=
           pos = firstExprPos expr
           signVal | op=="-"   = maybeNegative valE
                   | otherwise = valE
-
-
-
 
 handlerExprAddress :: Env -> LeftExpr -> (Env, ExprRes)
 handlerExprAddress env le =
@@ -484,7 +491,7 @@ handlerStmtExpr env expr =
     (exprEnv, (ExprRes _ _ _ _))         -> case expr of
           ExprPostIncr _             -> exprEnv
           ExprPostDecr _             -> exprEnv
-          ExprLeft (LEPreDecr _)     -> exprEnv
+          ExprLeft  (LEPreDecr _)     -> exprEnv
           ExprLeft  (LEPreIncrem _ ) -> exprEnv
           otherwise                  -> addError exprEnv (UnsusedValue (pos),pos)
   where pos = firstExprPos expr
@@ -502,9 +509,6 @@ handlerStmtForEach env (Ident (pos,name)) rTy lExpr =env5
         (env5)         = addSymbol env4 name (VarInfo (arrayType) False pos Nothing False)
         exprPos         = firstExprPos lExpr
 
-
-
-
 handlerStmtFor :: Env -> Ident -> Type -> Pos ->Expr -> Expr -> [Stmt] -> Dir -> Env
 handlerStmtFor env sId sTy pos sExpr lExpr stmts dir = env3
   where env1 = handlerConstVarDef env sId sTy sExpr pos
@@ -514,19 +518,16 @@ handlerStmtFor env sId sTy pos sExpr lExpr stmts dir = env3
         env2 = checkStmtFor exprEnv cTimeL sTy pos "ex1"
         env3 = checkStmtFor env2 cTime exprType exprPos "ex2"
 
-
 handlerStmtReturn :: Env -> Pos -> Env
 handlerStmtReturn env pos
   | forL = addError env (ReturnInForLoop pos "return",pos)
   | True = env
   where forL = loopFor env
 
--}
-
-  -------------------------------------------------
+-------------------------------------------------
 ------------------- CHECKS ----------------------
 -------------------------------------------------
-{-
+
 checkIfReturnVariableIsInitialized :: Env -> Env
 checkIfReturnVariableIsInitialized env =
   case val of
@@ -588,7 +589,7 @@ checkFunctionParameters env ((Parameter id@(Ident (pos,name)) modal ty):params)
                  ModConst  -> True
                  otherwise -> False
 
-checkDeclIdent :: Env -> Ident -> (Env, Maybe EnvRecord)
+checkDeclIdent :: Env -> Ident -> (Env, Maybe EnvEntry)
 checkDeclIdent env id@(Ident (pos,_))=
     case isDeclVar env id  of
         Just varInfos -> (env, Just varInfos)
@@ -662,9 +663,6 @@ checkAddressOfConst env const expr pos kind
           isAddressOfConst = case kind of
                                   0 -> const && (case expr of
                                                     (LExpr _) -> True
-                                                    otherwise -> False
-                                                || case ty of
-                                                    --Array _ _ -> True
                                                     otherwise -> False)
                                   otherwise -> const && (case ty of
                                                     Pointer _ -> True
@@ -720,7 +718,6 @@ checkArrayWithDimension env ty id@(Ident (pos,_))=
       otherwise -> (nEnv, rTy)
      where (nEnv,rTy,_) = convertToRedArray env ty
 
-
 checkReturnInitialized :: Env -> Ident -> Env
 checkReturnInitialized env id =
   case  isDeclVar env id of
@@ -744,7 +741,6 @@ checkMain env =
     Nothing -> addError env (NoMain (0,0),(0,0))
     otherwise -> env
 
-
 checkStmtFor :: Env -> Bool -> Type -> Pos -> String -> Env
 checkStmtFor env ctime ty pos kind = env2
   where intComp | kind == "ex1" = ty == (BasicType TypeInt)
@@ -754,19 +750,17 @@ checkStmtFor env ctime ty pos kind = env2
         env2 | ctime || not intComp = env1
              | otherwise = addError env1 (NotCompileTime pos, pos)
 
-
 checkDetLoop :: Env -> Pos -> Env
 checkDetLoop  env  pos
   |val = addError env (InfiniteLoop pos, pos)
   |otherwise = env
   where (_,_,_,_,val,_)= funcCheck env
+-}
 
 
 
--------------------------------------------------     redecl     
---------- GETTER/SETTER/QUERIES/ HELPERS --------
--------------------------------------------------
 
+{-
 returnInit :: Env ->  Ident -> Env
 returnInit env id =
   env {funcCheck = (Just (names env), Just id, False, False,True, False)}
@@ -774,21 +768,50 @@ returnInit env id =
 copyErrors :: Env -> Env -> Env
 copyErrors dest source = dest {errors = (errors dest)++(errors source)}
 -}
-isSymbolDeclared :: Env -> Ident -> Bool
-isSymbolDeclared (env, _) id = Map.member id env
 
-addSymbol :: Env -> Ident -> EnvEntry -> Env
+
+
+--------------------------------------------------
+------------- ENVIRONMENT MANAGEMENT -------------
+--------------------------------------------------
+
+-- Iterate the list of formal parameters
+addFormalParams :: Env -> [FormalParameters ()] -> Env
+addFormalParams env [] = env
+addFormalParams env (param:params) = addFormalParams env' params
+  where env' = addFormalParam env param
+
+-- Add the formal parameter to the environment
+addFormalParam :: Env -> FormalParameters () -> Env
+addFormalParam env (FormParam _ [] _) = env
+addFormalParam env (FormParam mod (id:ids) ty) = addFormalParam env' (FormParam mod ids ty)
+  where
+    id' = enrichIdent id
+    ty' = enrichType ty
+    env' = addSymbol env id (ConstVarEntry ty False (getIdentLoc id))
+
+addSymbol :: Env -> Ident () -> EnvEntry -> Env
 addSymbol (env, errs) name record = (Map.insert name record env, errs)
 
-addError :: Env -> (Error, Loc) -> Env
-addError (env, errs) (err, pos) = (env, errs ++ [(errorType err, pos)])
+addProcFun :: Env -> ProcedureAndFunctionHeading () -> Env
+addProcFun env (ProcHead ident params) =
+    addIfNotDeclared env ident 2 (ProcFunEntry params (BasicType Void) (getIdentLoc ident))
+addProcFun env (FunHead ident params retTy) =
+    addIfNotDeclared env ident 2 (ProcFunEntry params retTy (getIdentLoc ident))
 
-addIfNotDeclared :: Env -> Ident -> Int -> EnvEntry -> Env
-addIfNotDeclared env id errorKind symbolInfo = addSymbol env id symbolInfo
+addIfNotDeclared :: Env -> Ident () -> Int -> EnvEntry -> Env
+addIfNotDeclared env ident errorKind symbolInfo = addSymbol env ident symbolInfo
+
+addError :: Env -> (Error (), Loc) -> Env
+addError (env, errs) (err, pos) = (env, errs ++ [(errorType err, pos)])
 
 {-
 createEnv :: Env -> Env
 createEnv oldEnv = Env (Map.fromList defaultFuncList) (Just oldEnv) [] (loop oldEnv) (funcCheck oldEnv) (loopFor oldEnv)
+
+
+isSymbolDeclared :: Env -> Ident -> Bool
+isSymbolDeclared (env, _) id = Map.member id env
 
 getValue :: Env -> Id -> Maybe EnvRecord
 getValue env key = Data.Map.lookup key (names env)
@@ -827,7 +850,6 @@ maybeNegative :: Maybe Int -> Maybe Int
 maybeNegative (Just x) = (Just (-x))
 maybeNegative Nothing = Nothing
 
-
 translateParamsToRed :: [Param] -> [Param]
 translateParamsToRed [] = []
 translateParamsToRed ((Parameter id mod ty):par) = (Parameter id mod tyy):translateParamsToRed par
@@ -851,16 +873,10 @@ copyEnvInfo dest source Nothing =
         (_,_,valSource,_,_,_)            = funcCheck source
 -}
 ----------------------------------------------------------------------
--------------------- FOR CO-DEFINITIONS ------------------------------
+------------------------- FOR CO-DEFINITIONS -------------------------
 ----------------------------------------------------------------------
 
--- Aggiungi i parametri all'ambiente
-addProgramParams :: Env -> [Ident] -> Env
-addProgramParams env [] = env
-addProgramParams env (id:ids) = addProgramParams env' ids
-    where env' = addSymbol env id (VarEntry (Basic BasicType_String) False (getIdentLoc id))
-    
-
+{-
 addFuncToEnv :: Env -> ProcedureAndFunctionHeading -> Env
 addFuncToEnv env (FunDecl id params retTy) =
     addIfNotDeclared env id 2 (ProcEntry params (Just retTy) (Loc 0 0))
@@ -872,8 +888,8 @@ addFuncs env = env
 
 addFuncsFromParams :: Env -> [Ident] -> Env
 addFuncsFromParams env [] = env
-addFuncsFromParams env (id:ids) = addFuncsFromParams (addSymbol env id (ProcEntry [] Nothing (Loc 0 0))) ids
-{-
+addFuncsFromParams env (id:ids) = addFuncsFromParams (addSymbol env id (ProcEntry [] (BasicType Void) (Loc 0 0))) ids
+
 addFuncsFromStmts :: Env -> [Stmt] -> Env
 addFuncsFromStmts env [] = env
 addFuncsFromStmts env ((StmtDecl d):ss) =
@@ -883,37 +899,90 @@ addFuncsFromStmts env (_:ss) = addFuncsFromStmts env ss
 envWithoutErrors :: Env -> Env
 envWithoutErrors env = env {errors = []}
 -}
+
+
+
+---------------------------------------------------
+---------- GETTER/SETTER/QUERIES/HELPERS ----------
+---------------------------------------------------
+
+-- Helper function to extract just the identifier name
+getIdentName :: Ident ty -> String
+getIdentName (Ident name _ _) = name
+
+-- Estrae la posizione di un identificatore
+getIdentLoc :: Ident ty -> Loc
+getIdentLoc (Ident _ loc _) = loc  -- Default, should be overridden if Ident contains position
+
+-- Inferisce il tipo di una costante
+inferConstantType :: Constant ty -> Type ty
+inferConstantType (ConstInt _ _) = BasicType Integer
+inferConstantType (ConstDouble _ _) = BasicType Real
+inferConstantType (ConstStr _) = BasicType String
+
+getTypeInfo :: Constant () -> TypeInfo
+getTypeInfo const = case inferConstantType const of
+    BasicType Integer -> TInteger
+    BasicType Real -> TReal
+    BasicType String -> TString
+
+-- Cerca se un nome è già presente nell'environment; in caso affermativo torna l'entry corrispondente
+lookupByName :: Env -> String -> Maybe EnvEntry
+lookupByName (env, _) name =
+    let entries = Map.toList env
+        matching = filter (\(Ident n _ _, _) -> n == name) entries
+    in case matching of
+        [] -> Nothing
+        (_, entry):_ -> Just entry
+
+
+
 ----------------------------------------------------------------------
--------------------- PRETTY-ENV (PRINTER) ----------------------------
+------------------------ PRETTY-ENV (PRINTER) ------------------------
 ----------------------------------------------------------------------
 
 printEnv :: Env -> String
-printEnv (env, errs) = 
+printEnv (env, errs) = let
+    entries = Map.toList env
+    names = map (\(Ident n _ _, _) -> n) entries
+    in
     "\nSymbol Table:" ++ showNames (Map.toList env) ++
     "\nErrors:\n" ++ showErrors errs
 
-showNames :: [(Ident, EnvEntry)] -> String
+showNames :: [(Ident ty, EnvEntry)] -> String
 showNames [] = ""
-showNames ((id, entry):s) = "\n\t" ++ show id ++ ": " ++ showEnvEntry entry ++ showNames s
+showNames (((Ident name loc _), entry):s) = "\n\t" ++ show name ++ ": " ++ showEnvEntry entry ++ showNames s
 
 showEnvEntry :: EnvEntry -> String
 showEnvEntry entry = case entry of
-    VarEntry ty isConst loc -> 
-        "Var " ++ show ty ++ " (const: " ++ show isConst ++ ") at " ++ showLoc loc
-    ProcEntry params retTy loc ->
-        "Proc/Function " ++ showParams params ++ 
-        " returns: " ++ show retTy ++ " at " ++ showLoc loc
+    ConstVarEntry ty isConst loc ->
+        "Var " ++ showType ty ++ " (const: " ++ show isConst ++ ") at " ++ showLoc loc
+    ProcFunEntry params retTy loc -> case retTy of
+        (BasicType Void) ->
+            "Procedure " ++ showParams params ++ " returns: " ++ showType retTy ++ " at " ++ showLoc loc
+        _ ->
+            "Function " ++ showParams params ++ " returns: " ++ showType retTy ++ " at " ++ showLoc loc
 
 showLoc :: Loc -> String
 showLoc (Loc line col) = "(" ++ show line ++ ", " ++ show col ++ ")"
 
-showParams :: [FormalParameters] -> String
+showParams :: [FormalParameters ty] -> String
 showParams [] = "()"
 showParams params = "(" ++ intercalate ", " (map showParam params) ++ ")"
 
-showParam :: FormalParameters -> String
-showParam (FormParam mod ids ty) = 
-    show mod ++ " " ++ intercalate ", " (map show ids) ++ ": " ++ show ty
+showParam :: FormalParameters ty -> String
+showParam (FormParam mod ids ty) =
+    show mod ++ " " ++ intercalate ", " (map (show . getIdentName) ids) ++ ": " ++ showType ty
+
+showType :: Type ty -> String
+showType ty = case ty of
+    (BasicType Integer)   -> "Integer"
+    (BasicType Real)      -> "Real"
+    (BasicType Boolean)   -> "Boolean"
+    (BasicType Character) -> "Character"
+    (BasicType String)    -> "String"
+    (BasicType Void)      -> "Void"
+
 
 showErrors :: [(String, Loc)] -> String
 showErrors [] = "No errors"
@@ -925,115 +994,118 @@ showErrors errs = intercalate "\n" (map showError errs)
 
 
 
+----------------------------------------------------------------------
+----------------------- ENRICHED AST FUNCTIONS -----------------------
+----------------------------------------------------------------------
+
+enrichProgram :: Program () -> Program TypeInfo
+enrichProgram (Prog ident params block) =
+  Prog (enrichIdentUnknown ident) (enrichFormalParametersList params) (enrichBlock block)
+
+enrichFormalParametersList :: [FormalParameters ()] -> [FormalParameters TypeInfo]
+enrichFormalParametersList = map enrichFormalParameters
+
+enrichFormalParameters :: FormalParameters () -> FormalParameters TypeInfo
+enrichFormalParameters (FormParam mod idents ty) =
+  FormParam mod (map (`enrichIdent`ty) idents) (enrichType ty)
+
+enrichBlock :: Block () -> Block TypeInfo
+enrichBlock (Block consts vars procs compStmt) =
+    Block (map enrichConstDef consts)
+    (map enrichVarDecl vars)
+    (map enrichProcFunDecl procs)
+    (enrichCompoundStatement compStmt)
+
+enrichConstDef :: ConstantDefinition () -> ConstantDefinition TypeInfo
+enrichConstDef (ConstDef ident c) = ConstDef (enrichIdentUnknown ident) (enrichConst c)
+
+enrichVarDecl :: VariableDeclaration () -> VariableDeclaration TypeInfo
+enrichVarDecl (VarDecl ids ty) = VarDecl (map (`enrichIdent`ty) ids) (enrichType ty)
+
+enrichProcFunDecl :: ProcedureAndFunctionDeclaration () -> ProcedureAndFunctionDeclaration TypeInfo
+enrichProcFunDecl (ProcFunDecl heading block) = ProcFunDecl (enrichProcFunHeading heading) (enrichBlock block)
+
+enrichProcFunHeading :: ProcedureAndFunctionHeading () -> ProcedureAndFunctionHeading TypeInfo
+enrichProcFunHeading (ProcHead ident params) = ProcHead (enrichIdent ident (BasicType Void)) (enrichFormalParametersList params)
+enrichProcFunHeading (FunHead ident params ty) = FunHead (enrichIdent ident ty) (enrichFormalParametersList params) (enrichType ty)
+
+enrichCompoundStatement :: CompoundStatement () -> CompoundStatement TypeInfo
+enrichCompoundStatement (CompStmt stmts) = CompStmt (map enrichStatement stmts)
+
+enrichStatement :: Statement () -> Statement TypeInfo
+enrichStatement = undefined  -- Da implementare se necessario
+
+enrichIdent :: Ident () -> Type () -> Ident TypeInfo
+enrichIdent (Ident name loc ()) (BasicType Integer) = Ident name loc TInteger
+enrichIdent (Ident name loc ()) (BasicType Real) = Ident name loc TReal
+enrichIdent (Ident name loc ()) (BasicType Boolean) = Ident name loc TBoolean
+enrichIdent (Ident name loc ()) (BasicType Character) = Ident name loc TCharacter
+enrichIdent (Ident name loc ()) (BasicType String) = Ident name loc TString
+enrichIdent (Ident name loc ()) (BasicType Void) = Ident name loc TVoid
+--enrichIdent (Ident name loc ()) (Pointer (BasicType Integer)) = Ident name loc TInteger
+--enrichIdent (Ident name loc ()) (Array  [IndexType ty] (Type ty)) = Ident name loc TInteger
+
+enrichIdentUnknown :: Ident () -> Ident TypeInfo
+enrichIdentUnknown (Ident name loc _) = Ident name loc TUnknown
 
 
--------------------------------------------------
------------------ POSITION HELPERS --------------
--------------------------------------------------
+enrichType :: Type () -> Type TypeInfo
+enrichType (Array idxs t) = Array (map enrichIndex idxs) (enrichType t)
+enrichType (Pointer t)    = Pointer (enrichType t)
+enrichType (BasicType b)  = BasicType b
 
--- Convert Posn to Loc
-posnToLoc :: Posn -> Loc
-posnToLoc (Pn _ line col) = Loc line col
+enrichIndex :: IndexType () -> IndexType TypeInfo
+enrichIndex (IndexRange c1 c2) = IndexRange (enrichConst c1) (enrichConst c2)
 
--- Convert Posn to Pos (line, column tuple)
-posnToPos :: Posn -> Pos
-posnToPos (Pn _ line col) = (line, col)
+enrichConst :: Constant () -> Constant TypeInfo
+enrichConst (ConstId s i)      = ConstId s (enrichIdentUnknown i)
+enrichConst (ConstInt s n)     = ConstInt s n
+enrichConst (ConstDouble s d)  = ConstDouble s d
+enrichConst (ConstStr s)       = ConstStr s
 
--- Convert Loc to Pos
-locToPos :: Loc -> Pos
-locToPos (Loc line col) = (line, col)
-
--- Convert Pos to Loc
-posToLoc :: Pos -> Loc
-posToLoc (line, col) = Loc line col
-
--- Extract position from Token
-tokenToLoc :: Token -> Loc
-tokenToLoc = posnToLoc . tokenPosn
-
--- Extract position from Token as Pos
-tokenToPos :: Token -> Pos
-tokenToPos = posnToPos . tokenPosn
-
--- Helper to get position from AST nodes that might have position info
--- This will need to be extended based on your AST structure
-getNodePos :: (Show a) => a -> Loc
-getNodePos _ = Loc 0 0  -- Default position, should be overridden for specific AST nodes
-
--- Extract position from various AST elements
--- These functions assume the AST elements contain position information
--- You may need to adjust these based on your actual AST structure
-
--- Estrae la posizione di un identificatore
-getIdentLoc :: Ident -> Loc
-getIdentLoc (Ident name loc) = loc  -- Default, should be overridden if Ident contains position
-
--- Extract position from a constant (assuming it has position info)
-getConstPos :: Constant -> Loc
-getConstPos (Const _ _) = Loc 0 0  -- Default, should be overridden if Constant contains position
-getConstPos (ConstStr _) = Loc 0 0
-
--- Extract position from a type (assuming it has position info)
-getTypePos :: Type -> Loc
-getTypePos _ = Loc 0 0  -- Default, should be overridden if Type contains position
-
--- Extract position from a statement (assuming it has position info)
-getStmtPos :: Statement -> Loc
-getStmtPos _ = Loc 0 0  -- Default, should be overridden if Statement contains position
-
--- Extract position from an expression (assuming it has position info)
-getExprPos :: RExpr -> Loc
-getExprPos _ = Loc 0 0  -- Default, should be overridden if RExpr contains position
-
--- Helper function to create an error with position information
-createErrorWithPos :: String -> Loc -> (String, Loc)
-createErrorWithPos msg pos = (msg, pos)
-
--- Helper function to add an error with position information
-addErrorWithPos :: Env -> String -> Loc -> Env
-addErrorWithPos env msg pos = addError env (CustomError msg, pos)
-
--------------------------------------------------
------------------ PRACTICAL EXAMPLES -------------
--------------------------------------------------
-
--- Example: Check if a variable is declared with position information
-checkVarDeclarationWithPos :: Env -> Ident -> Loc -> Env
-checkVarDeclarationWithPos env id pos
-    | isSymbolDeclared env id = env
-    | otherwise = addErrorWithPos env ("Variable '" ++ show id ++ "' is not declared") pos
-
--- Example: Check type compatibility with position information
-checkTypeCompatibilityWithPos :: Env -> Type -> Type -> Loc -> Env
-checkTypeCompatibilityWithPos env t1 t2 pos
-    | t1 == t2 = env
-    | otherwise = addErrorWithPos env ("Type mismatch: expected " ++ show t1 ++ ", got " ++ show t2) pos
-
--- Example: Check array bounds with position information
-checkArrayBoundsWithPos :: Env -> Int -> Int -> Loc -> Env
-checkArrayBoundsWithPos env index size pos
-    | index >= 0 && index < size = env
-    | otherwise = addErrorWithPos env ("Array index " ++ show index ++ " out of bounds [0.." ++ show (size-1) ++ "]") pos
-
--- Example: Process a token and extract its position
-processTokenWithPos :: Env -> Token -> Env
-processTokenWithPos env token = 
-    let pos = tokenToLoc token
-        tokenText = case token of
-            PT _ (TK (TokSymbol s _)) -> s
-            PT _ (TL s) -> show s
-            PT _ (TI s) -> s
-            PT _ (TV s) -> s
-            PT _ (TD s) -> s
-            PT _ (TC s) -> s
-            Err _ -> "#error"
-    in addErrorWithPos env ("Processing token: " ++ tokenText) pos
-
--- Example: Validate constant definition with position
-validateConstDefWithPos :: Env -> ConstantDefinition -> Loc -> Env
-validateConstDefWithPos env (ConstDef id val) pos = 
-    let env1 = checkVarDeclarationWithPos env id pos
-        env2 = case val of
-            Const _ _ -> env1  -- Valid constant
-            ConstStr _ -> env1 -- Valid string constant
-    in env2
+{-
+    paramsAnn = map annotateParams params
+    (env', blockAnn) = checkBlock (addFormalParams defaultEnv paramsAnn) (annotateBlock block)
+    identAnn = annotateIdent ident
+    annotateIdent (Ident name loc ()) = Ident name loc TUnknown
+    annotateParams (FormParam mod idents ty) = FormParam mod (map annotateIdent idents) (annotateType ty)
+    annotateType (Array idxs t) = Array (map annotateIndex idxs) (annotateType t)
+    annotateType (Pointer t) = Pointer (annotateType t)
+    annotateType (BasicType b) = BasicType b
+    annotateIndex (IndexRange c1 c2) = IndexRange (annotateConstant c1) (annotateConstant c2)
+    annotateConstant (ConstId s i) = ConstId s (annotateIdent i)
+    annotateConstant (ConstInt s n) = ConstInt s n
+    annotateConstant (ConstDouble s d) = ConstDouble s d
+    annotateConstant (ConstStr s) = ConstStr s
+    annotateBlock (Block consts vars procs compStmt) = Block (map annotateConstDef consts) (map annotateVar vars) (map annotateProc procs) (annotateCompStmt compStmt)
+    annotateConstDef (ConstDef i c) = ConstDef (annotateIdent i) (annotateConstant c)
+    annotateVar (VarDecl ids ty) = VarDecl (map annotateIdent ids) (annotateType ty)
+    annotateProc (ProcFunDecl h b) = ProcFunDecl (annotateHeading h) (annotateBlock b)
+    annotateHeading (ProcHead i ps) = ProcHead (annotateIdent i) (map annotateParams ps)
+    annotateHeading (FunHead i ps t) = FunHead (annotateIdent i) (map annotateParams ps) (annotateType t)
+    annotateCompStmt (CompStmt stmts) = CompStmt (map annotateStmt stmts)
+    annotateStmt s = case s of
+      Stmts cs -> Stmts (annotateCompStmt cs)
+      RExprStmt r -> RExprStmt (annotateRExpr r)
+      Assign l r -> Assign (annotateLExpr l) (annotateRExpr r)
+      While r st -> While (annotateRExpr r) (annotateStmt st)
+      DoWhile st r -> DoWhile (annotateStmt st) (annotateRExpr r)
+      ForTo l r1 r2 st -> ForTo (annotateLExpr l) (annotateRExpr r1) (annotateRExpr r2) (annotateStmt st)
+      ForDownTo l r1 r2 st -> ForDownTo (annotateLExpr l) (annotateRExpr r1) (annotateRExpr r2) (annotateStmt st)
+      If r st oe -> If (annotateRExpr r) (annotateStmt st) (annotateOptElse oe)
+      Case r cs -> Case (annotateRExpr r) (map annotateCaseItem cs)
+    annotateOptElse oe = case oe of
+      NoElse -> NoElse
+      Else st -> Else (annotateStmt st)
+    annotateCaseItem (CaseItem c st) = CaseItem (annotateConstant c) (annotateStmt st)
+    annotateLExpr l = case l of
+      LId i -> LId (annotateIdent i)
+      LArr l' rs -> LArr (annotateLExpr l') (map annotateRExpr rs)
+      LDeref l' -> LDeref (annotateLExpr l')
+    annotateRExpr r = case r of
+      Binary r1 b r2 -> Binary (annotateRExpr r1) b (annotateRExpr r2)
+      Unary u r' -> Unary u (annotateRExpr r')
+      Lit l -> Lit l
+      FCall i rs -> FCall (annotateIdent i) (map annotateRExpr rs)
+      LExpr l' -> LExpr (annotateLExpr l')
+-}

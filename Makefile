@@ -32,10 +32,6 @@ all : TestLinguaggio
 TestLinguaggio : AbsLinguaggio.hs LexLinguaggio.hs ParLinguaggio.hs PrettyPrinter.hs PrintLinguaggio.hs
 	${GHC} ${GHC_OPTS} $@
 
-# Debug rule
-debug :
-	ghc -g -O0 --make -fbreak-on-error -fbreak-on-exception Compiler.hs -o linguaggio-debug
-
 # Rules for cleaning generated files.
 
 clean :

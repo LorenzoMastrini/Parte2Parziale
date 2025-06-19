@@ -137,18 +137,19 @@ instance Print Integer where
 instance Print Double where
   prt _ x = doc (shows x)
 
-instance Print AbsLinguaggio.Ident where
-  prt _ (AbsLinguaggio.Ident i loc) = doc $ showString i
-instance Print AbsLinguaggio.Program where
+instance Print (AbsLinguaggio.Ident ty) where
+  prt _ (AbsLinguaggio.Ident i loc _) = doc $ showString i
+
+instance Print (AbsLinguaggio.Program ty) where
   prt i = \case
     AbsLinguaggio.Prog id_ ids block -> prPrec i 0 (concatD [doc (showString "program"), prt 0 id_, doc (showString "("), prt 0 ids, doc (showString ")"), doc (showString ";"), prt 0 block, doc (showString ".")])
 
-instance Print [AbsLinguaggio.Ident] where
+instance Print [AbsLinguaggio.Ident ty] where
   prt _ [] = concatD []
   prt _ [x] = concatD [prt 0 x]
   prt _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
 
-instance Print AbsLinguaggio.Block where
+instance Print (AbsLinguaggio.Block ty) where
   prt i = \case
     AbsLinguaggio.Block constantdefinitions variabledeclarations procedureandfunctiondeclarations compoundstatement -> 
       prPrec i 0 (concatD [
@@ -158,96 +159,90 @@ instance Print AbsLinguaggio.Block where
         prt 0 compoundstatement
       ])
 
-
-instance Print AbsLinguaggio.ConstantDefinition where
+instance Print (AbsLinguaggio.ConstantDefinition ty) where
   prt i = \case
     AbsLinguaggio.ConstDef id_ constant -> prPrec i 0 (concatD [prt 0 id_, doc (showString "="), prt 0 constant])
 
-instance Print [AbsLinguaggio.ConstantDefinition] where
+instance Print [AbsLinguaggio.ConstantDefinition ty] where
   prt _ [] = concatD []
   prt _ [x] = concatD [prt 0 x, doc (showString ";")]
   prt _ (x:xs) = concatD [prt 0 x, doc (showString ";"), prt 0 xs]
 
-
-instance Print AbsLinguaggio.VariableDeclaration where
+instance Print (AbsLinguaggio.VariableDeclaration ty) where
   prt i = \case
     AbsLinguaggio.VarDecl ids type_ -> prPrec i 0 (concatD [prt 0 ids, doc (showString ":"), prt 0 type_])
 
-instance Print [AbsLinguaggio.VariableDeclaration] where
+instance Print [AbsLinguaggio.VariableDeclaration ty] where
   prt _ [] = concatD []
   prt _ [x] = concatD [prt 0 x, doc (showString ";")]
   prt _ (x:xs) = concatD [prt 0 x, doc (showString ";"), prt 0 xs]
 
-instance Print AbsLinguaggio.ProcedureAndFunctionDeclaration where
+instance Print (AbsLinguaggio.ProcedureAndFunctionDeclaration ty) where
   prt i = \case
     AbsLinguaggio.ProcFunDecl procedureandfunctionheading block -> prPrec i 0 (concatD [prt 0 procedureandfunctionheading, prt 0 block])
 
-instance Print [AbsLinguaggio.ProcedureAndFunctionDeclaration] where
+instance Print [AbsLinguaggio.ProcedureAndFunctionDeclaration ty] where
   prt _ [] = concatD []
   prt _ [x] = concatD [prt 0 x]
   prt _ (x:xs) = concatD [prt 0 x, doc (showString ";"), prt 0 xs]
 
-instance Print AbsLinguaggio.ProcedureAndFunctionHeading where
+instance Print (AbsLinguaggio.ProcedureAndFunctionHeading ty) where
   prt i = \case
-    AbsLinguaggio.ProcDecl id_ formalparameterss -> prPrec i 0 (concatD [doc (showString "procedure"), prt 0 id_, doc (showString "("), prt 0 formalparameterss, doc (showString ")"), doc (showString ";")])
-    AbsLinguaggio.FunDecl id_ formalparameterss type_ -> prPrec i 0 (concatD [doc (showString "function"), prt 0 id_, doc (showString "("), prt 0 formalparameterss, doc (showString ")"), doc (showString ":"), prt 0 type_, doc (showString ";")])
+    AbsLinguaggio.ProcHead id_ formalparameterss -> prPrec i 0 (concatD [doc (showString "procedure"), prt 0 id_, doc (showString "("), prt 0 formalparameterss, doc (showString ")"), doc (showString ";")])
+    AbsLinguaggio.FunHead id_ formalparameterss type_ -> prPrec i 0 (concatD [doc (showString "function"), prt 0 id_, doc (showString "("), prt 0 formalparameterss, doc (showString ")"), doc (showString ":"), prt 0 type_, doc (showString ";")])
 
-instance Print AbsLinguaggio.FormalParameters where
+instance Print (AbsLinguaggio.FormalParameters ty) where
   prt i = \case
     AbsLinguaggio.FormParam optmodality ids type_ -> prPrec i 0 (concatD [prt 0 optmodality, prt 0 ids, doc (showString ":"), prt 0 type_])
 
-instance Print [AbsLinguaggio.FormalParameters] where
+instance Print [AbsLinguaggio.FormalParameters ty] where
   prt _ [] = concatD []
   prt _ [x] = concatD [prt 0 x]
   prt _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
 
 instance Print AbsLinguaggio.OptModality where
   prt i = \case
-    AbsLinguaggio.ByVal -> prPrec i 0 (concatD [])
-    AbsLinguaggio.ByRef -> prPrec i 0 (concatD [doc (showString "var")])
-    AbsLinguaggio.ByValRes -> prPrec i 0 (concatD [doc (showString "valres")])
+    AbsLinguaggio.ByVal     -> prPrec i 0 (concatD [])
+    AbsLinguaggio.ByRef     -> prPrec i 0 (concatD [doc (showString "var")])
+    AbsLinguaggio.ByValRes  -> prPrec i 0 (concatD [doc (showString "valres")])
 
-instance Print AbsLinguaggio.Type where
+instance Print (AbsLinguaggio.Type ty) where
   prt i = \case
     AbsLinguaggio.Array indextypes type_ -> prPrec i 0 (concatD [doc (showString "array"), doc (showString "["), prt 0 indextypes, doc (showString "]"), doc (showString "of"), prt 0 type_])
     AbsLinguaggio.Pointer type_ -> prPrec i 0 (concatD [doc (showString "^"), prt 0 type_])
-    AbsLinguaggio.Basic basictype -> prPrec i 0 (concatD [prt 0 basictype])
+    AbsLinguaggio.BasicType basictype -> prPrec i 0 (concatD [prt 0 basictype])
 
 instance Print AbsLinguaggio.BasicType where
   prt i = \case
-    AbsLinguaggio.BasicType_Integer -> prPrec i 0 (concatD [doc (showString "Integer")])
-    AbsLinguaggio.BasicType_Real -> prPrec i 0 (concatD [doc (showString "Real")])
-    AbsLinguaggio.BasicType_Boolean -> prPrec i 0 (concatD [doc (showString "Boolean")])
-    AbsLinguaggio.BasicType_Character -> prPrec i 0 (concatD [doc (showString "Character")])
-    AbsLinguaggio.BasicType_String -> prPrec i 0 (concatD [doc (showString "String")])
+    AbsLinguaggio.Integer -> prPrec i 0 (concatD [doc (showString "Integer")])
+    AbsLinguaggio.Real -> prPrec i 0 (concatD [doc (showString "Real")])
+    AbsLinguaggio.Boolean -> prPrec i 0 (concatD [doc (showString "Boolean")])
+    AbsLinguaggio.Character -> prPrec i 0 (concatD [doc (showString "Character")])
+    AbsLinguaggio.String -> prPrec i 0 (concatD [doc (showString "String")])
 
-instance Print AbsLinguaggio.IndexType where
+instance Print (AbsLinguaggio.IndexType ty) where
   prt i = \case
     AbsLinguaggio.IndexRange constant1 constant2 -> prPrec i 0 (concatD [prt 0 constant1, doc (showString ".."), prt 0 constant2])
 
-instance Print [AbsLinguaggio.IndexType] where
+instance Print [AbsLinguaggio.IndexType ty] where
   prt _ [] = concatD []
   prt _ [x] = concatD [prt 0 x]
   prt _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
 
-instance Print AbsLinguaggio.Constant where
+instance Print (AbsLinguaggio.Constant ty) where
   prt i = \case
-    AbsLinguaggio.Const optsign identornumber -> prPrec i 0 (concatD [prt 0 optsign, prt 0 identornumber])
+    AbsLinguaggio.ConstId optsign id_ -> prPrec i 0 (concatD [prt 0 optsign, prt 0 id_])
+    AbsLinguaggio.ConstInt optsign n -> prPrec i 0 (concatD [prt 0 optsign, prt 0 n])
+    AbsLinguaggio.ConstDouble optsign d -> prPrec i 0 (concatD [prt 0 optsign, prt 0 d])
     AbsLinguaggio.ConstStr str -> prPrec i 0 (concatD [printString str])
-
-instance Print AbsLinguaggio.IdentOrNumber where
-  prt i = \case
-    AbsLinguaggio.ConstId id_ -> prPrec i 0 (concatD [prt 0 id_])
-    AbsLinguaggio.ConstInt n -> prPrec i 0 (concatD [prt 0 n])
-    AbsLinguaggio.ConstFloat d -> prPrec i 0 (concatD [prt 0 d])
 
 instance Print AbsLinguaggio.OptSign where
   prt i = \case
-    AbsLinguaggio.OptSign1 -> prPrec i 0 (concatD [])
-    AbsLinguaggio.OptSign2 -> prPrec i 0 (concatD [doc (showString "+")])
-    AbsLinguaggio.OptSign3 -> prPrec i 0 (concatD [doc (showString "-")])
+    AbsLinguaggio.NoOptSign -> prPrec i 0 (concatD [])
+    AbsLinguaggio.OptSignPlus -> prPrec i 0 (concatD [doc (showString "+")])
+    AbsLinguaggio.OptSignMinus -> prPrec i 0 (concatD [doc (showString "-")])
 
-instance Print AbsLinguaggio.Statement where
+instance Print (AbsLinguaggio.Statement ty) where
   prt i (AbsLinguaggio.RExprStmt expr) = prPrec i 0 (concatD [prt 0 expr])
   prt i (AbsLinguaggio.Assign lexpr expr) = prPrec i 0 (concatD [prt 0 lexpr, doc (showString ":="), prt 0 expr])
   prt i (AbsLinguaggio.While expr stmt) = prPrec i 0 (concatD [doc (showString "while"), prt 0 expr, doc (showString "do"), prt 0 stmt])
@@ -257,35 +252,35 @@ instance Print AbsLinguaggio.Statement where
   prt i (AbsLinguaggio.If expr stmt1 stmt2) = prPrec i 0 (concatD [doc (showString "if"), prt 0 expr, doc (showString "then"), prt 0 stmt1, prt 0 stmt2])
   prt i (AbsLinguaggio.Case expr items) = prPrec i 0 (concatD [doc (showString "case"), prt 0 expr, doc (showString "of"), prt 0 items, doc (showString "end")])
 
-instance Print AbsLinguaggio.OptElse where
+instance Print (AbsLinguaggio.OptElse ty) where
   prt i = \case
     AbsLinguaggio.NoElse -> prPrec i 0 (concatD [])
     AbsLinguaggio.Else statement -> prPrec i 0 (concatD [doc (showString "else"), prt 0 statement])
 
-instance Print AbsLinguaggio.CaseItem where
+instance Print (AbsLinguaggio.CaseItem ty) where
   prt i = \case
     AbsLinguaggio.CaseItem constant statement -> prPrec i 0 (concatD [prt 0 constant, doc (showString ":"), prt 0 statement])
 
-instance Print [AbsLinguaggio.CaseItem] where
+instance Print [AbsLinguaggio.CaseItem ty] where
   prt _ [] = concatD []
   prt _ [x] = concatD [prt 0 x]
   prt _ (x:xs) = concatD [prt 0 x, doc (showString ";"), prt 0 xs]
 
-instance Print [AbsLinguaggio.Statement] where
+instance Print [AbsLinguaggio.Statement ty] where
   prt _ [] = concatD []
   prt _ [x] = concatD [prt 0 x]
   prt _ (x:xs) = concatD [prt 0 x, doc (showString ";"), prt 0 xs]
 
-instance Print AbsLinguaggio.CompoundStatement where
+instance Print (AbsLinguaggio.CompoundStatement ty) where
   prt i (AbsLinguaggio.CompStmt statements) = prPrec i 0 (concatD [doc (showString "begin"), prt 0 statements, doc (showString "end")])
 
-instance Print AbsLinguaggio.LExpr where
+instance Print (AbsLinguaggio.LExpr ty) where
   prt i = \case
     AbsLinguaggio.LId id_ -> prPrec i 0 (concatD [prt 0 id_])
     AbsLinguaggio.LArr lexpr rexprs -> prPrec i 0 (concatD [prt 0 lexpr, doc (showString "["), prt 0 rexprs, doc (showString "]")])
     AbsLinguaggio.LDeref lexpr -> prPrec i 0 (concatD [prt 0 lexpr, doc (showString "^")])
 
-instance Print AbsLinguaggio.RExpr where
+instance Print (AbsLinguaggio.RExpr ty) where
   prt i = \case
     AbsLinguaggio.Binary rexpr1 binary rexpr2 -> prPrec i 0 (concatD [prt 0 rexpr1, prt 0 binary, prt 0 rexpr2])
     AbsLinguaggio.Unary unary rexpr -> prPrec i 0 (concatD [prt 0 unary, prt 0 rexpr])
@@ -293,7 +288,7 @@ instance Print AbsLinguaggio.RExpr where
     AbsLinguaggio.FCall id_ rexprs -> prPrec i 0 (concatD [prt 0 id_, doc (showString "("), prt 0 rexprs, doc (showString ")")])
     AbsLinguaggio.LExpr lexpr -> prPrec i 0 (concatD [prt 0 lexpr])
 
-instance Print [AbsLinguaggio.RExpr] where
+instance Print [AbsLinguaggio.RExpr ty] where
   prt _ [] = concatD []
   prt _ [x] = concatD [prt 0 x]
   prt _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]

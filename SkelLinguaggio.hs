@@ -15,36 +15,36 @@ type Result = Err String
 failure :: Show a => a -> Result
 failure x = Left $ "Undefined case: " ++ show x
 
-transIdent :: AbsLinguaggio.Ident -> Result
+transIdent :: Show ty => AbsLinguaggio.Ident ty -> Result
 transIdent x = case x of
-  AbsLinguaggio.Ident string loc -> failure x
+  AbsLinguaggio.Ident string loc _ -> failure x
 
-transProgram :: AbsLinguaggio.Program -> Result
+transProgram :: Show ty => AbsLinguaggio.Program ty -> Result
 transProgram x = case x of
   AbsLinguaggio.Prog ident idents block -> failure x
 
-transBlock :: AbsLinguaggio.Block -> Result
+transBlock :: Show ty => AbsLinguaggio.Block ty -> Result
 transBlock x = case x of
   AbsLinguaggio.Block constantdefinitions variabledeclarations procedureandfunctiondeclarations compoundstatement -> failure x
 
-transConstantDefinition :: AbsLinguaggio.ConstantDefinition -> Result
+transConstantDefinition :: Show ty => AbsLinguaggio.ConstantDefinition ty -> Result
 transConstantDefinition x = case x of
   AbsLinguaggio.ConstDef ident constant -> failure x
 
-transVariableDeclaration :: AbsLinguaggio.VariableDeclaration -> Result
+transVariableDeclaration :: Show ty => AbsLinguaggio.VariableDeclaration ty -> Result
 transVariableDeclaration x = case x of
   AbsLinguaggio.VarDecl idents type_ -> failure x
 
-transProcedureAndFunctionDeclaration :: AbsLinguaggio.ProcedureAndFunctionDeclaration -> Result
+transProcedureAndFunctionDeclaration :: Show ty => AbsLinguaggio.ProcedureAndFunctionDeclaration ty -> Result
 transProcedureAndFunctionDeclaration x = case x of
   AbsLinguaggio.ProcFunDecl procedureandfunctionheading block -> failure x
 
-transProcedureAndFunctionHeading :: AbsLinguaggio.ProcedureAndFunctionHeading -> Result
+transProcedureAndFunctionHeading :: Show ty => AbsLinguaggio.ProcedureAndFunctionHeading ty -> Result
 transProcedureAndFunctionHeading x = case x of
-  AbsLinguaggio.ProcDecl ident formalparameterss -> failure x
-  AbsLinguaggio.FunDecl ident formalparameterss type_ -> failure x
+  AbsLinguaggio.ProcHead ident formalparameterss -> failure x
+  AbsLinguaggio.FunHead ident formalparameterss type_ -> failure x
 
-transFormalParameters :: AbsLinguaggio.FormalParameters -> Result
+transFormalParameters :: Show ty => AbsLinguaggio.FormalParameters ty -> Result
 transFormalParameters x = case x of
   AbsLinguaggio.FormParam optmodality idents type_ -> failure x
 
@@ -54,42 +54,38 @@ transOptModality x = case x of
   AbsLinguaggio.ByRef -> failure x
   AbsLinguaggio.ByValRes -> failure x
 
-transType :: AbsLinguaggio.Type -> Result
+transType :: Show ty => AbsLinguaggio.Type ty -> Result
 transType x = case x of
   AbsLinguaggio.Array indextypes type_ -> failure x
   AbsLinguaggio.Pointer type_ -> failure x
-  AbsLinguaggio.Basic basictype -> failure x
+  AbsLinguaggio.BasicType basictype -> failure x
 
 transBasicType :: AbsLinguaggio.BasicType -> Result
 transBasicType x = case x of
-  AbsLinguaggio.BasicType_Integer -> failure x
-  AbsLinguaggio.BasicType_Real -> failure x
-  AbsLinguaggio.BasicType_Boolean -> failure x
-  AbsLinguaggio.BasicType_Character -> failure x
-  AbsLinguaggio.BasicType_String -> failure x
+  AbsLinguaggio.Integer -> failure x
+  AbsLinguaggio.Real -> failure x
+  AbsLinguaggio.Boolean -> failure x
+  AbsLinguaggio.Character -> failure x
+  AbsLinguaggio.String -> failure x
 
-transIndexType :: AbsLinguaggio.IndexType -> Result
+transIndexType :: Show ty => AbsLinguaggio.IndexType ty -> Result
 transIndexType x = case x of
   AbsLinguaggio.IndexRange constant1 constant2 -> failure x
 
-transConstant :: AbsLinguaggio.Constant -> Result
+transConstant :: Show ty => AbsLinguaggio.Constant ty -> Result
 transConstant x = case x of
-  AbsLinguaggio.Const optsign identornumber -> failure x
+  AbsLinguaggio.ConstId optsign ident -> failure x
+  AbsLinguaggio.ConstInt optsign integer -> failure x
+  AbsLinguaggio.ConstDouble optsign double -> failure x
   AbsLinguaggio.ConstStr string -> failure x
-
-transIdentOrNumber :: AbsLinguaggio.IdentOrNumber -> Result
-transIdentOrNumber x = case x of
-  AbsLinguaggio.ConstId ident -> failure x
-  AbsLinguaggio.ConstInt integer -> failure x
-  AbsLinguaggio.ConstFloat double -> failure x
 
 transOptSign :: AbsLinguaggio.OptSign -> Result
 transOptSign x = case x of
-  AbsLinguaggio.OptSign1 -> failure x
-  AbsLinguaggio.OptSign2 -> failure x
-  AbsLinguaggio.OptSign3 -> failure x
+  AbsLinguaggio.NoOptSign -> failure x
+  AbsLinguaggio.OptSignPlus -> failure x
+  AbsLinguaggio.OptSignMinus -> failure x
 
-transStatement :: AbsLinguaggio.Statement -> Result
+transStatement :: Show ty => AbsLinguaggio.Statement ty -> Result
 transStatement x = case x of
   AbsLinguaggio.RExprStmt rexpr -> failure x
   AbsLinguaggio.Assign lexpr rexpr -> failure x
@@ -100,22 +96,22 @@ transStatement x = case x of
   AbsLinguaggio.If rexpr statement optelse -> failure x
   AbsLinguaggio.Case rexpr caseitems -> failure x
 
-transOptElse :: AbsLinguaggio.OptElse -> Result
+transOptElse :: Show ty => AbsLinguaggio.OptElse ty -> Result
 transOptElse x = case x of
   AbsLinguaggio.NoElse -> failure x
   AbsLinguaggio.Else statement -> failure x
 
-transCaseItem :: AbsLinguaggio.CaseItem -> Result
+transCaseItem :: Show ty => AbsLinguaggio.CaseItem ty -> Result
 transCaseItem x = case x of
   AbsLinguaggio.CaseItem constant statement -> failure x
 
-transLExpr :: AbsLinguaggio.LExpr -> Result
+transLExpr :: Show ty => AbsLinguaggio.LExpr ty -> Result
 transLExpr x = case x of
   AbsLinguaggio.LId ident -> failure x
   AbsLinguaggio.LArr lexpr rexprs -> failure x
   AbsLinguaggio.LDeref lexpr -> failure x
 
-transRExpr :: AbsLinguaggio.RExpr -> Result
+transRExpr :: Show ty => AbsLinguaggio.RExpr ty -> Result
 transRExpr x = case x of
   AbsLinguaggio.Binary rexpr1 binary rexpr2 -> failure x
   AbsLinguaggio.Unary unary rexpr -> failure x
