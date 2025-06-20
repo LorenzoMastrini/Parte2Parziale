@@ -11,11 +11,14 @@ import SkelLinguaggio
 import AbsLinguaggio
 import PrettyPrinter
 import PrintLinguaggio
-import TACGenerator
---import StaticAnalysis
+-- import StaticAnalysis
 --import TACGenerator
-import Utils
+import TACGen
+-- import Utils
 import ErrM
+
+
+type Pos = (Int, Int)
 
 type ParseFun a = [Token] -> ErrM.Err a
 
@@ -51,7 +54,10 @@ run v p s = let ts = myLLexer s in case p ts of
                           exitFailure
            Ok tree  -> do putStrN v $ "\n" ++ colorGreen "[PARSING]: PASS\n" ++ show tree
                           putStrNC v "\n[PARSING]: PASS"
-                          putStrT v (testingTAC (generateTAC tree) s)
+                          putStrLn (colorRed "test test")
+                          mapM_ print (genTAC (buildSymTab (getDecls (getBlock tree))) tree)
+                          
+                          -- putStrT v (testingTAC (generateTAC tree) s)
                           --x <-testing tree s
                           --putStrC v x
                           putStrV v typ

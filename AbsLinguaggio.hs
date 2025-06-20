@@ -49,7 +49,7 @@ data FormalParameters = FormParam OptModality [Ident] Type
 data OptModality = ByVal | ByRef | ByValRes
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data Type = Array [IndexType] Type | Pointer Type | Basic BasicType | ErrorType | VoidType | ArrayTest Type Integer
+data Type = Array [IndexType] Type | Pointer Type | Basic BasicType | ErrorType | VoidType 
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data BasicType
