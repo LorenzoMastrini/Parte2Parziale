@@ -86,6 +86,16 @@ genRExpr (FCall (Ident name) args) = do
 
 genRExpr (LExpr lexpr) = genLExpr lexpr
 
+-- no symbolic table
+-- genExpr :: Expr Type -> TACGen Operand
+-- genExpr (Add e1 e2 typ) = do
+--   t1 <- genExpr e1
+--   t2 <- genExpr e2
+--   temp <- freshTemp
+--   emit $ case typ of
+--     TInt -> TacBinOp temp t1 "+" t2
+--     TDouble -> TacBinOp temp t1 "+.f" t2
+--   return temp
 
 showUnary :: Unary -> String
 showUnary Unary1 = "-"
