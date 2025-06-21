@@ -11,50 +11,51 @@ import AbsLinguaggio
 
 type SymbolTable = Map String Type
 
-buildSymTab :: DeclarationPart -> SymbolTable
-buildSymTab (Decls _ (VarDecls decls) _) = Map.fromList $
-  concatMap extractVar decls
-  where
-    extractVar (VarDecl idents typ) =
-      [ (name, typ) | Ident name <- idents ]
-buildSymTab _ = Map.empty
+
+getVarType :: Ident -> TACGen pn BasicType
+getVarType (Ident name _ _) = do
+  symtab <- ask
+  case Map.lookup name symtab of
+    Just t  -> return t
+    Nothing -> error $ "Unknown variable: " ++ name
 
 
-type TACGen a = ReaderT SymbolTable (State TACState) a
+buildSymTab :: Block ty -> SymbolTable
+buildSymTab (Block _ varDecls _ _) = Map.fromList $
+  concatMap (\(VarDecl ids (Basic bt)) ->
+    [ (n, bt) | Ident n _ _ <- ids ]) varDecls
 
-data TACState = TACState
+
+type TACGen pn a = ReaderT SymbolTable (State (TACState pn)) a
+
+data TACState pn = TACState
     { tempCount  :: Int
     , labelCount :: Int
-    , code       :: [TAC]
+    , code       :: [TAC pn]
     }
 
 
 
--- Generate fresh temporary variable
-newTemp :: TACGen Temp
-newTemp = do
-    st <- get
-    let t = tempCount st
-    put st { tempCount = t + 1 }
-    return $ "t" ++ show t
+newTemp :: BasicType -> TACGen Address
+newTemp t = do
+  st <- get
+  let n = tempCount st
+  put st { tempCount = n + 1 }
+  return $ Temporary n t
 
--- Generate fresh label
-newLabel :: TACGen Label
+newLabel :: TACGen String
 newLabel = do
-    st <- get
-    let l = labelCount st
-    put st { labelCount = l + 1 }
-    return $ "L" ++ show l
+  st <- get
+  let lbl = "L" ++ show (labelCount st)
+  put st { labelCount = labelCount st + 1 }
+  return lbl
 
--- Emit TAC
 emit :: TAC -> TACGen ()
 emit instr = do
-    st <- get
-    put st { code = code st ++ [instr] }
+  st <- get
+  put st { code = code st ++ [instr] }
 
-
-
-genRExpr :: RExpr -> TACGen Operand
+genRExpr :: RExpr Type -> TACGen Address
 genRExpr (Binary e1 op e2) = do
     v1 <- genRExpr e1
     v2 <- genRExpr e2
@@ -87,15 +88,20 @@ genRExpr (FCall (Ident name) args) = do
 genRExpr (LExpr lexpr) = genLExpr lexpr
 
 -- no symbolic table
--- genExpr :: Expr Type -> TACGen Operand
--- genExpr (Add e1 e2 typ) = do
---   t1 <- genExpr e1
---   t2 <- genExpr e2
---   temp <- freshTemp
---   emit $ case typ of
---     TInt -> TacBinOp temp t1 "+" t2
---     TDouble -> TacBinOp temp t1 "+.f" t2
---   return temp
+genExpr (Lit (LiteralInteger i) t) = return $ TacLit (LInt i) t
+genExpr (Binary e1 BinaryPlus e2) = do
+  t1 <- genExpr e1
+  t2 <- genExpr e2
+  temp <- newTemp t
+  emit $ TacBinary res AddOp t a1 a2
+  -- emit $ case typ of
+  --   TInt -> TacBinOp temp t1 "+" t2
+  --   TDouble -> TacBinOp temp t1 "+.f" t2
+  return temp
+genExpr (LExpr (LId x)) = do
+  -- Look up variable info from context
+  varInfo <- lookupVar x
+  return $ ProgVar varInfo t
 
 showUnary :: Unary -> String
 showUnary Unary1 = "-"
@@ -119,23 +125,51 @@ binOpToString op = case op of
     BinaryGt    -> ">"
     BinaryGte   -> ">="
 
-literalToOperand :: Literal -> Operand
-literalToOperand lit = case lit of
-    LiteralInteger i -> OpInt i
-    LiteralDouble d  -> OpDouble d
-    LiteralChar c    -> OpChar c
-    LiteralString s  -> OpString s
-    Literal_true     -> OpBool True
-    Literal_false    -> OpBool False
+literalToAddress :: Literal -> Address
+literalToAddress lit = TacLit lit (inferType lit)
+
+inferType :: Literal -> BasicType
+inferType (LiteralInteger _) = Integer
+inferType (LiteralDouble _)  = Real
+inferType (LiteralChar _)    = Character
+inferType (LiteralString _)  = String
+inferType Literal_true       = Boolean
+inferType Literal_false      = Boolean
 
 
-constToOperand :: Constant -> TACGen Operand
-constToOperand (Const _ c) = case c of
-    ConstId (Ident name) -> return $ OpVar name
-    ConstInt i           -> return $ OpInt i
-    ConstFloat f         -> return $ OpDouble f
-constToOperand (ConstStr s) = return $ OpString s
 
+-- Assuming IdentOrNumber looks something like this:
+data IdentOrNumber = IdentName String | Number Integer
+  deriving (Eq, Ord, Show, Read)
+
+
+identName :: Ident -> String
+identName (Ident name) = name
+
+constToAddress :: Constant -> TACGen Address
+constToAddress (Const sign idOrNum) = case idOrNum of
+  ConstId ident -> do
+    symtab <- ask
+    -- Look up the variable info by ident name (you'll need to extract String from Ident)
+    let name = identName ident  -- You need a function to get String from Ident
+    case lookupSymbol name symtab of
+      Just varInfo -> return $ ProgVar varInfo (varBasicType varInfo)
+      Nothing -> error $ "Undefined variable: " ++ name
+
+  ConstInt n -> do
+    let val = case sign of
+                OptSign3 -> -n
+                _ -> n
+    return $ TacLit (LInt val) Integer
+
+  ConstFloat f -> do
+    let val = case sign of
+                OptSign3 -> -f
+                _ -> f
+    return $ TacLit (LFloat val) Real
+
+constToAddress (ConstStr s) =
+  return $ TacLit (LString s) String
 
 sizeOf :: Type -> Int
 sizeOf (Basic BasicType_Integer)   = 4
@@ -147,7 +181,7 @@ sizeOf (Pointer _)                 = 8   -- Assuming 64-bit machine
 sizeOf (Array _ t)                 = sizeOf t -- size of 1 element (not the whole array)
 sizeOf _ = error "Unhandled type in sizeOf"
 
-genLExpr :: LExpr -> TACGen Operand
+genLExpr :: LExpr -> TACGen Address
 genLExpr (LId (Ident name)) = return (OpVar name)
 
 
@@ -282,20 +316,20 @@ initState = TACState { tempCount = 0, labelCount = 0, code = [] }
 runTACGen :: SymbolTable -> TACGen a -> a
 runTACGen symtab gen = evalState (runReaderT gen symtab) initState 
 
-genTAC :: SymbolTable -> Program -> [TAC]
-genTAC symTab prog = code finalState
-  where
-    finalState = execState (runReaderT (genProgram prog) symTab) initState
-
-
-genProgram :: Program -> TACGen ()
-genProgram (Prog _ _ block) = do
-  let symtab = buildSymTab (getDecls block)
-  local (const symtab) $ genBlock block
-genProgram (ProgNoParams _ block) = do
-  let symtab = buildSymTab (getDecls block)
-  genBlock block
-genProgram p = error ("genProgram: unhandled pattern " ++ show p)
+-- genTAC :: SymbolTable -> Program -> [TAC]
+-- genTAC symTab prog = code finalState
+--   where
+--     finalState = execState (runReaderT (genProgram prog) symTab) initState
+--
+--
+-- genProgram :: Program -> TACGen ()
+-- genProgram (Prog _ _ block) = do
+--   let symtab = buildSymTab (getDecls block)
+--   local (const symtab) $ genBlock block
+-- genProgram (ProgNoParams _ block) = do
+--   let symtab = buildSymTab (getDecls block)
+--   genBlock block
+-- genProgram p = error ("genProgram: unhandled pattern " ++ show p)
 
 getDecls :: Block -> DeclarationPart
 getDecls (Block decls _) = decls
@@ -308,3 +342,14 @@ genBlock (Block _ (CompStmt stmts)) = mapM_ genStmt stmts
 getBlock :: Program -> Block
 getBlock (ProgNoParams _ block) = block
 getBlock (Prog _ _ block)      = block
+
+
+genProgram :: Program ty -> TACGen ()
+genProgram (Prog _ _ block) = 
+  local (const $ buildSymTab block) $ genBlock block
+
+genTAC :: Program ty -> [TAC]
+genTAC prog = code finalState
+  where
+    (_, finalState) = runState (runReaderT (genProgram prog) sym) initState
+    sym = buildSymTab (let (Prog _ _ b) = prog in b)

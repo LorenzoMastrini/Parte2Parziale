@@ -1,28 +1,44 @@
 module TAC where
 
-type Temp = String
-type Label = String
+import AbsLinguaggio
 
-data Operand
-    = OpTemp Temp
-    | OpInt Integer
-    | OpDouble Double
-    | OpBool Bool
-    | OpChar Char
-    | OpString String
-    | OpVar String
-  deriving (Show, Eq)
+-- type Temp = String
+-- type Label = String
 
-data TAC
-    = TacAssign Temp Operand
-    | TacBinOp Temp Operand String Operand
-    | TacUnOp Temp String Operand
-    | TacGoto Label
-    | TacIf Operand String Operand Label
-    | TacLabel Label
-    | TacCall Temp String [Operand]
-    | TacParam Operand
-    | TacReturn (Maybe Operand)
-    | TacNop
-  deriving (Show, Eq)
+type TacType = BasicType
 
+data TacProgVariable = TacProgVar{
+  varName :: Ident,
+  varIsMutable :: Bool,
+  varModality :: OptModality,
+  varBasicType :: BasicType
+}deriving(Show)
+
+data Address  = ProgVar {progVar :: TacProgVariable, addrT :: TacType}
+              | TacLit{tacLit :: Literal, addrT :: TacType}
+              | Temporary{tempInt :: Int, addrT :: TacType}
+
+data XAddr  = Addr Address 
+            | ArrayAddr{base :: Address, offset :: Address}
+            | RefAddr Address
+
+
+data TAC pn
+      = TacBinary Address Binary BasicType Address Address
+      | TacUnary  Address Unary BasicType Address
+      | TacNullary Address BasicType Address
+      | TacGoto pn
+      | TacIf Address pn
+      | TacIfFalse Address pn
+      | TacIfRel Address Binary Address pn
+      | TacIndexedLoad Address TacProgVariable Address
+      | TacindexedStore TacProgVariable Address Address
+      | TaxAddrOf Address TacProgVariable
+      | TacAssigA Address Address
+      | TacDerefRead Address Address
+      | TacDerefWrite Address Address
+      | TacParam Address
+      | TacPCall pn Int
+      | TacFCall Address pn Int
+      | TacReturn
+      | TacReturnVal Address
