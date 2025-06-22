@@ -21,18 +21,18 @@ begin
     // ERROR CASES - Should generate "Incompatible types" errors [TypeError]:
 
     // Unary plus on non-numeric types
-    +true;           // Unary + on Boolean = ERROR
-    +'a';            // Unary + on Character = ERROR
-    +"hello";        // Unary + on String = ERROR
+    +true;           // + Boolean = ERROR
+    +'a';            // + Character = ERROR
+    +"hello";        // + String = ERROR
 
     // Unary minus on non-numeric types
-    -true;           // Unary - on Boolean = ERROR
-    -'a';            // Unary - on Character = ERROR
-    -"hello";        // Unary - on String = ERROR
+    -true;           // - Boolean = ERROR
+    -'a';            // - Character = ERROR
+    -"hello";        // - String = ERROR
     
     // Unary not on non-boolean types
-    not 1;           // Unary not on Integer = ERROR
-    not 1.5;         // Unary not on Real = ERROR
-    not 'a';         // Unary not on Character = ERROR
-    not "hello";     // Unary not on String = ERROR
+    not 1;           // not Integer = ERROR
+    not 1.5;         // not Real = ERROR
+    not 'a';         // not Character = ERROR
+    not "hello";     // not String = ERROR
 end.

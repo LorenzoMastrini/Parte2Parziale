@@ -298,9 +298,9 @@ checkRExpr env expr = case expr of
             (env1, eEnriched) = checkRExpr env e
             t = getRExprType eEnriched
             (env3, typeInfo) = checkUnaryOp env op t
-        in (env1, Unary op eEnriched typeInfo)
+        in (env3, Unary op eEnriched typeInfo)
     Lit lit _ -> (env, enrichLitExpr lit)
-    FCall ident@(Ident name loc _ varInfo funInfo) args -> case lookupByName env name of
+    FCall ident@(Ident name loc _ _ _) args -> case lookupByName env name of
         Nothing ->
             (addError env (FunNotDefined ident, loc), FCall (enrichIdentUnknown ident) []) -- Function doesn't exist
         Just (ConstVarEntry _ _ _ loc, _) ->
@@ -450,6 +450,7 @@ identExists env ident@(Ident name loc _ varInfo funInfo) = case lookupByName env
     Just (ProcFunEntry params retTy loc, _) ->
         (env, enrichIdent ident retTy NoVarInfo (FunInfo retTy params))
 
+-------------------- Binary --------------------
 checkBinaryOp :: Env -> Binary -> SimpleType -> SimpleType -> (Env, TypeInfo)
 checkBinaryOp env op t1 t2 = case op of
     BinaryPlus loc      -> checkNumericOp env "+" t1 t2 loc     -- "+"
@@ -493,12 +494,6 @@ checkNumericOp env op t1 t2 loc = case (t1, t2) of
             then (env, TReal)
             else (env, TInteger)
 
--- Promote a numeric type to the sup
-promoteNumericType :: SimpleType -> SimpleType
-promoteNumericType t = case t of
-    BasicType Integer -> BasicType Integer
-    BasicType Real -> BasicType Real
-
 checkIntegerOp :: Env -> String -> SimpleType -> SimpleType -> Loc -> (Env, TypeInfo)
 checkIntegerOp env op t1 t2 loc = let
     (env1, tyInfo1) = checkIntegerType env op t1 loc
@@ -507,11 +502,6 @@ checkIntegerOp env op t1 t2 loc = let
         then (env2, TInteger)
         else (env2, TUnknown)
 
-checkIntegerType :: Env -> String -> SimpleType -> Loc -> (Env, TypeInfo)
-checkIntegerType env op t loc = case t of
-    BasicType Integer -> (env, TInteger)
-    _ -> (addError env (NotIntegerType op t, loc), TUnknown)
-
 checkBooleanOp :: Env -> String -> SimpleType -> SimpleType -> Loc -> (Env, TypeInfo)
 checkBooleanOp env op t1 t2 loc = let
         (env1, tyInfo1) = checkBooleanType env op t1 loc
@@ -519,13 +509,6 @@ checkBooleanOp env op t1 t2 loc = let
     in if tyInfo1 == TBoolean && tyInfo2 == TBoolean
         then (env2, TBoolean)
         else (env2, TUnknown)
-
-checkBooleanType :: Env -> String -> SimpleType -> Loc -> (Env, TypeInfo)
-checkBooleanType env op t loc = case t of
-    BasicType Boolean -> (env, TBoolean)
-    -- BasicType Integer -> (env, TBoolean) -- 0 = false, non-zero = true
-    -- BasicType Real -> (env, TBoolean)    -- 0.0 = false, non-zero = true
-    _ -> (addError env (NotBooleanType op t, loc), TUnknown)
 
 checkComparisonOp :: Env -> String -> SimpleType -> SimpleType -> Loc -> (Env, TypeInfo)
 checkComparisonOp env "<" t1@(BasicType Boolean) t2@(BasicType Boolean) loc = (addError env (NotBooleanOperation "<" t1 t2, loc), TUnknown)
@@ -541,6 +524,7 @@ checkComparisonOp env op t1 t2 loc = if t1 == t2
         (BasicType String, BasicType Character) -> (env, TBoolean) -- implicit cast of t2
         _ -> (addError env (ComparisonTypeMismatch op t1 t2, loc), TUnknown) -- incompatible types
 
+-------------------- Unary --------------------
 checkUnaryOp :: Env -> Unary -> SimpleType -> (Env, TypeInfo)
 checkUnaryOp env op t = case op of
     UnaryPlus loc ->
@@ -555,6 +539,19 @@ checkUnaryOp env op t = case op of
         let
             (env1, typeInfo) = checkBooleanType env "not" t loc
         in (env1, typeInfo)
+
+
+checkIntegerType :: Env -> String -> SimpleType -> Loc -> (Env, TypeInfo)
+checkIntegerType env op t loc = case t of
+    BasicType Integer -> (env, TInteger)
+    _ -> (addError env (NotIntegerType op t, loc), TUnknown)
+
+checkBooleanType :: Env -> String -> SimpleType -> Loc -> (Env, TypeInfo)
+checkBooleanType env op t loc = case t of
+    BasicType Boolean -> (env, TBoolean)
+    -- BasicType Integer -> (env, TBoolean) -- 0 = false, non-zero = true
+    -- BasicType Real -> (env, TBoolean)    -- 0.0 = false, non-zero = true
+    _ -> (addError env (NotBooleanType op t, loc), TUnknown)
 
 checkNumericType :: Env -> String -> SimpleType -> Loc -> (Env, TypeInfo)
 checkNumericType env op t loc = case t of
@@ -833,67 +830,6 @@ mergeEnvs env1 env2 = Env
 
 
 
-{-
-getValue :: Env -> Id -> Maybe EnvRecord
-getValue env key = Data.Map.lookup key (names env)
-
-isDeclVar :: Env -> Ident -> Maybe EnvRecord
-isDeclVar env id@(Ident (_,name))
-    | isSymbolDeclared env name =  getValue env name
-    | otherwise = case parent env of
-                         Just pEnv -> isDeclVar pEnv id
-                         Nothing -> Nothing
-getExprLen :: Env -> Expr -> Int
-getExprLen env e =
-    case e of
-      ExprArray _ (x:xs) -> length (x:xs)
-      ExprCreate _ _ _ dim ->
-          case saExpr env dim of
-               (_,(ExprRes _ _ (Just x) _)) -> x
-               otherwise -> 0
-      otherwise ->
-          case saExpr env e of
-            (_, (ExprRes (Array _ dim) _ _ _)) -> dim
-            otherwise -> 0
-
-maybeOp :: TACOp -> Maybe Int -> Maybe Int -> Maybe Int
-maybeOp "+" (Just x) (Just y)  = Just (x+y)
-maybeOp "*" (Just x) (Just y)  = Just (x*y)
-maybeOp "-" (Just x) (Just y)  = Just (x-y)
-maybeOp "/" (Just _) (Just _)  = Nothing
-maybeOp "%" (Just x) (Just 0)  = Nothing
-maybeOp "%" (Just x) (Just y)  = Just (mod x y)
-maybeOp "^" (Just x) (Just y)  = Just (x^y)
-maybeOp _ _ _ = Nothing
-
-maybeNegative :: Maybe Int -> Maybe Int
-maybeNegative (Just x) = (Just (-x))
-maybeNegative Nothing = Nothing
-
-translateParamsToRed :: [Param] -> [Param]
-translateParamsToRed [] = []
-translateParamsToRed ((Parameter id mod ty):par) = (Parameter id mod tyy):translateParamsToRed par
-  where (_,tyy,_) = convertToRedArray defaultEnv ty
-
-copyEnvInfo :: Env -> Env -> Maybe Env-> Env
-copyEnvInfo dest source (Just source2) =
-    dest {errors = (errors dest)++(errors source)++(errors source2),
-          funcCheck = (oldN, oldId,  valSource && valSource2, valOld || (valSource && valSource2),
-          break && b1 && b2, def)}
-    where (oldN,oldId,valOld,_,break , def) = funcCheck dest
-          (_,_,valSource,_,b1,_) = funcCheck source
-          (_,_,valSource2,_,b2,_) = funcCheck source2
-
-copyEnvInfo dest source Nothing =
-  dest {errors = (errors dest)++(errors source),
-        funcCheck = (oldN, oldId,  valSource , valOld || valSource,
-          break, def)}
-  where (oldN,oldId,valOld,_,break, def) = funcCheck dest
-        (_,_,valSource,_,_,_)            = funcCheck source
--}
-
-
-
 ----------------------------------------------------------------
 -------------------- ENRICHED AST FUNCTIONS --------------------
 ----------------------------------------------------------------
@@ -959,7 +895,7 @@ enrichConst (ConstDouble s d)  = ConstDouble s d
 enrichConst (ConstStr s)       = ConstStr s
 
 enrichIdent :: SimpleIdent -> SimpleType -> VarInfo -> FunInfo -> Ident TypeInfo VarInfo FunInfo
-enrichIdent (Ident name loc _ _ _) ty varInfo funInfo = Ident name loc (typeInfoFromType ty) varInfo funInfo
+enrichIdent (Ident name loc _ _ _) ty = Ident name loc (typeInfoFromType ty)
 
 enrichIdentUnknown :: SimpleIdent -> Ident TypeInfo VarInfo FunInfo
 enrichIdentUnknown (Ident name loc _ _ _) = Ident name loc TUnknown NoVarInfo NoFunInfo
@@ -1002,7 +938,7 @@ getLExprTypeInfo (LDeref lexpr) = case getLExprTypeInfo lexpr of
 -- Extract type info from RExpr
 getRExprTypeInfo :: RExpr TypeInfo VarInfo FunInfo -> TypeInfo
 getRExprTypeInfo (Binary _ _ _ ty) = ty
-getRExprTypeInfo (Unary _ rexpr ty)   = getRExprTypeInfo rexpr
+getRExprTypeInfo (Unary _ _ ty)   = ty
 getRExprTypeInfo (Lit _ ty)        = ty
 getRExprTypeInfo (FCall ident _)   = getIdentTypeInfo ident
 getRExprTypeInfo (LExpr lexpr)     = getLExprTypeInfo lexpr
@@ -1070,6 +1006,12 @@ lookupByName env name =
                     case lookupByName p name of
                         Nothing -> Nothing -- Not found in parent chain
                         Just (entry, _) -> Just (entry, True)
+    
+-- Promote a numeric type to the sup
+promoteNumericType :: SimpleType -> SimpleType
+promoteNumericType t = case t of
+    BasicType Integer -> BasicType Integer
+    BasicType Real -> BasicType Real
 
 
 
