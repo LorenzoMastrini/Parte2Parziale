@@ -355,7 +355,25 @@ alexRightContext IBOX(sc) user__ _ _ input__ =
         -- match when checking the right context, just
         -- the first match will do.
 #endif
-{-# LINE 68 "LexLinguaggio.x" #-}
+{-# LINE 67 "LexLinguaggio.x" #-}
+-------------------------------------------
+------------------HELPERS------------------
+-------------------------------------------
+
+-- Functions used in ParLinguaggio.y to get the position of the tokens
+
+getPos :: Token -> Posn
+getPos (PT pos _) = pos
+
+-- Converts the position to the data type defined in AbsLinguaggio.hs
+posToLoc :: Posn -> Loc
+posToLoc pos = Loc line col
+  where
+    Pn _ line col = pos
+
+-------------------------------------------
+
+
 -- | Create a token with position.
 tok :: (String -> Tok) -> (Posn -> String -> Token)
 tok f p = PT p . f
@@ -407,11 +425,6 @@ tokenPos []    = "end of file"
 tokenPosn :: Token -> Posn
 tokenPosn (PT p _) = p
 tokenPosn (Err p)  = p
-
-posToLoc :: Posn -> Loc
-posToLoc pos = Loc line col
-  where
-    Pn _ line col = pos
 
 -- | Get line and column of a token.
 tokenLineCol :: Token -> (Int, Int)

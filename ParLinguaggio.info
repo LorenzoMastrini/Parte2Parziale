@@ -125,22 +125,22 @@ Terminals
 -----------------------------------------------------------------------------
 	'('            { PT _ (TS _ 1) }
 	')'            { PT _ (TS _ 2) }
-	'*'            { PT _ (TS _ 3) }
-	'+'            { PT _ (TS _ 4) }
+	'*'            { PT pos (TS _ 3) }
+	'+'            { PT pos (TS _ 4) }
 	','            { PT _ (TS _ 5) }
-	'-'            { PT _ (TS _ 6) }
+	'-'            { PT pos (TS _ 6) }
 	'.'            { PT _ (TS _ 7) }
 	'..'           { PT _ (TS _ 8) }
-	'/'            { PT _ (TS _ 9) }
+	'/'            { PT pos (TS _ 9) }
 	':'            { PT _ (TS _ 10) }
-	':='           { PT _ (TS _ 11) }
+	':='           { PT pos (TS _ 11) }
 	';'            { PT _ (TS _ 12) }
-	'<'            { PT _ (TS _ 13) }
-	'<='           { PT _ (TS _ 14) }
-	'<>'           { PT _ (TS _ 15) }
-	'='            { PT _ (TS _ 16) }
-	'>'            { PT _ (TS _ 17) }
-	'>='           { PT _ (TS _ 18) }
+	'<'            { PT pos (TS _ 13) }
+	'<='           { PT pos (TS _ 14) }
+	'<>'           { PT pos (TS _ 15) }
+	'='            { PT pos (TS _ 16) }
+	'>'            { PT pos (TS _ 17) }
+	'>='           { PT pos (TS _ 18) }
 	'Boolean'      { PT _ (TS _ 19) }
 	'Character'    { PT _ (TS _ 20) }
 	'Integer'      { PT _ (TS _ 21) }
@@ -149,12 +149,12 @@ Terminals
 	'['            { PT _ (TS _ 24) }
 	']'            { PT _ (TS _ 25) }
 	'^'            { PT _ (TS _ 26) }
-	'and'          { PT _ (TS _ 27) }
+	'and'          { PT pos (TS _ 27) }
 	'array'        { PT _ (TS _ 28) }
 	'begin'        { PT _ (TS _ 29) }
 	'case'         { PT _ (TS _ 30) }
 	'const'        { PT _ (TS _ 31) }
-	'div'          { PT _ (TS _ 32) }
+	'div'          { PT pos (TS _ 32) }
 	'do'           { PT _ (TS _ 33) }
 	'downto'       { PT _ (TS _ 34) }
 	'else'         { PT _ (TS _ 35) }
@@ -163,12 +163,12 @@ Terminals
 	'for'          { PT _ (TS _ 38) }
 	'function'     { PT _ (TS _ 39) }
 	'if'           { PT _ (TS _ 40) }
-	'mod'          { PT _ (TS _ 41) }
-	'not'          { PT _ (TS _ 42) }
+	'mod'          { PT pos (TS _ 41) }
+	'not'          { PT pos (TS _ 42) }
 	'of'           { PT _ (TS _ 43) }
-	'or'           { PT _ (TS _ 44) }
+	'or'           { PT pos (TS _ 44) }
 	'procedure'    { PT _ (TS _ 45) }
-	'program'      { PT _ (TS _ 46) }
+	'program'      { PT pos (TS _ 46) }
 	'repeat'       { PT _ (TS _ 47) }
 	'then'         { PT _ (TS _ 48) }
 	'to'           { PT _ (TS _ 49) }

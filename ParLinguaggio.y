@@ -35,22 +35,22 @@ import LexLinguaggio
 %token
   '('         { PT _ (TS _ 1)  }
   ')'         { PT _ (TS _ 2)  }
-  '*'         { PT _ (TS _ 3)  }
-  '+'         { PT _ (TS _ 4)  }
+  '*'         { PT pos (TS _ 3)  }
+  '+'         { PT pos (TS _ 4)  }
   ','         { PT _ (TS _ 5)  }
-  '-'         { PT _ (TS _ 6)  }
+  '-'         { PT pos (TS _ 6)  }
   '.'         { PT _ (TS _ 7)  }
   '..'        { PT _ (TS _ 8)  }
-  '/'         { PT _ (TS _ 9)  }
+  '/'         { PT pos (TS _ 9)  }
   ':'         { PT _ (TS _ 10) }
-  ':='        { PT _ (TS _ 11) }
+  ':='        { PT pos (TS _ 11) }
   ';'         { PT _ (TS _ 12) }
-  '<'         { PT _ (TS _ 13) }
-  '<='        { PT _ (TS _ 14) }
-  '<>'        { PT _ (TS _ 15) }
-  '='         { PT _ (TS _ 16) }
-  '>'         { PT _ (TS _ 17) }
-  '>='        { PT _ (TS _ 18) }
+  '<'         { PT pos (TS _ 13) }
+  '<='        { PT pos (TS _ 14) }
+  '<>'        { PT pos (TS _ 15) }
+  '='         { PT pos (TS _ 16) }
+  '>'         { PT pos (TS _ 17) }
+  '>='        { PT pos (TS _ 18) }
   'Boolean'   { PT _ (TS _ 19) }
   'Character' { PT _ (TS _ 20) }
   'Integer'   { PT _ (TS _ 21) }
@@ -59,12 +59,12 @@ import LexLinguaggio
   '['         { PT _ (TS _ 24) }
   ']'         { PT _ (TS _ 25) }
   '^'         { PT _ (TS _ 26) }
-  'and'       { PT _ (TS _ 27) }
+  'and'       { PT pos (TS _ 27) }
   'array'     { PT _ (TS _ 28) }
   'begin'     { PT _ (TS _ 29) }
   'case'      { PT _ (TS _ 30) }
   'const'     { PT _ (TS _ 31) }
-  'div'       { PT _ (TS _ 32) }
+  'div'       { PT pos (TS _ 32) }
   'do'        { PT _ (TS _ 33) }
   'downto'    { PT _ (TS _ 34) }
   'else'      { PT _ (TS _ 35) }
@@ -73,12 +73,12 @@ import LexLinguaggio
   'for'       { PT _ (TS _ 38) }
   'function'  { PT _ (TS _ 39) }
   'if'        { PT _ (TS _ 40) }
-  'mod'       { PT _ (TS _ 41) }
-  'not'       { PT _ (TS _ 42) }
+  'mod'       { PT pos (TS _ 41) }
+  'not'       { PT pos (TS _ 42) }
   'of'        { PT _ (TS _ 43) }
-  'or'        { PT _ (TS _ 44) }
+  'or'        { PT pos (TS _ 44) }
   'procedure' { PT _ (TS _ 45) }
-  'program'   { PT _ (TS _ 46) }
+  'program'   { PT pos (TS _ 46) }
   'repeat'    { PT _ (TS _ 47) }
   'then'      { PT _ (TS _ 48) }
   'to'        { PT _ (TS _ 49) }
@@ -95,8 +95,8 @@ import LexLinguaggio
 
 %%
 
-Ident :: { AbsLinguaggio.Ident () }
-Ident  : L_Ident { AbsLinguaggio.Ident $1 (posToLoc pos) () }
+Ident :: { AbsLinguaggio.Ident () () () }
+Ident  : L_Ident { AbsLinguaggio.Ident $1 (posToLoc pos) () () () }
 
 Char    :: { Char }
 Char     : L_charac { (read $1) :: Char }
@@ -110,60 +110,60 @@ Integer  : L_integ  { (read $1) :: Integer }
 String  :: { String }
 String   : L_quoted { $1 }
 
-Program :: { AbsLinguaggio.Program () }
+Program :: { AbsLinguaggio.Program () () () }
 Program
-  : 'program' Ident '(' ListFormalParameters ')' ';' Block '.' { AbsLinguaggio.Prog $2 $4 $7 }
+  : 'program' Ident '(' ListFormalParameters ')' ';' Block '.' { AbsLinguaggio.Prog $2 $4 $7 (posToLoc (getPos $1)) }
 
-ListIdent :: { [AbsLinguaggio.Ident ()] }
+ListIdent :: { [AbsLinguaggio.Ident () () ()] }
 ListIdent
   : Ident { (:[]) $1 }
   | Ident ',' ListIdent { (:) $1 $3 }
   | {-empty-} { [] }
 
-Block :: { AbsLinguaggio.Block () }
+Block :: { AbsLinguaggio.Block () () () }
 Block
   : ListConstantDefinition ListVariableDeclaration ListProcedureAndFunctionDeclaration CompoundStatement { AbsLinguaggio.Block $1 $2 $3 $4 }
 
-ConstantDefinition :: { AbsLinguaggio.ConstantDefinition () }
+ConstantDefinition :: { AbsLinguaggio.ConstantDefinition () () () }
 ConstantDefinition
   : Ident '=' Constant { AbsLinguaggio.ConstDef $1 $3 }
 
-ListConstantDefinition :: { [AbsLinguaggio.ConstantDefinition ()] }
+ListConstantDefinition :: { [AbsLinguaggio.ConstantDefinition () () ()] }
 ListConstantDefinition
   : {- empty -} { [] }
   | 'const' ConstantDefinition ';' ListConstantDefinition { $2 : $4 }
   | ConstantDefinition ';' ListConstantDefinition { $1 : $3 }
 
-VariableDeclaration :: { AbsLinguaggio.VariableDeclaration () }
+VariableDeclaration :: { AbsLinguaggio.VariableDeclaration () () () }
 VariableDeclaration
   : ListIdent ':' Type { AbsLinguaggio.VarDecl $1 $3 }
 
-ListVariableDeclaration :: { [AbsLinguaggio.VariableDeclaration ()] }
+ListVariableDeclaration :: { [AbsLinguaggio.VariableDeclaration () () ()] }
 ListVariableDeclaration
   : {- empty -} { [] }
   | 'var' VariableDeclaration ';' ListVariableDeclaration { $2 : $4 }
   | VariableDeclaration ';' ListVariableDeclaration { $1 : $3 }
 
-ProcedureAndFunctionDeclaration :: { AbsLinguaggio.ProcedureAndFunctionDeclaration () }
+ProcedureAndFunctionDeclaration :: { AbsLinguaggio.ProcedureAndFunctionDeclaration () () () }
 ProcedureAndFunctionDeclaration
   : ProcedureAndFunctionHeading Block { AbsLinguaggio.ProcFunDecl $1 $2 }
 
-ListProcedureAndFunctionDeclaration :: { [AbsLinguaggio.ProcedureAndFunctionDeclaration ()] }
+ListProcedureAndFunctionDeclaration :: { [AbsLinguaggio.ProcedureAndFunctionDeclaration () () ()] }
 ListProcedureAndFunctionDeclaration
   : {- empty -} { [] }
   | ProcedureAndFunctionDeclaration { (:[]) $1 }
   | ProcedureAndFunctionDeclaration ';' ListProcedureAndFunctionDeclaration { (:) $1 $3 }
 
-ProcedureAndFunctionHeading :: { AbsLinguaggio.ProcedureAndFunctionHeading () }
+ProcedureAndFunctionHeading :: { AbsLinguaggio.ProcedureAndFunctionHeading () () () }
 ProcedureAndFunctionHeading
   : 'procedure' Ident '(' ListFormalParameters ')' ';' { AbsLinguaggio.ProcHead $2 $4 }
   | 'function' Ident '(' ListFormalParameters ')' ':' Type ';' { AbsLinguaggio.FunHead $2 $4 $7 }
 
-FormalParameters :: { AbsLinguaggio.FormalParameters () }
+FormalParameters :: { AbsLinguaggio.FormalParameters () () () }
 FormalParameters
   : OptModality ListIdent ':' Type { AbsLinguaggio.FormParam $1 $2 $4 }
 
-ListFormalParameters :: { [AbsLinguaggio.FormalParameters ()] }
+ListFormalParameters :: { [AbsLinguaggio.FormalParameters () () ()] }
 ListFormalParameters
   : {- empty -} { [] }
   | FormalParameters { (:[]) $1 }
@@ -175,7 +175,7 @@ OptModality
   | 'var' { AbsLinguaggio.ByRef }
   | 'valres' { AbsLinguaggio.ByValRes }
 
-Type :: { AbsLinguaggio.Type () }
+Type :: { AbsLinguaggio.Type () () () }
 Type
   : 'array' '[' ListIndexType ']' 'of' Type { AbsLinguaggio.Array $3 $6 }
   | '^' Type { AbsLinguaggio.Pointer $2 }
@@ -189,16 +189,16 @@ BasicType
   | 'Character' { AbsLinguaggio.Character }
   | 'String' { AbsLinguaggio.String }
 
-IndexType :: { AbsLinguaggio.IndexType () }
+IndexType :: { AbsLinguaggio.IndexType () () () }
 IndexType
   : Constant '..' Constant { AbsLinguaggio.IndexRange $1 $3 }
 
-ListIndexType :: { [AbsLinguaggio.IndexType ()] }
+ListIndexType :: { [AbsLinguaggio.IndexType () () ()] }
 ListIndexType
   : IndexType { (:[]) $1 }
   | IndexType ',' ListIndexType { (:) $1 $3 }
 
-Constant :: { AbsLinguaggio.Constant () }
+Constant :: { AbsLinguaggio.Constant () () () }
 Constant
   : OptSign Ident { AbsLinguaggio.ConstId $1 $2 }
   | OptSign Integer { AbsLinguaggio.ConstInt $1 $2 }
@@ -211,20 +211,20 @@ OptSign
   | '+' { AbsLinguaggio.OptSignPlus }
   | '-' { AbsLinguaggio.OptSignMinus }
 
-CompoundStatement :: { AbsLinguaggio.CompoundStatement () }
+CompoundStatement :: { AbsLinguaggio.CompoundStatement () () () }
 CompoundStatement
   : 'begin' ListStatement 'end' { AbsLinguaggio.CompStmt $2 }
 
-ListStatement :: { [AbsLinguaggio.Statement ()] }
+ListStatement :: { [AbsLinguaggio.Statement () () ()] }
 ListStatement
   : Statement ';' { (:[]) $1 }
   | Statement ';' ListStatement { (:) $1 $3 }
 
-Statement :: { AbsLinguaggio.Statement () }
+Statement :: { AbsLinguaggio.Statement () () () }
 Statement
   : CompoundStatement { AbsLinguaggio.Stmts $1 }
-  | RExpr { AbsLinguaggio.RExprStmt $1 }
-  | LExpr ':=' RExpr { AbsLinguaggio.Assign $1 $3 }
+  | RExpr { AbsLinguaggio.RExprStmt $1 () }
+  | LExpr ':=' RExpr { AbsLinguaggio.Assign $1 $3 (posToLoc (getPos $2)) }
   | 'while' RExpr 'do' Statement { AbsLinguaggio.While $2 $4 }
   | 'repeat' Statement 'until' RExpr { AbsLinguaggio.DoWhile $2 $4 }
   | 'for' LExpr ':=' RExpr 'to' RExpr 'do' Statement { AbsLinguaggio.ForTo $2 $4 $6 $8 }
@@ -232,52 +232,52 @@ Statement
   | 'if' RExpr 'then' Statement OptElse { AbsLinguaggio.If $2 $4 $5 }
   | 'case' RExpr 'of' ListCaseItem 'end' { AbsLinguaggio.Case $2 $4 }
 
-OptElse :: { AbsLinguaggio.OptElse () }
+OptElse :: { AbsLinguaggio.OptElse () () () }
 OptElse
   : {- empty -} { AbsLinguaggio.NoElse }
   | 'else' Statement { AbsLinguaggio.Else $2 }
 
-CaseItem :: { AbsLinguaggio.CaseItem () }
+CaseItem :: { AbsLinguaggio.CaseItem () () () }
 CaseItem
   : Constant ':' Statement { AbsLinguaggio.CaseItem $1 $3 }
 
-ListCaseItem :: { [AbsLinguaggio.CaseItem ()] }
+ListCaseItem :: { [AbsLinguaggio.CaseItem () () ()] }
 ListCaseItem
   : {- empty -} { [] }
   | CaseItem { (:[]) $1 }
   | CaseItem ';' ListCaseItem { (:) $1 $3 }
 
-LExpr :: { AbsLinguaggio.LExpr () }
+LExpr :: { AbsLinguaggio.LExpr () () () }
 LExpr
   : Ident { AbsLinguaggio.LId $1 }
   | LExpr '[' ListRExpr ']' { AbsLinguaggio.LArr $1 $3 }
   | LExpr '^' { AbsLinguaggio.LDeref $1 }
 
-RExpr :: { AbsLinguaggio.RExpr () }
+RExpr :: { AbsLinguaggio.RExpr () () () }
 RExpr
-  : RExpr '+' RExpr %prec '+' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryPlus $3 }
-  | RExpr '-' RExpr %prec '-' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryMinus $3 }
-  | RExpr '*' RExpr %prec '*' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryMul $3 }
-  | RExpr '/' RExpr %prec '/' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryDiv $3 }
-  | RExpr 'div' RExpr %prec 'div' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryIntDiv $3 }
-  | RExpr 'mod' RExpr %prec 'mod' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryMod $3 }
-  | RExpr 'or' RExpr %prec 'or' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryOr $3 }
-  | RExpr 'and' RExpr %prec 'and' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryAnd $3 }
-  | RExpr '=' RExpr %prec '=' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryEq $3 }
-  | RExpr '<>' RExpr %prec '<>' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryNeq $3 }
-  | RExpr '<' RExpr %prec '<' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryLt $3 }
-  | RExpr '<=' RExpr %prec '<=' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryLte $3 }
-  | RExpr '>' RExpr %prec '>' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryGt $3 }
-  | RExpr '>=' RExpr %prec '>=' { AbsLinguaggio.Binary $1 AbsLinguaggio.BinaryGte $3 }
-  | '+' RExpr %prec UnaryPlus { AbsLinguaggio.Unary AbsLinguaggio.UnaryPlus $2 }
-  | '-' RExpr %prec UnaryMinus { AbsLinguaggio.Unary AbsLinguaggio.UnaryMinus $2 }
-  | 'not' RExpr %prec 'not' { AbsLinguaggio.Unary AbsLinguaggio.UnaryNot $2 }
-  | Literal { AbsLinguaggio.Lit $1 }
+  : RExpr '+' RExpr %prec '+' { AbsLinguaggio.Binary $1 (AbsLinguaggio.BinaryPlus (posToLoc (getPos $2))) $3 () }
+  | RExpr '-' RExpr %prec '-' { AbsLinguaggio.Binary $1 (AbsLinguaggio.BinaryMinus (posToLoc (getPos $2))) $3 () }
+  | RExpr '*' RExpr %prec '*' { AbsLinguaggio.Binary $1 (AbsLinguaggio.BinaryMul (posToLoc (getPos $2))) $3 () }
+  | RExpr '/' RExpr %prec '/' { AbsLinguaggio.Binary $1 (AbsLinguaggio.BinaryDiv (posToLoc (getPos $2))) $3 () }
+  | RExpr 'div' RExpr %prec 'div' { AbsLinguaggio.Binary $1 (AbsLinguaggio.BinaryIntDiv (posToLoc (getPos $2))) $3 () }
+  | RExpr 'mod' RExpr %prec 'mod' { AbsLinguaggio.Binary $1 (AbsLinguaggio.BinaryMod (posToLoc (getPos $2))) $3 () }
+  | RExpr 'or' RExpr %prec 'or' { AbsLinguaggio.Binary $1 (AbsLinguaggio.BinaryOr (posToLoc (getPos $2))) $3 () }
+  | RExpr 'and' RExpr %prec 'and' { AbsLinguaggio.Binary $1 (AbsLinguaggio.BinaryAnd (posToLoc (getPos $2))) $3 () }
+  | RExpr '=' RExpr %prec '=' { AbsLinguaggio.Binary $1 (AbsLinguaggio.BinaryEq (posToLoc (getPos $2))) $3 () }
+  | RExpr '<>' RExpr %prec '<>' { AbsLinguaggio.Binary $1 (AbsLinguaggio.BinaryNeq (posToLoc (getPos $2))) $3 () }
+  | RExpr '<' RExpr %prec '<' { AbsLinguaggio.Binary $1 (AbsLinguaggio.BinaryLt (posToLoc (getPos $2))) $3 () }
+  | RExpr '<=' RExpr %prec '<=' { AbsLinguaggio.Binary $1 (AbsLinguaggio.BinaryLte (posToLoc (getPos $2))) $3 () }
+  | RExpr '>' RExpr %prec '>' { AbsLinguaggio.Binary $1 (AbsLinguaggio.BinaryGt (posToLoc (getPos $2))) $3 () }
+  | RExpr '>=' RExpr %prec '>=' { AbsLinguaggio.Binary $1 (AbsLinguaggio.BinaryGte (posToLoc (getPos $2))) $3 () }
+  | '+' RExpr %prec UnaryPlus { AbsLinguaggio.Unary (AbsLinguaggio.UnaryPlus (posToLoc (getPos $1))) $2 () }
+  | '-' RExpr %prec UnaryMinus { AbsLinguaggio.Unary (AbsLinguaggio.UnaryMinus (posToLoc (getPos $1))) $2 () }
+  | 'not' RExpr %prec 'not' { AbsLinguaggio.Unary (AbsLinguaggio.UnaryNot (posToLoc (getPos $1))) $2 () }
+  | Literal { AbsLinguaggio.Lit $1 () }
   | Ident '(' ListRExpr ')' { AbsLinguaggio.FCall $1 $3 }
   | '(' RExpr ')' { $2 }
   | LExpr { AbsLinguaggio.LExpr $1 }
 
-ListRExpr :: { [AbsLinguaggio.RExpr ()] }
+ListRExpr :: { [AbsLinguaggio.RExpr () () ()] }
 ListRExpr
   : RExpr { (:[]) $1 }
   | RExpr ',' ListRExpr { (:) $1 $3 }
@@ -294,9 +294,9 @@ Literal
 
 Unary :: { AbsLinguaggio.Unary }
 Unary
-  : '+' { AbsLinguaggio.UnaryPlus }
-  | '-' { AbsLinguaggio.UnaryMinus }
-  | 'not' { AbsLinguaggio.UnaryNot }
+  : '+' { AbsLinguaggio.UnaryPlus (posToLoc (getPos $1)) }
+  | '-' { AbsLinguaggio.UnaryMinus (posToLoc (getPos $1)) }
+  | 'not' { AbsLinguaggio.UnaryNot (posToLoc (getPos $1)) }
 
 {
 

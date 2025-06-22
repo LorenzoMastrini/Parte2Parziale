@@ -18,7 +18,6 @@ import AbsLinguaggio (Loc(..))
 }
 
 -- Predefined character classes
-
 $c = [A-Z\192-\221] # [\215]  -- capital isolatin1 letter (215 = \times) FIXME
 $s = [a-z\222-\255] # [\247]  -- small   isolatin1 letter (247 = \div  ) FIXME
 $l = [$c $s]         -- letter
@@ -66,6 +65,25 @@ $d+ \. $d+ (e (\-)? $d+)?
     { tok TD }
 
 {
+
+-------------------------------------------
+------------------HELPERS------------------
+-------------------------------------------
+
+-- Functions used in ParLinguaggio.y to get the position of the tokens
+
+getPos :: Token -> Posn
+getPos (PT pos _) = pos
+
+-- Converts the position to the data type defined in AbsLinguaggio.hs
+posToLoc :: Posn -> Loc
+posToLoc pos = Loc line col
+  where
+    Pn _ line col = pos
+
+-------------------------------------------
+
+
 -- | Create a token with position.
 tok :: (String -> Tok) -> (Posn -> String -> Token)
 tok f p = PT p . f
@@ -117,11 +135,6 @@ tokenPos []    = "end of file"
 tokenPosn :: Token -> Posn
 tokenPosn (PT p _) = p
 tokenPosn (Err p)  = p
-
-posToLoc :: Posn -> Loc
-posToLoc pos = Loc line col
-  where
-    Pn _ line col = pos
 
 -- | Get line and column of a token.
 tokenLineCol :: Token -> (Int, Int)

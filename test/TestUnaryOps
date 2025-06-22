@@ -1,0 +1,38 @@
+program TestUnaryOps();
+
+var
+    a: Integer;
+    b: Real;
+    c: Boolean;
+    d: Character;
+    e: String;
+
+begin
+    // Unary operations (+, -, not)
+    // Valid cases:
+    +10;             // + Integer = Integer
+    -20;             // - Integer = Integer
+    +15.5;           // + Real = Real
+    -25.5;           // - Real = Real
+    not true;        // not Boolean = Boolean
+    not false;       // not Boolean = Boolean
+
+
+    // ERROR CASES - Should generate "Incompatible types" errors [TypeError]:
+
+    // Unary plus on non-numeric types
+    +true;           // Unary + on Boolean = ERROR
+    +'a';            // Unary + on Character = ERROR
+    +"hello";        // Unary + on String = ERROR
+
+    // Unary minus on non-numeric types
+    -true;           // Unary - on Boolean = ERROR
+    -'a';            // Unary - on Character = ERROR
+    -"hello";        // Unary - on String = ERROR
+    
+    // Unary not on non-boolean types
+    not 1;           // Unary not on Integer = ERROR
+    not 1.5;         // Unary not on Real = ERROR
+    not 'a';         // Unary not on Character = ERROR
+    not "hello";     // Unary not on String = ERROR
+end.

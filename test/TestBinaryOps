@@ -1,0 +1,178 @@
+program TestBinaryOps();
+
+var
+    a: Integer;
+    b: Real;
+    c: Boolean;
+    d: Character;
+    e: String;
+
+begin
+    // Arithmetic operations (+, -, *, /, div, mod)
+    // Valid cases:
+    1 + 2;           // Integer + Integer = Integer
+    1.5 + 2.7;       // Real + Real = Real
+    1 + 3.0;         // Integer + Real = Real (promotion)
+    2.5 + 1;         // Real + Integer = Real (promotion)
+    
+    10 - 3;          // Integer - Integer = Integer
+    10.5 - 3.2;      // Real - Real = Real
+    10 - 3.5;        // Integer - Real = Real (promotion)
+    13.8 - 3;        // Real - Integer = Real (promotion)
+    
+    4 * 5;           // Integer * Integer = Integer
+    4.5 * 2.0;       // Real * Real = Real
+    4 * 2.5;         // Integer * Real = Real (promotion)
+    5.9 * 2;         // Real * Integer = Real (promotion)
+    
+    8 / 4;           // Integer / Integer = Integer
+    10.0 / 2.0;      // Real / Real = Real
+    10 / 2.5;        // Integer / Real = Real (promotion)
+    15.8 / 3;        // Real / Integer = Real (promotion)
+
+    
+    10 div 3;        // Integer div Integer = Integer
+    10 mod 3;        // Integer mod Integer = Integer
+
+    // Logical operations (and, or)
+    // Valid cases:
+    true and false;  // Boolean and Boolean = Boolean
+    true or false;   // Boolean or Boolean = Boolean
+    c and true;      // Boolean and Boolean = Boolean
+    c or false;      // Boolean or Boolean = Boolean
+    
+    // Comparison operations (=, <>, <, <=, >, >=)
+    // Valid cases:
+    1 = 2;           // Integer = Integer = Boolean
+    1.5 = 2.0;       // Real = Real = Boolean
+    1 = 2.0;         // Integer = Real = Boolean (compatible)
+    1.5 = 2;         // Real = Integer = Boolean (compatible)
+    
+    1 <> 2;          // Integer <> Integer = Boolean
+    1.5 <> 2.0;      // Real <> Real = Boolean
+    1 <> 2.0;        // Integer <> Real = Boolean
+    1.5 <> 2;        // Real <> Integer = Boolean
+    
+    1 < 2;           // Integer < Integer = Boolean
+    1.5 < 2.0;       // Real < Real = Boolean
+    1 < 2.0;         // Integer < Real = Boolean
+    1.5 < 2;         // Real < Integer = Boolean
+    
+    1 <= 2;          // Integer <= Integer = Boolean
+    1.5 <= 2.0;      // Real <= Real = Boolean
+    1 <= 2.0;        // Integer <= Real = Boolean
+    1.5 <= 2;        // Real <= Integer = Boolean
+    
+    3 > 2;           // Integer > Integer = Boolean
+    3.5 > 2.0;       // Real > Real = Boolean
+    3 > 2.0;         // Integer > Real = Boolean
+    3.5 > 2;         // Real > Integer = Boolean
+    
+    3 >= 2;          // Integer >= Integer = Boolean
+    3.5 >= 2.0;      // Real >= Real = Boolean
+    3 >= 2.0;        // Integer >= Real = Boolean
+    3.5 >= 2;        // Real >= Integer = Boolean
+    
+    // Comparison operations with characters and strings
+    'a' = 'b';       // Character = Character = Boolean
+    'a' < 'b';       // Character < Character = Boolean
+    'a' <= 'b';      // Character <= Character = Boolean
+    'b' > 'a';       // Character > Character = Boolean
+    'b' >= 'a';      // Character >= Character = Boolean
+    'a' <> 'b';      // Character <> Character = Boolean
+    
+    "hello" = "world"; // String = String = Boolean
+    "hello" < "world"; // String < String = Boolean
+    "hello" <= "world"; // String <= String = Boolean
+    "world" > "hello"; // String > String = Boolean
+    "world" >= "hello"; // String >= String = Boolean
+    "hello" <> "world"; // String <> String = Boolean
+    
+    // Comparison operations between (compatible) characters and strings
+    'a' = "a";       // Character = String = Boolean (compatible)
+    "a" = 'a';       // String = Character = Boolean (compatible)
+    'a' < "b";       // Character < String = Boolean (compatible)
+    "a" < 'b';       // String < Character = Boolean (compatible)
+
+
+
+    // ERROR CASES - Should generate "Incompatible types" errors [TypeError]:
+
+    // Arithmetic operations with non-numeric types
+    1 + true;             // Integer + Boolean = ERROR
+    1.5 + false;          // Real + Boolean = ERROR
+    1 + 'a';              // Integer + Character = ERROR
+    1.5 + "hello";        // Real + String = ERROR
+    true + 1;             // Boolean + Integer = ERROR
+    'a' + 1;              // Character + Integer = ERROR
+    "hello" + 1;          // String + Integer = ERROR
+    
+    1 - true;             // Integer - Boolean = ERROR
+    1.5 - false;          // Real - Boolean = ERROR
+    1 - 'a';              // Integer - Character = ERROR
+    1.5 - "hello";        // Real - String = ERROR
+    
+    1 * true;             // Integer * Boolean = ERROR
+    1.5 * false;          // Real * Boolean = ERROR
+    1 * 'a';              // Integer * Character = ERROR
+    1.5 * "hello";        // Real * String = ERROR
+    
+    1 / true;             // Integer / Boolean = ERROR
+    1.5 / false;          // Real / Boolean = ERROR
+    1 / 'a';              // Integer / Character = ERROR
+    1.5 / "hello";        // Real / String = ERROR
+
+    1 div true;           // Integer div Boolean = ERROR
+    1 mod false;          // Integer mod Boolean = ERROR
+    1 div 'a';            // Integer div Character = ERROR
+    1 mod "hello";        // Integer mod String = ERROR
+
+    // Logical operations with non-boolean types
+    true and 1;           // Boolean and Integer = ERROR
+    false or 1.5;         // Boolean or Real = ERROR
+    true and 'a';         // Boolean and Character = ERROR
+    false or "hello";     // Boolean or String = ERROR
+    1 and true;           // Integer and Boolean = ERROR
+    1.5 or false;         // Real or Boolean = ERROR
+    'a' and true;         // Character and Boolean = ERROR
+    "hello" or false;     // String or Boolean = ERROR
+    
+    // Comparison operations with incompatible types
+    1 = true;             // Integer = Boolean = ERROR
+    1.5 = false;          // Real = Boolean = ERROR
+    1 = 'a';              // Integer = Character = ERROR
+    1.5 = "hello";        // Real = String = ERROR
+    true = 1;             // Boolean = Integer = ERROR
+    'a' = 1;              // Character = Integer = ERROR
+    "hello" = 1.5;        // String = Real = ERROR
+    
+    1 < true;             // Integer < Boolean = ERROR
+    1.5 > false;          // Real > Boolean = ERROR
+    1 <= 'a';             // Integer <= Character = ERROR
+    1.5 >= "hello";       // Real >= String = ERROR
+    true < 1;             // Boolean < Integer = ERROR
+    'a' > 1;              // Character > Integer = ERROR
+    "hello" < 1.5;        // String < Real = ERROR
+    
+    true < false;         // Boolean < Boolean = ERROR
+    true > false;         // Boolean > Boolean = ERROR
+    true <= false;        // Boolean <= Boolean = ERROR
+    true >= false;        // Boolean >= Boolean = ERROR
+    
+    // Comparison operations between characters/strings and numbers
+    'a' < 1;              // Character < Integer = ERROR
+    "hello" > 1.5;        // String > Real = ERROR
+    1 < 'a';              // Integer < Character = ERROR
+    1.5 > "hello";        // Real > String = ERROR
+    
+    // Comparison operations between characters/strings and booleans
+    'a' = true;           // Character = Boolean = ERROR
+    "hello" = false;      // String = Boolean = ERROR
+    true = 'a';           // Boolean = Character = ERROR
+    false = "hello";      // Boolean = String = ERROR
+    
+    'a' < true;           // Character < Boolean = ERROR
+    "hello" > false;      // String > Boolean = ERROR
+    true < 'a';           // Boolean < Character = ERROR
+    false > "hello";      // Boolean > String = ERROR
+end.

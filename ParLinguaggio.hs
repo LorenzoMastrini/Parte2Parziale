@@ -49,8 +49,8 @@ type HappyAny = Happy_GHC_Exts.Any
 #else
 type HappyAny = forall a . a
 #endif
-newtype HappyWrap5 = HappyWrap5 (AbsLinguaggio.Ident ())
-happyIn5 :: (AbsLinguaggio.Ident ()) -> (HappyAbsSyn )
+newtype HappyWrap5 = HappyWrap5 (AbsLinguaggio.Ident () () ())
+happyIn5 :: (AbsLinguaggio.Ident () () ()) -> (HappyAbsSyn )
 happyIn5 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap5 x)
 {-# INLINE happyIn5 #-}
 happyOut5 :: (HappyAbsSyn ) -> HappyWrap5
@@ -84,85 +84,85 @@ happyIn9 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap9 x)
 happyOut9 :: (HappyAbsSyn ) -> HappyWrap9
 happyOut9 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut9 #-}
-newtype HappyWrap10 = HappyWrap10 (AbsLinguaggio.Program ())
-happyIn10 :: (AbsLinguaggio.Program ()) -> (HappyAbsSyn )
+newtype HappyWrap10 = HappyWrap10 (AbsLinguaggio.Program () () ())
+happyIn10 :: (AbsLinguaggio.Program () () ()) -> (HappyAbsSyn )
 happyIn10 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap10 x)
 {-# INLINE happyIn10 #-}
 happyOut10 :: (HappyAbsSyn ) -> HappyWrap10
 happyOut10 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut10 #-}
-newtype HappyWrap11 = HappyWrap11 ([AbsLinguaggio.Ident ()])
-happyIn11 :: ([AbsLinguaggio.Ident ()]) -> (HappyAbsSyn )
+newtype HappyWrap11 = HappyWrap11 ([AbsLinguaggio.Ident () () ()])
+happyIn11 :: ([AbsLinguaggio.Ident () () ()]) -> (HappyAbsSyn )
 happyIn11 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap11 x)
 {-# INLINE happyIn11 #-}
 happyOut11 :: (HappyAbsSyn ) -> HappyWrap11
 happyOut11 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut11 #-}
-newtype HappyWrap12 = HappyWrap12 (AbsLinguaggio.Block ())
-happyIn12 :: (AbsLinguaggio.Block ()) -> (HappyAbsSyn )
+newtype HappyWrap12 = HappyWrap12 (AbsLinguaggio.Block () () ())
+happyIn12 :: (AbsLinguaggio.Block () () ()) -> (HappyAbsSyn )
 happyIn12 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap12 x)
 {-# INLINE happyIn12 #-}
 happyOut12 :: (HappyAbsSyn ) -> HappyWrap12
 happyOut12 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut12 #-}
-newtype HappyWrap13 = HappyWrap13 (AbsLinguaggio.ConstantDefinition ())
-happyIn13 :: (AbsLinguaggio.ConstantDefinition ()) -> (HappyAbsSyn )
+newtype HappyWrap13 = HappyWrap13 (AbsLinguaggio.ConstantDefinition () () ())
+happyIn13 :: (AbsLinguaggio.ConstantDefinition () () ()) -> (HappyAbsSyn )
 happyIn13 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap13 x)
 {-# INLINE happyIn13 #-}
 happyOut13 :: (HappyAbsSyn ) -> HappyWrap13
 happyOut13 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut13 #-}
-newtype HappyWrap14 = HappyWrap14 ([AbsLinguaggio.ConstantDefinition ()])
-happyIn14 :: ([AbsLinguaggio.ConstantDefinition ()]) -> (HappyAbsSyn )
+newtype HappyWrap14 = HappyWrap14 ([AbsLinguaggio.ConstantDefinition () () ()])
+happyIn14 :: ([AbsLinguaggio.ConstantDefinition () () ()]) -> (HappyAbsSyn )
 happyIn14 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap14 x)
 {-# INLINE happyIn14 #-}
 happyOut14 :: (HappyAbsSyn ) -> HappyWrap14
 happyOut14 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut14 #-}
-newtype HappyWrap15 = HappyWrap15 (AbsLinguaggio.VariableDeclaration ())
-happyIn15 :: (AbsLinguaggio.VariableDeclaration ()) -> (HappyAbsSyn )
+newtype HappyWrap15 = HappyWrap15 (AbsLinguaggio.VariableDeclaration () () ())
+happyIn15 :: (AbsLinguaggio.VariableDeclaration () () ()) -> (HappyAbsSyn )
 happyIn15 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap15 x)
 {-# INLINE happyIn15 #-}
 happyOut15 :: (HappyAbsSyn ) -> HappyWrap15
 happyOut15 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut15 #-}
-newtype HappyWrap16 = HappyWrap16 ([AbsLinguaggio.VariableDeclaration ()])
-happyIn16 :: ([AbsLinguaggio.VariableDeclaration ()]) -> (HappyAbsSyn )
+newtype HappyWrap16 = HappyWrap16 ([AbsLinguaggio.VariableDeclaration () () ()])
+happyIn16 :: ([AbsLinguaggio.VariableDeclaration () () ()]) -> (HappyAbsSyn )
 happyIn16 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap16 x)
 {-# INLINE happyIn16 #-}
 happyOut16 :: (HappyAbsSyn ) -> HappyWrap16
 happyOut16 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut16 #-}
-newtype HappyWrap17 = HappyWrap17 (AbsLinguaggio.ProcedureAndFunctionDeclaration ())
-happyIn17 :: (AbsLinguaggio.ProcedureAndFunctionDeclaration ()) -> (HappyAbsSyn )
+newtype HappyWrap17 = HappyWrap17 (AbsLinguaggio.ProcedureAndFunctionDeclaration () () ())
+happyIn17 :: (AbsLinguaggio.ProcedureAndFunctionDeclaration () () ()) -> (HappyAbsSyn )
 happyIn17 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap17 x)
 {-# INLINE happyIn17 #-}
 happyOut17 :: (HappyAbsSyn ) -> HappyWrap17
 happyOut17 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut17 #-}
-newtype HappyWrap18 = HappyWrap18 ([AbsLinguaggio.ProcedureAndFunctionDeclaration ()])
-happyIn18 :: ([AbsLinguaggio.ProcedureAndFunctionDeclaration ()]) -> (HappyAbsSyn )
+newtype HappyWrap18 = HappyWrap18 ([AbsLinguaggio.ProcedureAndFunctionDeclaration () () ()])
+happyIn18 :: ([AbsLinguaggio.ProcedureAndFunctionDeclaration () () ()]) -> (HappyAbsSyn )
 happyIn18 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap18 x)
 {-# INLINE happyIn18 #-}
 happyOut18 :: (HappyAbsSyn ) -> HappyWrap18
 happyOut18 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut18 #-}
-newtype HappyWrap19 = HappyWrap19 (AbsLinguaggio.ProcedureAndFunctionHeading ())
-happyIn19 :: (AbsLinguaggio.ProcedureAndFunctionHeading ()) -> (HappyAbsSyn )
+newtype HappyWrap19 = HappyWrap19 (AbsLinguaggio.ProcedureAndFunctionHeading () () ())
+happyIn19 :: (AbsLinguaggio.ProcedureAndFunctionHeading () () ()) -> (HappyAbsSyn )
 happyIn19 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap19 x)
 {-# INLINE happyIn19 #-}
 happyOut19 :: (HappyAbsSyn ) -> HappyWrap19
 happyOut19 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut19 #-}
-newtype HappyWrap20 = HappyWrap20 (AbsLinguaggio.FormalParameters ())
-happyIn20 :: (AbsLinguaggio.FormalParameters ()) -> (HappyAbsSyn )
+newtype HappyWrap20 = HappyWrap20 (AbsLinguaggio.FormalParameters () () ())
+happyIn20 :: (AbsLinguaggio.FormalParameters () () ()) -> (HappyAbsSyn )
 happyIn20 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap20 x)
 {-# INLINE happyIn20 #-}
 happyOut20 :: (HappyAbsSyn ) -> HappyWrap20
 happyOut20 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut20 #-}
-newtype HappyWrap21 = HappyWrap21 ([AbsLinguaggio.FormalParameters ()])
-happyIn21 :: ([AbsLinguaggio.FormalParameters ()]) -> (HappyAbsSyn )
+newtype HappyWrap21 = HappyWrap21 ([AbsLinguaggio.FormalParameters () () ()])
+happyIn21 :: ([AbsLinguaggio.FormalParameters () () ()]) -> (HappyAbsSyn )
 happyIn21 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap21 x)
 {-# INLINE happyIn21 #-}
 happyOut21 :: (HappyAbsSyn ) -> HappyWrap21
@@ -175,8 +175,8 @@ happyIn22 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap22 x)
 happyOut22 :: (HappyAbsSyn ) -> HappyWrap22
 happyOut22 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut22 #-}
-newtype HappyWrap23 = HappyWrap23 (AbsLinguaggio.Type ())
-happyIn23 :: (AbsLinguaggio.Type ()) -> (HappyAbsSyn )
+newtype HappyWrap23 = HappyWrap23 (AbsLinguaggio.Type () () ())
+happyIn23 :: (AbsLinguaggio.Type () () ()) -> (HappyAbsSyn )
 happyIn23 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap23 x)
 {-# INLINE happyIn23 #-}
 happyOut23 :: (HappyAbsSyn ) -> HappyWrap23
@@ -189,22 +189,22 @@ happyIn24 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap24 x)
 happyOut24 :: (HappyAbsSyn ) -> HappyWrap24
 happyOut24 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut24 #-}
-newtype HappyWrap25 = HappyWrap25 (AbsLinguaggio.IndexType ())
-happyIn25 :: (AbsLinguaggio.IndexType ()) -> (HappyAbsSyn )
+newtype HappyWrap25 = HappyWrap25 (AbsLinguaggio.IndexType () () ())
+happyIn25 :: (AbsLinguaggio.IndexType () () ()) -> (HappyAbsSyn )
 happyIn25 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap25 x)
 {-# INLINE happyIn25 #-}
 happyOut25 :: (HappyAbsSyn ) -> HappyWrap25
 happyOut25 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut25 #-}
-newtype HappyWrap26 = HappyWrap26 ([AbsLinguaggio.IndexType ()])
-happyIn26 :: ([AbsLinguaggio.IndexType ()]) -> (HappyAbsSyn )
+newtype HappyWrap26 = HappyWrap26 ([AbsLinguaggio.IndexType () () ()])
+happyIn26 :: ([AbsLinguaggio.IndexType () () ()]) -> (HappyAbsSyn )
 happyIn26 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap26 x)
 {-# INLINE happyIn26 #-}
 happyOut26 :: (HappyAbsSyn ) -> HappyWrap26
 happyOut26 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut26 #-}
-newtype HappyWrap27 = HappyWrap27 (AbsLinguaggio.Constant ())
-happyIn27 :: (AbsLinguaggio.Constant ()) -> (HappyAbsSyn )
+newtype HappyWrap27 = HappyWrap27 (AbsLinguaggio.Constant () () ())
+happyIn27 :: (AbsLinguaggio.Constant () () ()) -> (HappyAbsSyn )
 happyIn27 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap27 x)
 {-# INLINE happyIn27 #-}
 happyOut27 :: (HappyAbsSyn ) -> HappyWrap27
@@ -217,64 +217,64 @@ happyIn28 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap28 x)
 happyOut28 :: (HappyAbsSyn ) -> HappyWrap28
 happyOut28 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut28 #-}
-newtype HappyWrap29 = HappyWrap29 (AbsLinguaggio.CompoundStatement ())
-happyIn29 :: (AbsLinguaggio.CompoundStatement ()) -> (HappyAbsSyn )
+newtype HappyWrap29 = HappyWrap29 (AbsLinguaggio.CompoundStatement () () ())
+happyIn29 :: (AbsLinguaggio.CompoundStatement () () ()) -> (HappyAbsSyn )
 happyIn29 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap29 x)
 {-# INLINE happyIn29 #-}
 happyOut29 :: (HappyAbsSyn ) -> HappyWrap29
 happyOut29 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut29 #-}
-newtype HappyWrap30 = HappyWrap30 ([AbsLinguaggio.Statement ()])
-happyIn30 :: ([AbsLinguaggio.Statement ()]) -> (HappyAbsSyn )
+newtype HappyWrap30 = HappyWrap30 ([AbsLinguaggio.Statement () () ()])
+happyIn30 :: ([AbsLinguaggio.Statement () () ()]) -> (HappyAbsSyn )
 happyIn30 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap30 x)
 {-# INLINE happyIn30 #-}
 happyOut30 :: (HappyAbsSyn ) -> HappyWrap30
 happyOut30 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut30 #-}
-newtype HappyWrap31 = HappyWrap31 (AbsLinguaggio.Statement ())
-happyIn31 :: (AbsLinguaggio.Statement ()) -> (HappyAbsSyn )
+newtype HappyWrap31 = HappyWrap31 (AbsLinguaggio.Statement () () ())
+happyIn31 :: (AbsLinguaggio.Statement () () ()) -> (HappyAbsSyn )
 happyIn31 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap31 x)
 {-# INLINE happyIn31 #-}
 happyOut31 :: (HappyAbsSyn ) -> HappyWrap31
 happyOut31 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut31 #-}
-newtype HappyWrap32 = HappyWrap32 (AbsLinguaggio.OptElse ())
-happyIn32 :: (AbsLinguaggio.OptElse ()) -> (HappyAbsSyn )
+newtype HappyWrap32 = HappyWrap32 (AbsLinguaggio.OptElse () () ())
+happyIn32 :: (AbsLinguaggio.OptElse () () ()) -> (HappyAbsSyn )
 happyIn32 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap32 x)
 {-# INLINE happyIn32 #-}
 happyOut32 :: (HappyAbsSyn ) -> HappyWrap32
 happyOut32 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut32 #-}
-newtype HappyWrap33 = HappyWrap33 (AbsLinguaggio.CaseItem ())
-happyIn33 :: (AbsLinguaggio.CaseItem ()) -> (HappyAbsSyn )
+newtype HappyWrap33 = HappyWrap33 (AbsLinguaggio.CaseItem () () ())
+happyIn33 :: (AbsLinguaggio.CaseItem () () ()) -> (HappyAbsSyn )
 happyIn33 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap33 x)
 {-# INLINE happyIn33 #-}
 happyOut33 :: (HappyAbsSyn ) -> HappyWrap33
 happyOut33 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut33 #-}
-newtype HappyWrap34 = HappyWrap34 ([AbsLinguaggio.CaseItem ()])
-happyIn34 :: ([AbsLinguaggio.CaseItem ()]) -> (HappyAbsSyn )
+newtype HappyWrap34 = HappyWrap34 ([AbsLinguaggio.CaseItem () () ()])
+happyIn34 :: ([AbsLinguaggio.CaseItem () () ()]) -> (HappyAbsSyn )
 happyIn34 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap34 x)
 {-# INLINE happyIn34 #-}
 happyOut34 :: (HappyAbsSyn ) -> HappyWrap34
 happyOut34 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut34 #-}
-newtype HappyWrap35 = HappyWrap35 (AbsLinguaggio.LExpr ())
-happyIn35 :: (AbsLinguaggio.LExpr ()) -> (HappyAbsSyn )
+newtype HappyWrap35 = HappyWrap35 (AbsLinguaggio.LExpr () () ())
+happyIn35 :: (AbsLinguaggio.LExpr () () ()) -> (HappyAbsSyn )
 happyIn35 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap35 x)
 {-# INLINE happyIn35 #-}
 happyOut35 :: (HappyAbsSyn ) -> HappyWrap35
 happyOut35 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut35 #-}
-newtype HappyWrap36 = HappyWrap36 (AbsLinguaggio.RExpr ())
-happyIn36 :: (AbsLinguaggio.RExpr ()) -> (HappyAbsSyn )
+newtype HappyWrap36 = HappyWrap36 (AbsLinguaggio.RExpr () () ())
+happyIn36 :: (AbsLinguaggio.RExpr () () ()) -> (HappyAbsSyn )
 happyIn36 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap36 x)
 {-# INLINE happyIn36 #-}
 happyOut36 :: (HappyAbsSyn ) -> HappyWrap36
 happyOut36 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut36 #-}
-newtype HappyWrap37 = HappyWrap37 ([AbsLinguaggio.RExpr ()])
-happyIn37 :: ([AbsLinguaggio.RExpr ()]) -> (HappyAbsSyn )
+newtype HappyWrap37 = HappyWrap37 ([AbsLinguaggio.RExpr () () ()])
+happyIn37 :: ([AbsLinguaggio.RExpr () () ()]) -> (HappyAbsSyn )
 happyIn37 x = Happy_GHC_Exts.unsafeCoerce# (HappyWrap37 x)
 {-# INLINE happyIn37 #-}
 happyOut37 :: (HappyAbsSyn ) -> HappyWrap37
@@ -441,7 +441,7 @@ happyReduce_1 = happySpecReduce_1  0# happyReduction_1
 happyReduction_1 happy_x_1
          =  case happyOutTok happy_x_1 of { (PT pos (TV happy_var_1)) -> 
         happyIn5
-                 (AbsLinguaggio.Ident happy_var_1 (posToLoc pos) ()
+                 (AbsLinguaggio.Ident happy_var_1 (posToLoc pos) () () ()
         )}
 
 happyReduce_2 = happySpecReduce_1  1# happyReduction_2
@@ -482,12 +482,13 @@ happyReduction_6 (happy_x_8 `HappyStk`
         happy_x_2 `HappyStk`
         happy_x_1 `HappyStk`
         happyRest)
-         = case happyOut5 happy_x_2 of { (HappyWrap5 happy_var_2) -> 
+         = case happyOutTok happy_x_1 of { happy_var_1 -> 
+        case happyOut5 happy_x_2 of { (HappyWrap5 happy_var_2) -> 
         case happyOut21 happy_x_4 of { (HappyWrap21 happy_var_4) -> 
         case happyOut12 happy_x_7 of { (HappyWrap12 happy_var_7) -> 
         happyIn10
-                 (AbsLinguaggio.Prog happy_var_2 happy_var_4 happy_var_7
-        ) `HappyStk` happyRest}}}
+                 (AbsLinguaggio.Prog happy_var_2 happy_var_4 happy_var_7 (posToLoc (getPos happy_var_1))
+        ) `HappyStk` happyRest}}}}
 
 happyReduce_7 = happySpecReduce_1  6# happyReduction_7
 happyReduction_7 happy_x_1
@@ -888,7 +889,7 @@ happyReduce_54 = happySpecReduce_1  26# happyReduction_54
 happyReduction_54 happy_x_1
          =  case happyOut36 happy_x_1 of { (HappyWrap36 happy_var_1) -> 
         happyIn31
-                 (AbsLinguaggio.RExprStmt happy_var_1
+                 (AbsLinguaggio.RExprStmt happy_var_1 ()
         )}
 
 happyReduce_55 = happySpecReduce_3  26# happyReduction_55
@@ -896,10 +897,11 @@ happyReduction_55 happy_x_3
         happy_x_2
         happy_x_1
          =  case happyOut35 happy_x_1 of { (HappyWrap35 happy_var_1) -> 
+        case happyOutTok happy_x_2 of { happy_var_2 -> 
         case happyOut36 happy_x_3 of { (HappyWrap36 happy_var_3) -> 
         happyIn31
-                 (AbsLinguaggio.Assign happy_var_1 happy_var_3
-        )}}
+                 (AbsLinguaggio.Assign happy_var_1 happy_var_3 (posToLoc (getPos happy_var_2))
+        )}}}
 
 happyReduce_56 = happyReduce 4# 26# happyReduction_56
 happyReduction_56 (happy_x_4 `HappyStk`
@@ -1065,170 +1067,187 @@ happyReduction_71 happy_x_3
         happy_x_2
         happy_x_1
          =  case happyOut36 happy_x_1 of { (HappyWrap36 happy_var_1) -> 
+        case happyOutTok happy_x_2 of { happy_var_2 -> 
         case happyOut36 happy_x_3 of { (HappyWrap36 happy_var_3) -> 
         happyIn36
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryPlus happy_var_3
-        )}}
+                 (AbsLinguaggio.Binary happy_var_1 (AbsLinguaggio.BinaryPlus (posToLoc (getPos happy_var_2))) happy_var_3 ()
+        )}}}
 
 happyReduce_72 = happySpecReduce_3  31# happyReduction_72
 happyReduction_72 happy_x_3
         happy_x_2
         happy_x_1
          =  case happyOut36 happy_x_1 of { (HappyWrap36 happy_var_1) -> 
+        case happyOutTok happy_x_2 of { happy_var_2 -> 
         case happyOut36 happy_x_3 of { (HappyWrap36 happy_var_3) -> 
         happyIn36
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryMinus happy_var_3
-        )}}
+                 (AbsLinguaggio.Binary happy_var_1 (AbsLinguaggio.BinaryMinus (posToLoc (getPos happy_var_2))) happy_var_3 ()
+        )}}}
 
 happyReduce_73 = happySpecReduce_3  31# happyReduction_73
 happyReduction_73 happy_x_3
         happy_x_2
         happy_x_1
          =  case happyOut36 happy_x_1 of { (HappyWrap36 happy_var_1) -> 
+        case happyOutTok happy_x_2 of { happy_var_2 -> 
         case happyOut36 happy_x_3 of { (HappyWrap36 happy_var_3) -> 
         happyIn36
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryMul happy_var_3
-        )}}
+                 (AbsLinguaggio.Binary happy_var_1 (AbsLinguaggio.BinaryMul (posToLoc (getPos happy_var_2))) happy_var_3 ()
+        )}}}
 
 happyReduce_74 = happySpecReduce_3  31# happyReduction_74
 happyReduction_74 happy_x_3
         happy_x_2
         happy_x_1
          =  case happyOut36 happy_x_1 of { (HappyWrap36 happy_var_1) -> 
+        case happyOutTok happy_x_2 of { happy_var_2 -> 
         case happyOut36 happy_x_3 of { (HappyWrap36 happy_var_3) -> 
         happyIn36
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryDiv happy_var_3
-        )}}
+                 (AbsLinguaggio.Binary happy_var_1 (AbsLinguaggio.BinaryDiv (posToLoc (getPos happy_var_2))) happy_var_3 ()
+        )}}}
 
 happyReduce_75 = happySpecReduce_3  31# happyReduction_75
 happyReduction_75 happy_x_3
         happy_x_2
         happy_x_1
          =  case happyOut36 happy_x_1 of { (HappyWrap36 happy_var_1) -> 
+        case happyOutTok happy_x_2 of { happy_var_2 -> 
         case happyOut36 happy_x_3 of { (HappyWrap36 happy_var_3) -> 
         happyIn36
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryIntDiv happy_var_3
-        )}}
+                 (AbsLinguaggio.Binary happy_var_1 (AbsLinguaggio.BinaryIntDiv (posToLoc (getPos happy_var_2))) happy_var_3 ()
+        )}}}
 
 happyReduce_76 = happySpecReduce_3  31# happyReduction_76
 happyReduction_76 happy_x_3
         happy_x_2
         happy_x_1
          =  case happyOut36 happy_x_1 of { (HappyWrap36 happy_var_1) -> 
+        case happyOutTok happy_x_2 of { happy_var_2 -> 
         case happyOut36 happy_x_3 of { (HappyWrap36 happy_var_3) -> 
         happyIn36
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryMod happy_var_3
-        )}}
+                 (AbsLinguaggio.Binary happy_var_1 (AbsLinguaggio.BinaryMod (posToLoc (getPos happy_var_2))) happy_var_3 ()
+        )}}}
 
 happyReduce_77 = happySpecReduce_3  31# happyReduction_77
 happyReduction_77 happy_x_3
         happy_x_2
         happy_x_1
          =  case happyOut36 happy_x_1 of { (HappyWrap36 happy_var_1) -> 
+        case happyOutTok happy_x_2 of { happy_var_2 -> 
         case happyOut36 happy_x_3 of { (HappyWrap36 happy_var_3) -> 
         happyIn36
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryOr happy_var_3
-        )}}
+                 (AbsLinguaggio.Binary happy_var_1 (AbsLinguaggio.BinaryOr (posToLoc (getPos happy_var_2))) happy_var_3 ()
+        )}}}
 
 happyReduce_78 = happySpecReduce_3  31# happyReduction_78
 happyReduction_78 happy_x_3
         happy_x_2
         happy_x_1
          =  case happyOut36 happy_x_1 of { (HappyWrap36 happy_var_1) -> 
+        case happyOutTok happy_x_2 of { happy_var_2 -> 
         case happyOut36 happy_x_3 of { (HappyWrap36 happy_var_3) -> 
         happyIn36
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryAnd happy_var_3
-        )}}
+                 (AbsLinguaggio.Binary happy_var_1 (AbsLinguaggio.BinaryAnd (posToLoc (getPos happy_var_2))) happy_var_3 ()
+        )}}}
 
 happyReduce_79 = happySpecReduce_3  31# happyReduction_79
 happyReduction_79 happy_x_3
         happy_x_2
         happy_x_1
          =  case happyOut36 happy_x_1 of { (HappyWrap36 happy_var_1) -> 
+        case happyOutTok happy_x_2 of { happy_var_2 -> 
         case happyOut36 happy_x_3 of { (HappyWrap36 happy_var_3) -> 
         happyIn36
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryEq happy_var_3
-        )}}
+                 (AbsLinguaggio.Binary happy_var_1 (AbsLinguaggio.BinaryEq (posToLoc (getPos happy_var_2))) happy_var_3 ()
+        )}}}
 
 happyReduce_80 = happySpecReduce_3  31# happyReduction_80
 happyReduction_80 happy_x_3
         happy_x_2
         happy_x_1
          =  case happyOut36 happy_x_1 of { (HappyWrap36 happy_var_1) -> 
+        case happyOutTok happy_x_2 of { happy_var_2 -> 
         case happyOut36 happy_x_3 of { (HappyWrap36 happy_var_3) -> 
         happyIn36
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryNeq happy_var_3
-        )}}
+                 (AbsLinguaggio.Binary happy_var_1 (AbsLinguaggio.BinaryNeq (posToLoc (getPos happy_var_2))) happy_var_3 ()
+        )}}}
 
 happyReduce_81 = happySpecReduce_3  31# happyReduction_81
 happyReduction_81 happy_x_3
         happy_x_2
         happy_x_1
          =  case happyOut36 happy_x_1 of { (HappyWrap36 happy_var_1) -> 
+        case happyOutTok happy_x_2 of { happy_var_2 -> 
         case happyOut36 happy_x_3 of { (HappyWrap36 happy_var_3) -> 
         happyIn36
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryLt happy_var_3
-        )}}
+                 (AbsLinguaggio.Binary happy_var_1 (AbsLinguaggio.BinaryLt (posToLoc (getPos happy_var_2))) happy_var_3 ()
+        )}}}
 
 happyReduce_82 = happySpecReduce_3  31# happyReduction_82
 happyReduction_82 happy_x_3
         happy_x_2
         happy_x_1
          =  case happyOut36 happy_x_1 of { (HappyWrap36 happy_var_1) -> 
+        case happyOutTok happy_x_2 of { happy_var_2 -> 
         case happyOut36 happy_x_3 of { (HappyWrap36 happy_var_3) -> 
         happyIn36
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryLte happy_var_3
-        )}}
+                 (AbsLinguaggio.Binary happy_var_1 (AbsLinguaggio.BinaryLte (posToLoc (getPos happy_var_2))) happy_var_3 ()
+        )}}}
 
 happyReduce_83 = happySpecReduce_3  31# happyReduction_83
 happyReduction_83 happy_x_3
         happy_x_2
         happy_x_1
          =  case happyOut36 happy_x_1 of { (HappyWrap36 happy_var_1) -> 
+        case happyOutTok happy_x_2 of { happy_var_2 -> 
         case happyOut36 happy_x_3 of { (HappyWrap36 happy_var_3) -> 
         happyIn36
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryGt happy_var_3
-        )}}
+                 (AbsLinguaggio.Binary happy_var_1 (AbsLinguaggio.BinaryGt (posToLoc (getPos happy_var_2))) happy_var_3 ()
+        )}}}
 
 happyReduce_84 = happySpecReduce_3  31# happyReduction_84
 happyReduction_84 happy_x_3
         happy_x_2
         happy_x_1
          =  case happyOut36 happy_x_1 of { (HappyWrap36 happy_var_1) -> 
+        case happyOutTok happy_x_2 of { happy_var_2 -> 
         case happyOut36 happy_x_3 of { (HappyWrap36 happy_var_3) -> 
         happyIn36
-                 (AbsLinguaggio.Binary happy_var_1 AbsLinguaggio.BinaryGte happy_var_3
-        )}}
+                 (AbsLinguaggio.Binary happy_var_1 (AbsLinguaggio.BinaryGte (posToLoc (getPos happy_var_2))) happy_var_3 ()
+        )}}}
 
 happyReduce_85 = happySpecReduce_2  31# happyReduction_85
 happyReduction_85 happy_x_2
         happy_x_1
-         =  case happyOut36 happy_x_2 of { (HappyWrap36 happy_var_2) -> 
+         =  case happyOutTok happy_x_1 of { happy_var_1 -> 
+        case happyOut36 happy_x_2 of { (HappyWrap36 happy_var_2) -> 
         happyIn36
-                 (AbsLinguaggio.Unary AbsLinguaggio.UnaryPlus happy_var_2
-        )}
+                 (AbsLinguaggio.Unary (AbsLinguaggio.UnaryPlus (posToLoc (getPos happy_var_1))) happy_var_2 ()
+        )}}
 
 happyReduce_86 = happySpecReduce_2  31# happyReduction_86
 happyReduction_86 happy_x_2
         happy_x_1
-         =  case happyOut36 happy_x_2 of { (HappyWrap36 happy_var_2) -> 
+         =  case happyOutTok happy_x_1 of { happy_var_1 -> 
+        case happyOut36 happy_x_2 of { (HappyWrap36 happy_var_2) -> 
         happyIn36
-                 (AbsLinguaggio.Unary AbsLinguaggio.UnaryMinus happy_var_2
-        )}
+                 (AbsLinguaggio.Unary (AbsLinguaggio.UnaryMinus (posToLoc (getPos happy_var_1))) happy_var_2 ()
+        )}}
 
 happyReduce_87 = happySpecReduce_2  31# happyReduction_87
 happyReduction_87 happy_x_2
         happy_x_1
-         =  case happyOut36 happy_x_2 of { (HappyWrap36 happy_var_2) -> 
+         =  case happyOutTok happy_x_1 of { happy_var_1 -> 
+        case happyOut36 happy_x_2 of { (HappyWrap36 happy_var_2) -> 
         happyIn36
-                 (AbsLinguaggio.Unary AbsLinguaggio.UnaryNot happy_var_2
-        )}
+                 (AbsLinguaggio.Unary (AbsLinguaggio.UnaryNot (posToLoc (getPos happy_var_1))) happy_var_2 ()
+        )}}
 
 happyReduce_88 = happySpecReduce_1  31# happyReduction_88
 happyReduction_88 happy_x_1
          =  case happyOut38 happy_x_1 of { (HappyWrap38 happy_var_1) -> 
         happyIn36
-                 (AbsLinguaggio.Lit happy_var_1
+                 (AbsLinguaggio.Lit happy_var_1 ()
         )}
 
 happyReduce_89 = happyReduce 4# 31# happyReduction_89
@@ -1323,41 +1342,44 @@ happyReduction_100 happy_x_1
 
 happyReduce_101 = happySpecReduce_1  34# happyReduction_101
 happyReduction_101 happy_x_1
-         =  happyIn39
-                 (AbsLinguaggio.UnaryPlus
-        )
+         =  case happyOutTok happy_x_1 of { happy_var_1 -> 
+        happyIn39
+                 (AbsLinguaggio.UnaryPlus (posToLoc (getPos happy_var_1))
+        )}
 
 happyReduce_102 = happySpecReduce_1  34# happyReduction_102
 happyReduction_102 happy_x_1
-         =  happyIn39
-                 (AbsLinguaggio.UnaryMinus
-        )
+         =  case happyOutTok happy_x_1 of { happy_var_1 -> 
+        happyIn39
+                 (AbsLinguaggio.UnaryMinus (posToLoc (getPos happy_var_1))
+        )}
 
 happyReduce_103 = happySpecReduce_1  34# happyReduction_103
 happyReduction_103 happy_x_1
-         =  happyIn39
-                 (AbsLinguaggio.UnaryNot
-        )
+         =  case happyOutTok happy_x_1 of { happy_var_1 -> 
+        happyIn39
+                 (AbsLinguaggio.UnaryNot (posToLoc (getPos happy_var_1))
+        )}
 
 happyTerminalToTok term = case term of {
         PT _ (TS _ 1) -> 2#;
         PT _ (TS _ 2) -> 3#;
-        PT _ (TS _ 3) -> 4#;
-        PT _ (TS _ 4) -> 5#;
+        PT pos (TS _ 3) -> 4#;
+        PT pos (TS _ 4) -> 5#;
         PT _ (TS _ 5) -> 6#;
-        PT _ (TS _ 6) -> 7#;
+        PT pos (TS _ 6) -> 7#;
         PT _ (TS _ 7) -> 8#;
         PT _ (TS _ 8) -> 9#;
-        PT _ (TS _ 9) -> 10#;
+        PT pos (TS _ 9) -> 10#;
         PT _ (TS _ 10) -> 11#;
-        PT _ (TS _ 11) -> 12#;
+        PT pos (TS _ 11) -> 12#;
         PT _ (TS _ 12) -> 13#;
-        PT _ (TS _ 13) -> 14#;
-        PT _ (TS _ 14) -> 15#;
-        PT _ (TS _ 15) -> 16#;
-        PT _ (TS _ 16) -> 17#;
-        PT _ (TS _ 17) -> 18#;
-        PT _ (TS _ 18) -> 19#;
+        PT pos (TS _ 13) -> 14#;
+        PT pos (TS _ 14) -> 15#;
+        PT pos (TS _ 15) -> 16#;
+        PT pos (TS _ 16) -> 17#;
+        PT pos (TS _ 17) -> 18#;
+        PT pos (TS _ 18) -> 19#;
         PT _ (TS _ 19) -> 20#;
         PT _ (TS _ 20) -> 21#;
         PT _ (TS _ 21) -> 22#;
@@ -1366,12 +1388,12 @@ happyTerminalToTok term = case term of {
         PT _ (TS _ 24) -> 25#;
         PT _ (TS _ 25) -> 26#;
         PT _ (TS _ 26) -> 27#;
-        PT _ (TS _ 27) -> 28#;
+        PT pos (TS _ 27) -> 28#;
         PT _ (TS _ 28) -> 29#;
         PT _ (TS _ 29) -> 30#;
         PT _ (TS _ 30) -> 31#;
         PT _ (TS _ 31) -> 32#;
-        PT _ (TS _ 32) -> 33#;
+        PT pos (TS _ 32) -> 33#;
         PT _ (TS _ 33) -> 34#;
         PT _ (TS _ 34) -> 35#;
         PT _ (TS _ 35) -> 36#;
@@ -1380,12 +1402,12 @@ happyTerminalToTok term = case term of {
         PT _ (TS _ 38) -> 39#;
         PT _ (TS _ 39) -> 40#;
         PT _ (TS _ 40) -> 41#;
-        PT _ (TS _ 41) -> 42#;
-        PT _ (TS _ 42) -> 43#;
+        PT pos (TS _ 41) -> 42#;
+        PT pos (TS _ 42) -> 43#;
         PT _ (TS _ 43) -> 44#;
-        PT _ (TS _ 44) -> 45#;
+        PT pos (TS _ 44) -> 45#;
         PT _ (TS _ 45) -> 46#;
-        PT _ (TS _ 46) -> 47#;
+        PT pos (TS _ 46) -> 47#;
         PT _ (TS _ 47) -> 48#;
         PT _ (TS _ 48) -> 49#;
         PT _ (TS _ 49) -> 50#;

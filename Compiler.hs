@@ -10,6 +10,7 @@ import ParLinguaggio
 import SkelLinguaggio
 import AbsLinguaggio
 import PrettyPrinter
+import PrintLinguaggio
 import StaticAnalysis
 --import TACGenerator
 import ErrM
@@ -24,10 +25,10 @@ type Verbosity = Int
 putStrV :: Verbosity -> String -> IO ()
 putStrV v s = when (v > 1) $ putStrLn s
 
-compile :: Verbosity -> ParseFun (Program ())-> FilePath -> IO ()
+compile :: Verbosity -> ParseFun (Program () () ())-> FilePath -> IO ()
 compile v p f = putStrLn f >> readFile f >>= run v p
 
-run ::  Verbosity -> ParseFun (Program ())-> String -> IO ()
+run ::  Verbosity -> ParseFun (Program () () ())-> String -> IO ()
 run v p s = let ts = myLLexer s in case p ts of
            Bad s    -> do putStrLn (colorRed "[PARSING]: FAIL" )
                           putStrLn $ errorMsg s
@@ -41,6 +42,7 @@ run v p s = let ts = myLLexer s in case p ts of
                           --putStrNC v $ removeAnsi typ
                           --putStrNC v $ removeAnsi err
                           putStrV v (StaticAnalysis.printEnv (fst (checkProgram tree)))
+                          putStrLn (prettyTree (snd (checkProgram tree)))
                           --putStrV v (show (snd (staticAnalysis tree))) -- print the annotated
                           if nErr == 0 then
                              do
@@ -88,7 +90,7 @@ countError ((x,_):xs) = if "[Error]:" `isInfixOf` x
                         else countError xs
 
 
-showTree :: Program () -> String -> (String,String,String,Int)
+showTree :: Program () () () -> String -> (String,String,String,Int)
 showTree  tree s= (("\n" ++ infoMsg "Abstract Syntax Tree\n" ++
                    {-prettyTree tree-}
                    {-prettyTree tree-}

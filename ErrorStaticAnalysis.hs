@@ -5,80 +5,131 @@ import Utils
 import PrettyPrinter
 
 
+data Error ty varInfo funInfo
+    = RedeclaredVar SimpleIdent
+    | RedeclaredConst SimpleIdent
+    | RedeclaredProcFun SimpleIdent
+    | FunNotDefined SimpleIdent
+    | NotAFunction SimpleIdent
+    | FunArgsMismatch Int Int 
+    | UnknownIdentifier SimpleIdent
+    | IncompatibleArrPtrType
+    | IncompatiblePtrArrType
+    | IncompatibleTypes String SimpleType SimpleType
+    | ComparisonTypeMismatch String SimpleType SimpleType
+    | NotIntegerType String SimpleType
+    | NotBooleanType String SimpleType
+    | NotNumericType String SimpleType
+    | IncompatibleAssignment SimpleType SimpleType
+    | NotBooleanOperation String SimpleType SimpleType
 
-tabSpace :: String
-tabSpace = "    "
-
-data Error ty
-    = RedeclaredVar (Ident ())
-    | RedeclaredConst (Ident ())
-    | RedeclaredProcFun (Ident ())
-
-    | RedeclaredFunction (Ident ty)
-    | RedeclaredParameter (Ident ty)
-    | TypeMismatch Loc (Type ty) (Type ty)
+    | RedeclaredFunction (Ident ty varInfo funInfo)
+    | RedeclaredParameter (Ident ty varInfo funInfo)
+    | TypeMismatch Loc (Type ty varInfo funInfo) (Type ty varInfo funInfo)
     | FunctionNameMismatch Loc Id
     | NonOmogeneusArray Loc
     | NonConstantExpr Loc
     | NonIntegerExpr Loc
     | NonIntegerExprInArrayAccess Loc
-    | NotDeclared (Ident ty)
-    | DereferenceExcess (Ident ty)
+    | NotDeclared (Ident ty varInfo funInfo)
+    | DereferenceExcess (Ident ty varInfo funInfo)
     | NotAnArray Loc
     | PointerArithmetic Loc
     | NonNumericValue Loc
-    | ArithmeticError (Type ty) (Type ty) Loc String 
+    | ArithmeticError (Type ty varInfo funInfo) (Type ty varInfo funInfo) Loc String 
     | DifferentLenght Loc
     | EmptyList Loc
     | NegativeSize Loc
     | NegativeSizeIndex Loc
     | DivideByZero Loc
-    | NonBasicType Loc (Type ty)
+    | NonBasicType Loc (Type ty varInfo funInfo)
 --  | RelError Loc (Type ty) (Type ty) Rel
-    | BoolOpError Loc (Type ty) (Type ty) String
-    | BoolNotError Loc (Type ty) String
-    | FuncArgsMismatch [Type ty] [Type ty] (Ident ty)
-    | FuncTypesMismatch [Type ty] [Type ty] (Ident ty) Loc
+    | BoolOpError Loc (Type ty varInfo funInfo) (Type ty varInfo funInfo) String
+    | BoolNotError Loc (Type ty varInfo funInfo) String
+    | FuncTypesMismatch [Type ty varInfo funInfo] [Type ty varInfo funInfo] (Ident ty varInfo funInfo) Loc
     | AssignConstToVar Loc
-    | ChangingConstVar (Ident ty)
+    | ChangingConstVar (Ident ty varInfo funInfo)
     | NotInLoop Loc String
-    | NonBooleanExpr Loc (Type ty)
-    | NonConstPass Loc Int (Ident ty)
-    | NonCompExpr (Type ty) (Type ty) Loc
-    | NonRefLeft Loc Int (Ident ty)
-    | NonEqRefTypes Loc Int (Ident ty) (Type ty) (Type ty)
+    | NonBooleanExpr Loc (Type ty varInfo funInfo)
+    | NonConstPass Loc Int (Ident ty varInfo funInfo)
+    | NonCompExpr (Type ty varInfo funInfo) (Type ty varInfo funInfo) Loc
+    | NonRefLeft Loc Int (Ident ty varInfo funInfo)
+    | NonEqRefTypes Loc Int (Ident ty varInfo funInfo) (Type ty varInfo funInfo) (Type ty varInfo funInfo)
     | PassingRefOfConst Loc
-    | CaseExprNotEq Loc (Type ty)
-    | ErrorDeclaration (Ident ty) String
-    | FunctionWithoutDimension (Ident ty)
+    | CaseExprNotEq Loc (Type ty varInfo funInfo)
+    | ErrorDeclaration (Ident ty varInfo funInfo) String
+    | FunctionWithoutDimension (Ident ty varInfo funInfo)
     | NotAnArrayForEach Loc
-    | NotIntegerType Loc (Type ty)
     | NotCompileTime Loc
-    | IncompatibleExprs Loc (Type ty) (Type ty)
+    | IncompatibleExprs Loc (Type ty varInfo funInfo) (Type ty varInfo funInfo)
     | FunctionAsIdentifier Loc
     | ReturnInForLoop Loc String
     | CustomError String
     -- warnings
-    | WarVarNameUsedForFunc (Ident ty)
+    | WarVarNameUsedForFunc (Ident ty varInfo funInfo)
     | WarEmptyCase Loc
     | UnsusedValue Loc
-    | UnitializedVariable (Ident ty)
+    | UnitializedVariable (Ident ty varInfo funInfo)
     | DeathCode Loc
     | NoMain Loc
     | InfiniteLoop Loc
 
-errorType :: Error ty -> String
+errorType :: Error ty varInfo funInfo -> String
 errorType x =
-    case x of 
-        RedeclaredVar (Ident name loc _) -> 
-            errorMsg "The identifier '" ++ name ++ "' has already been used for a variable." ++ " [DeclError]."
+    case x of
+        -- [Declaration Error]
+        RedeclaredVar (Ident name loc _ _ _) -> 
+            errorMsg "The identifier '" ++ name ++ "' has already been used for a variable." ++ " [Declaration Error]."
 
-        RedeclaredConst (Ident name loc _) -> 
-            errorMsg "The identifier '" ++ name ++ "' has already been used for a constant." ++ " [DeclError]."
+        RedeclaredConst (Ident name loc _ _ _) -> 
+            errorMsg "The identifier '" ++ name ++ "' has already been used for a constant." ++ " [Declaration Error]."
 
-        RedeclaredProcFun (Ident name loc _) -> 
-            errorMsg "The identifier '" ++ name ++ "' has already been used for a procedure/function." ++ " [DeclError]."
-            
+        RedeclaredProcFun (Ident name loc _ _ _) -> 
+            errorMsg "The identifier '" ++ name ++ "' has already been used for a procedure/function." ++ " [Declaration Error]."
+
+        FunNotDefined (Ident name loc _ _ _) -> 
+            errorMsg "The function '" ++ name ++ "' does not exists." ++ " [Declaration Error]."
+        
+        NotAFunction (Ident name loc _ _ _) -> 
+            errorMsg "'" ++ name ++ "' is a variable, not a function." ++ " [Declaration Error]."
+        
+        FunArgsMismatch nArgs nFormParams -> 
+            errorMsg "Function arguments mismatch: expected "++ show nFormParams ++ " parameters, got " ++ show nArgs  ++ " arguments." ++ " [Declaration Error]."
+        
+        UnknownIdentifier (Ident name loc _ _ _) -> 
+            errorMsg "Unknown identifier '" ++ name ++ "'." ++ " [Declaration Error]."
+
+        -- [Type Error]
+
+        IncompatibleArrPtrType -> 
+            errorMsg "Array element type must match pointer type."
+
+        IncompatiblePtrArrType -> 
+            errorMsg "Pointer type must match array element type."
+        
+        IncompatibleTypes op (BasicType t1) (BasicType t2) ->
+            errorMsg "Cannot perform " ++ show op ++ "operation: type " ++ show t1 ++ " is not compatible with type " ++ show t2 ++ "." ++ " [Type Error]"
+
+        ComparisonTypeMismatch op (BasicType t1) (BasicType t2) ->
+            errorMsg "Type mismatch in comparison operation " ++ show op ++ ". [Type Error]"
+
+        NotBooleanOperation op (BasicType t1) (BasicType t2) ->
+            errorMsg "Cannot perform " ++ show op ++ " operation between boolean types. [Type Error]"
+        
+        NotIntegerType op (BasicType t) ->
+            errorMsg "Integer type expected in " ++ show op ++ " operation. Got " ++ show t ++ " type instead." ++ " [Type Error]"
+
+        NotBooleanType op (BasicType t) ->
+            errorMsg "Boolean type expected in " ++ show op ++ " operation. Got " ++ show t ++ " type instead." ++ " [Type Error]"
+        
+        NotNumericType op (BasicType t) ->
+            errorMsg "Numeric type expected in " ++ show op ++ "." ++ " [Type Error]"
+        
+        IncompatibleAssignment (BasicType targetType) (BasicType sourceType) ->
+            errorMsg "Cannot assign " ++ show sourceType ++ " type to " ++ show targetType ++ " ." ++ " [Type Error]"
+        
+
+        
         --RedeclaredFunction (Ident ((loc),name)) -> 
         --    errorMsg "Symbol name '"++ name ++ "' for function declaration already used. " 
         --    ++ (lineAndColumn l c) ++  " [DeclError]."
@@ -153,10 +204,7 @@ errorType x =
         --BoolOpError (loc) ty1 ty2 op -> errorMsg "Undefined operator '"++ op ++" : "++ showType ty1 ++" x "++ showType ty2 ++" -> Bool'.\n"++tabSpace ++ "Expected 2 boolean values."++ (lineAndColumn l c) ++  " [TypeError]."
         
         --BoolNotError (loc) ty1 op -> errorMsg "Undefined operator '"++ op ++" : "++ showType ty1 ++" -> Bool'.\n"++tabSpace ++ "Expected a boolean value."++ (lineAndColumn l c) ++  " [TypeError]."
-        
-        --FuncArgsMismatch exprs params (Ident ((loc),_)) ->
-        --    errorMsg "Mismatch in number of arguments. "++ (lineAndColumn l c) ++  " [TypeError].\n"++ tabSpace ++"The call function has "++ show( length exprs) ++" arguments while " ++ show (length params)++ " are required." 
-            
+                    
         --FuncTypesMismatch exprs params (Ident ((loc),name)) (ld, cd)->
         --    errorMsg "Mismatch in argument types."++ (lineAndColumn l c) ++  " [TypeError].\n" ++ tabSpace ++ "In function call: '" ++ (showFunction ( name ++ "(" ) exprs)++ "'.\n"++tabSpace ++
         --        "Function definition found at <l:" ++ (show ld) ++ ",c:" ++ (show cd) ++ "> with signature: '" ++ ( showFunction (name++"(") params) ++
@@ -218,7 +266,7 @@ errorType x =
 ------------------ WARNINGS ---------------------
 -------------------------------------------------
 
-        WarVarNameUsedForFunc (Ident name loc _) ->
+        WarVarNameUsedForFunc (Ident name _ _ _ _) ->
             warningMsg "The identifier '" ++ name ++ "' has already been used for a function." ++ " [DeclError]."
 
 
