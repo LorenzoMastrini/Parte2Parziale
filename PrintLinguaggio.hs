@@ -276,17 +276,18 @@ instance Print (AbsLinguaggio.CompoundStatement () () ()) where
 
 instance Print (AbsLinguaggio.LExpr () () ()) where
   prt i = \case
-    AbsLinguaggio.LId id_ -> prPrec i 0 (concatD [prt 0 id_])
-    AbsLinguaggio.LArr lexpr rexprs -> prPrec i 0 (concatD [prt 0 lexpr, doc (showString "["), prt 0 rexprs, doc (showString "]")])
-    AbsLinguaggio.LDeref lexpr -> prPrec i 0 (concatD [prt 0 lexpr, doc (showString "^")])
+    AbsLinguaggio.LId id_ ty -> prPrec i 0 (concatD [prt 0 id_])
+    AbsLinguaggio.LArr lexpr rexprs ty loc -> prPrec i 0 (concatD [prt 0 lexpr, doc (showString "["), prt 0 rexprs, doc (showString "]")])
+    AbsLinguaggio.LDeref lexpr ty loc -> prPrec i 0 (concatD [prt 0 lexpr, doc (showString "^")])
 
 instance Print (AbsLinguaggio.RExpr () () ()) where
   prt i = \case
     AbsLinguaggio.Binary rexpr1 binary rexpr2 ty -> prPrec i 0 (concatD [prt 0 rexpr1, prt 0 binary, prt 0 rexpr2])
     AbsLinguaggio.Unary unary rexpr ty -> prPrec i 0 (concatD [prt 0 unary, prt 0 rexpr])
+    AbsLinguaggio.Ref unary lexpr ty -> prPrec i 0 (concatD [doc (showString "ref "), prt 0 unary, prt 0 lexpr])
     AbsLinguaggio.Lit literal _ -> prPrec i 0 (concatD [prt 0 literal])
     AbsLinguaggio.FCall id_ rexprs loc -> prPrec i 0 (concatD [prt 0 id_, doc (showString "("), prt 0 rexprs, doc (showString ")")])
-    AbsLinguaggio.LExpr lexpr -> prPrec i 0 (concatD [prt 0 lexpr])
+    AbsLinguaggio.LExpr lexpr ty -> prPrec i 0 (concatD [prt 0 lexpr])
 
 instance Print [AbsLinguaggio.RExpr () () ()] where
   prt _ [] = concatD []

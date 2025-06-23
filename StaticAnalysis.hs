@@ -288,7 +288,7 @@ checkRExpr env expr = case expr of
     Binary e1 op e2 _ ->
         let
             (env1, e1Enriched) = checkRExpr env e1
-            (env2, e2Enriched) = checkRExpr env e2
+            (env2, e2Enriched) = checkRExpr env1 e2
             t1 = getRExprType e1Enriched
             t2 = getRExprType e2Enriched
             (env3, typeInfo) = checkBinaryOp env op t1 t2
@@ -312,10 +312,21 @@ checkRExpr env expr = case expr of
                     then setIdentTypeInfo (enrichIdent ident retTy NoVarInfo (FunInfo retTy params)) TUnknown
                     else enrichIdent ident retTy NoVarInfo (FunInfo retTy params)
             in (env1, FCall identEnriched argsEnriched loc)
-    LExpr lexpr -> 
+    Ref op@(UnaryRef loc) rexpr _ ->
+        let
+            (env1, rexprEnriched) = checkRExpr env rexpr
+            isLExprResult = isLExpr rexprEnriched
+        in if isLExprResult
+            then let
+                t = getRExprType rexprEnriched
+                typeInfo = TPointer t
+                in (env1, Ref op rexprEnriched typeInfo)
+            else (addError env1 (NotLExpr op, loc), Ref op rexprEnriched TUnknown)
+    LExpr lexpr _ ->
         let
             (env1, lexprEnriched) = checkLExpr env lexpr
-        in (env1, LExpr lexprEnriched)
+            typeInfo = getLExprTypeInfo lexprEnriched
+        in (env1, LExpr lexprEnriched typeInfo)
 
 checkArgsNumWithTypeError :: Env -> [SimpleRExpr] -> [SimpleFormalParameters] -> Loc -> (Env, [RExpr TypeInfo VarInfo FunInfo], Bool)
 checkArgsNumWithTypeError env [] [] loc = (env, [], False)
@@ -342,19 +353,34 @@ checkArgType env argEnriched (FormParam _ _ paramType) loc =
 
 checkLExpr :: Env -> SimpleLExpr -> (Env, LExpr TypeInfo VarInfo FunInfo)
 checkLExpr env lexpr = case lexpr of
-    LId ident ->
+    LId ident _ ->
         let
             (env1, identEnriched) = identExists env ident
-        in (env1, LId identEnriched)
-    LArr lexpr' indices ->
+            typeInfo = getIdentTypeInfo identEnriched
+        in (env1, LId identEnriched typeInfo)
+    LArr lexpr' indices _ loc ->
         let
             (env1, lexprEnriched) = checkLExpr env lexpr'
-            (env2, indicesEnriched) = checkIndices env indices
-        in (env2, LArr lexprEnriched indicesEnriched)
-    LDeref lexpr' ->
+            (env2, indicesEnriched) = checkIndices env1 indices
+            isArrayResult = isArray lexprEnriched
+        in if isArrayResult
+            then
+                let
+                    t = getLExprType lexprEnriched
+                    (TArray i ty) = typeInfoFromType t
+                    --(env3, indicesEnrichedChecked) = checkRange env2 lexpr' indices -------------------------- TODO
+                in (env2, LArr lexprEnriched indicesEnriched (typeInfoFromType ty) loc)
+            else (addError env1 (NotAnArray, loc), LArr lexprEnriched indicesEnriched TUnknown loc)
+    LDeref lexpr' _ loc ->
         let
             (env1, lexprEnriched) = checkLExpr env lexpr'
-        in (env1, LDeref lexprEnriched)
+            isPointerResult = isPointer lexprEnriched
+        in if isPointerResult
+            then let
+                (Pointer t) = getLExprType lexprEnriched
+                typeInfo = typeInfoFromType t
+                in (env1, LDeref lexprEnriched typeInfo loc)
+            else (addError env1 (NotAPointer, loc), LDeref lexprEnriched TUnknown loc)
 
 checkIndices :: Env -> [SimpleRExpr] -> (Env, [RExpr TypeInfo VarInfo FunInfo])
 checkIndices env [] = (env, [])
@@ -940,31 +966,45 @@ enrichLitExpr lit = case lit of
     Literal_true     -> Lit lit TBoolean
     Literal_false    -> Lit lit TBoolean
 
--- Extract type info from LExpr
-getLExprTypeInfo :: LExpr TypeInfo VarInfo FunInfo -> TypeInfo
-getLExprTypeInfo (LId ident) = getIdentTypeInfo ident
-getLExprTypeInfo (LArr lexpr _) = case getLExprTypeInfo lexpr of
-    TArray _ arrTy -> typeInfoFromType arrTy
-    _              -> TUnknown
-getLExprTypeInfo (LDeref lexpr) = case getLExprTypeInfo lexpr of
-    TPointer ptrTy -> typeInfoFromType ptrTy
-    _              -> TUnknown
-
--- Extract type info from RExpr
-getRExprTypeInfo :: RExpr TypeInfo VarInfo FunInfo -> TypeInfo
-getRExprTypeInfo (Binary _ _ _ ty) = ty
-getRExprTypeInfo (Unary _ _ ty)   = ty
-getRExprTypeInfo (Lit _ ty)        = ty
-getRExprTypeInfo (FCall ident _ _)   = getIdentTypeInfo ident
-getRExprTypeInfo (LExpr lexpr)     = getLExprTypeInfo lexpr
-
--- Extract type from LExpr
-getLExprType :: LExpr TypeInfo VarInfo FunInfo -> SimpleType
-getLExprType = typeFromTypeInfo . getLExprTypeInfo
-
 -- Extract type from RExpr
 getRExprType :: RExpr TypeInfo VarInfo FunInfo -> SimpleType
 getRExprType = typeFromTypeInfo . getRExprTypeInfo
+
+-- Extract type info from RExpr
+getRExprTypeInfo :: RExpr TypeInfo VarInfo FunInfo -> TypeInfo
+getRExprTypeInfo (Binary _ _ _ ty)  = ty
+getRExprTypeInfo (Unary _ _ ty)     = ty
+getRExprTypeInfo (Lit _ ty)         = ty
+getRExprTypeInfo (FCall ident _ _)  = getIdentTypeInfo ident
+getRExprTypeInfo (Ref _ _ ty)       = ty
+getRExprTypeInfo (LExpr lexpr ty)   = getLExprTypeInfo lexpr
+
+getLExprType :: LExpr TypeInfo VarInfo FunInfo -> SimpleType
+getLExprType = typeFromTypeInfo . getLExprTypeInfo
+
+-- Extract type info from LExpr
+getLExprTypeInfo :: LExpr TypeInfo VarInfo FunInfo -> TypeInfo
+getLExprTypeInfo (LId ident _) = getIdentTypeInfo ident
+getLExprTypeInfo (LArr lexpr _ _ _) = case getLExprTypeInfo lexpr of
+    TArray _ arrTy -> typeInfoFromType arrTy
+    _              -> TUnknown
+getLExprTypeInfo (LDeref lexpr _ _) = case getLExprTypeInfo lexpr of
+    TPointer ptrTy -> typeInfoFromType ptrTy
+    _              -> TUnknown
+
+getArrIndicesType :: IndexType TypeInfo VarInfo FunInfo -> SimpleIndexType
+getArrIndicesType (IndexRange c1 c2) = IndexRange (toSimpleConstant c1) (toSimpleConstant c2)
+
+-- Funzione di supporto per convertire una costante arricchita in una semplice
+toSimpleConstant :: Constant ty varInfo funInfo -> Constant () () ()
+toSimpleConstant (ConstId s i)      = ConstId s (toSimpleIdent i)
+toSimpleConstant (ConstInt s n)     = ConstInt s n
+toSimpleConstant (ConstDouble s d)  = ConstDouble s d
+toSimpleConstant (ConstStr str)     = ConstStr str
+
+-- Funzione di supporto per convertire un identificatore arricchito in uno semplice
+toSimpleIdent :: Ident ty varInfo funInfo -> Ident () () ()
+toSimpleIdent (Ident name loc _ _ _) = Ident name loc () () ()
 
 -- Helper function to get TypeInfo from Ident
 getIdentTypeInfo :: Ident TypeInfo VarInfo FunInfo -> TypeInfo
@@ -979,23 +1019,25 @@ typeFromTypeInfo TCharacter = BasicType Character
 typeFromTypeInfo TString = BasicType String
 typeFromTypeInfo TVoid = BasicType Void
 typeFromTypeInfo TUnknown = BasicType Integer  -- Default fallback for unknown types
-typeFromTypeInfo (TArray _ _) = BasicType Integer  -- TODO: Implement proper array type
-typeFromTypeInfo (TPointer _) = BasicType Integer  -- TODO: Implement proper pointer type
+typeFromTypeInfo (TArray idxs t) = Array idxs t
+typeFromTypeInfo (TPointer t) = Pointer t
 
 setRExprTypeInfo :: RExpr TypeInfo VarInfo FunInfo -> TypeInfo -> RExpr TypeInfo VarInfo FunInfo
 setRExprTypeInfo (Binary e1 op e2 _) ty = Binary e1 op e2 ty
 setRExprTypeInfo (Unary op e _) ty = Unary op e ty
 setRExprTypeInfo (Lit lit _) ty = Lit lit ty
 setRExprTypeInfo (FCall ident args loc) ty = FCall (setIdentTypeInfo ident ty) args loc
-setRExprTypeInfo (LExpr lexpr) ty = LExpr (setLExprTypeInfo lexpr ty)
+setRExprTypeInfo (LExpr lexpr _) ty = LExpr (setLExprTypeInfo lexpr ty) ty
 
 setIdentTypeInfo :: Ident TypeInfo VarInfo FunInfo -> TypeInfo -> Ident TypeInfo VarInfo FunInfo
 setIdentTypeInfo (Ident name loc _ v f) ty = Ident name loc ty v f
 
 setLExprTypeInfo :: LExpr TypeInfo VarInfo FunInfo -> TypeInfo -> LExpr TypeInfo VarInfo FunInfo
-setLExprTypeInfo (LId ident) ty = LId (setIdentTypeInfo ident ty)
-setLExprTypeInfo (LArr lexpr indices) ty = LArr (setLExprTypeInfo lexpr ty) indices
-setLExprTypeInfo (LDeref lexpr) ty = LDeref (setLExprTypeInfo lexpr ty)
+setLExprTypeInfo (LId ident identTy) ty = LId (setIdentTypeInfo ident ty) identTy
+setLExprTypeInfo (LArr lexpr indices identTy loc) ty = LArr (setLExprTypeInfo lexpr ty) indices identTy loc
+setLExprTypeInfo (LDeref lexpr identTy loc) ty = LDeref (setLExprTypeInfo lexpr ty) identTy loc
+
+
 
 -----------------------------------------------------------
 -------------------- SUPPORT FUNCTIONS --------------------
@@ -1046,6 +1088,22 @@ paramsToList :: [SimpleFormalParameters] -> [SimpleFormalParameters]
 paramsToList = concatMap expandParam
   where
     expandParam (FormParam mod idents ty) = [FormParam mod [ident] ty | ident <- idents]
+
+isLExpr :: RExpr TypeInfo VarInfo FunInfo -> Bool
+isLExpr (LExpr {}) = True
+isLExpr _          = False
+
+isPointer :: LExpr TypeInfo VarInfo FunInfo -> Bool
+isPointer (LId _ (TPointer {}))         = True
+isPointer (LArr _ _ (TPointer {}) _)    = True
+isPointer (LDeref _ (TPointer {}) _)    = True
+isPointer _                             = False
+
+isArray :: LExpr TypeInfo VarInfo FunInfo -> Bool
+isArray (LId _ (TArray {}))         = True
+isArray (LArr _ _ (TArray {}) _)    = True
+isArray (LDeref _ (TArray {}) _)    = True
+isArray _                           = False
 
 
 -----------------------------------------------------------

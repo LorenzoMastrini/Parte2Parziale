@@ -56,9 +56,9 @@ import LexLinguaggio
   'Integer'   { PT _ (TS _ 21) }
   'Real'      { PT _ (TS _ 22) }
   'String'    { PT _ (TS _ 23) }
-  '['         { PT _ (TS _ 24) }
+  '['         { PT pos (TS _ 24) }
   ']'         { PT _ (TS _ 25) }
-  '^'         { PT _ (TS _ 26) }
+  '^'         { PT pos (TS _ 26) }
   'and'       { PT pos (TS _ 27) }
   'array'     { PT _ (TS _ 28) }
   'begin'     { PT _ (TS _ 29) }
@@ -249,9 +249,10 @@ ListCaseItem
 
 LExpr :: { AbsLinguaggio.LExpr () () () }
 LExpr
-  : Ident { AbsLinguaggio.LId $1 }
-  | LExpr '[' ListRExpr ']' { AbsLinguaggio.LArr $1 $3 }
-  | LExpr '^' { AbsLinguaggio.LDeref $1 }
+  : Ident { AbsLinguaggio.LId $1 () }
+  | LExpr '[' ListRExpr ']' { AbsLinguaggio.LArr $1 $3 () (posToLoc (getPos $2)) }
+  | LExpr '^' { AbsLinguaggio.LDeref $1 () (posToLoc (getPos $2)) }
+  | '(' LExpr ')' { $2 }
 
 RExpr :: { AbsLinguaggio.RExpr () () () }
 RExpr
@@ -272,10 +273,11 @@ RExpr
   | '+' RExpr %prec UnaryPlus { AbsLinguaggio.Unary (AbsLinguaggio.UnaryPlus (posToLoc (getPos $1))) $2 () }
   | '-' RExpr %prec UnaryMinus { AbsLinguaggio.Unary (AbsLinguaggio.UnaryMinus (posToLoc (getPos $1))) $2 () }
   | 'not' RExpr %prec 'not' { AbsLinguaggio.Unary (AbsLinguaggio.UnaryNot (posToLoc (getPos $1))) $2 () }
+  | '^' RExpr %prec '^' { AbsLinguaggio.Ref (AbsLinguaggio.UnaryRef (posToLoc (getPos $1))) $2 () }
   | Literal { AbsLinguaggio.Lit $1 () }
   | Ident '(' ListRExpr ')' { AbsLinguaggio.FCall $1 $3 (posToLoc (getPos $2)) }
   | '(' RExpr ')' { $2 }
-  | LExpr { AbsLinguaggio.LExpr $1 }
+  | LExpr { AbsLinguaggio.LExpr $1 () }
 
 ListRExpr :: { [AbsLinguaggio.RExpr () () ()] }
 ListRExpr
@@ -297,6 +299,7 @@ Unary
   : '+' { AbsLinguaggio.UnaryPlus (posToLoc (getPos $1)) }
   | '-' { AbsLinguaggio.UnaryMinus (posToLoc (getPos $1)) }
   | 'not' { AbsLinguaggio.UnaryNot (posToLoc (getPos $1)) }
+  | '^' { AbsLinguaggio.UnaryRef (posToLoc (getPos $1)) }
 
 {
 

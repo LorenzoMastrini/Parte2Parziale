@@ -421,7 +421,7 @@ instance PrintTree EnrichedFormalParameters where
 instance PrintTree EnrichedType where
   buildTree (Array it ty) = (colorDecl "Array") : (paddingMultiple (buildTree it) ++ paddingSingle (buildTree ty))
   buildTree (Pointer ty) = (colorDecl "Pointer") : paddingSingle (buildTree ty)
-  buildTree (BasicType bt) = [colorDecl "BasicType " ++ show bt]
+  buildTree (BasicType bt) = [colorDecl ("BasicType " ++ show bt)]
 
 instance PrintTree [EnrichedIndexType] where
     buildTree [] = []
@@ -447,7 +447,7 @@ instance PrintTree [EnrichedStatement] where
 
 instance PrintTree EnrichedStatement where
   buildTree (Stmts stmt) = (colorStmt "Stmts") : paddingSingle (buildTree stmt)
-  buildTree (RExprStmt rexpr ty) = (colorStmt "RExprStmt" ++ " " ++ colorGrey (show ty)) : paddingSingle (buildTree rexpr)
+  buildTree (RExprStmt rexpr ty) = (colorStmt ("RExprStmt " ++ colorGrey (show ty))) : paddingSingle (buildTree rexpr)
   buildTree (Assign lexpr rexpr loc) = (colorStmt "Assign") : (paddingMultiple (buildTree lexpr) ++ paddingSingle (buildTree rexpr))
   buildTree (While rexpr stmt) = (colorStmt "While") : (paddingMultiple (buildTree rexpr) ++ paddingSingle (buildTree stmt))
   buildTree (DoWhile stmt rexpr) = (colorStmt "DoWhile") : (paddingMultiple (buildTree stmt) ++ paddingSingle (buildTree rexpr))
@@ -469,9 +469,9 @@ instance PrintTree EnrichedCaseItem where
   buildTree (CaseItem const stmt) = colorStmt "CaseItem" : (paddingMultiple (buildTree const) ++ paddingSingle (buildTree stmt))
 
 instance PrintTree EnrichedLExpr where
-  buildTree (LId id) = [colorLE "LId " ++ showId id]
-  buildTree (LArr lexpr rexprs) = colorLE "LArr" : (paddingMultiple (buildTree lexpr) ++ buildTree rexprs)
-  buildTree (LDeref lexpr) = colorLE "LDeref" : paddingSingle (buildTree lexpr)
+  buildTree (LId id tyy) = [colorLE ("LId " ++ colorGrey (show tyy)) ++ " " ++ showId id]
+  buildTree (LArr lexpr rexprs ty loc) = colorLE ("LArr " ++ colorGrey (show ty)) : (paddingMultiple (buildTree lexpr) ++ buildTree rexprs)
+  buildTree (LDeref lexpr ty loc) = colorLE ("LDeref " ++ colorGrey (show ty)) : paddingSingle (buildTree lexpr)
 
 instance PrintTree [EnrichedRExpr] where
     buildTree [] = []
@@ -481,9 +481,10 @@ instance PrintTree [EnrichedRExpr] where
 instance PrintTree EnrichedRExpr where
   buildTree (Binary r1 op r2 ty) = colorExpr ("Binary " ++ show op ++ " " ++ colorGrey (show ty)) : (paddingMultiple (buildTree r1) ++ paddingSingle (buildTree r2))
   buildTree (Unary op r ty) = colorExpr ("Unary " ++ show op ++ " " ++ colorGrey (show ty)) : paddingSingle (buildTree r)
+  buildTree (Ref op lexpr ty) = colorExpr ("Ref " ++ colorGrey (show ty)) : (paddingMultiple (buildTree op) ++ paddingSingle (buildTree lexpr))
   buildTree (Lit lit ty) = colorExpr ("Lit " ++ colorGrey (show ty)) : paddingSingle (buildTree lit)
-  buildTree (FCall id rexprs loc) = (colorExpr "FCall " ++ showId id) : buildTree rexprs
-  buildTree (LExpr lexpr) = colorExpr "LExpr" : paddingSingle (buildTree lexpr)
+  buildTree (FCall id rexprs loc) = (colorExpr ("FCall " ++ showId id)) : buildTree rexprs
+  buildTree (LExpr lexpr ty) = colorExpr ("LExpr " ++ colorGrey (show ty)) : paddingSingle (buildTree lexpr)
 
 instance PrintTree Literal where
   buildTree (LiteralInteger i) = ["Integer " ++ show i]
@@ -500,3 +501,9 @@ instance PrintTree (Constant () () ()) where
     buildTree (ConstInt sign i) = [show sign ++ " " ++ show i]
     buildTree (ConstDouble sign d) = [show sign ++ " " ++ show d]
     buildTree (ConstStr s) = ["\"" ++ s ++ "\""]
+
+instance PrintTree Unary where
+  buildTree (UnaryPlus loc) = ["UnaryPlus " ++ show loc]
+  buildTree (UnaryMinus loc) = ["UnaryMinus " ++ show loc]
+  buildTree (UnaryNot loc) = ["UnaryNot " ++ show loc]
+  buildTree (UnaryRef loc) = ["UnaryRef " ++ show loc]

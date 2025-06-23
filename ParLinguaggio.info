@@ -6,11 +6,13 @@ state 17 contains 1 shift/reduce conflicts.
 state 40 contains 1 shift/reduce conflicts.
 state 58 contains 1 shift/reduce conflicts.
 state 63 contains 1 shift/reduce conflicts.
-state 177 contains 1 shift/reduce conflicts.
+state 127 contains 1 shift/reduce conflicts.
+state 183 contains 1 shift/reduce conflicts.
 
-rule 101 is unused
-rule 102 is unused
 rule 103 is unused
+rule 104 is unused
+rule 105 is unused
+rule 106 is unused
 
 -----------------------------------------------------------------------------
 Grammar
@@ -86,39 +88,42 @@ Grammar
 	LExpr -> Ident                                     (68)
 	LExpr -> LExpr '[' ListRExpr ']'                   (69)
 	LExpr -> LExpr '^'                                 (70)
-	RExpr -> RExpr '+' RExpr                           (71)
-	RExpr -> RExpr '-' RExpr                           (72)
-	RExpr -> RExpr '*' RExpr                           (73)
-	RExpr -> RExpr '/' RExpr                           (74)
-	RExpr -> RExpr 'div' RExpr                         (75)
-	RExpr -> RExpr 'mod' RExpr                         (76)
-	RExpr -> RExpr 'or' RExpr                          (77)
-	RExpr -> RExpr 'and' RExpr                         (78)
-	RExpr -> RExpr '=' RExpr                           (79)
-	RExpr -> RExpr '<>' RExpr                          (80)
-	RExpr -> RExpr '<' RExpr                           (81)
-	RExpr -> RExpr '<=' RExpr                          (82)
-	RExpr -> RExpr '>' RExpr                           (83)
-	RExpr -> RExpr '>=' RExpr                          (84)
-	RExpr -> '+' RExpr                                 (85)
-	RExpr -> '-' RExpr                                 (86)
-	RExpr -> 'not' RExpr                               (87)
-	RExpr -> Literal                                   (88)
-	RExpr -> Ident '(' ListRExpr ')'                   (89)
-	RExpr -> '(' RExpr ')'                             (90)
-	RExpr -> LExpr                                     (91)
-	ListRExpr -> RExpr                                 (92)
-	ListRExpr -> RExpr ',' ListRExpr                   (93)
-	ListRExpr ->                                       (94)
-	Literal -> Integer                                 (95)
-	Literal -> Double                                  (96)
-	Literal -> Char                                    (97)
-	Literal -> String                                  (98)
-	Literal -> 'true'                                  (99)
-	Literal -> 'false'                                 (100)
-	Unary -> '+'                                       (101)
-	Unary -> '-'                                       (102)
-	Unary -> 'not'                                     (103)
+	LExpr -> '(' LExpr ')'                             (71)
+	RExpr -> RExpr '+' RExpr                           (72)
+	RExpr -> RExpr '-' RExpr                           (73)
+	RExpr -> RExpr '*' RExpr                           (74)
+	RExpr -> RExpr '/' RExpr                           (75)
+	RExpr -> RExpr 'div' RExpr                         (76)
+	RExpr -> RExpr 'mod' RExpr                         (77)
+	RExpr -> RExpr 'or' RExpr                          (78)
+	RExpr -> RExpr 'and' RExpr                         (79)
+	RExpr -> RExpr '=' RExpr                           (80)
+	RExpr -> RExpr '<>' RExpr                          (81)
+	RExpr -> RExpr '<' RExpr                           (82)
+	RExpr -> RExpr '<=' RExpr                          (83)
+	RExpr -> RExpr '>' RExpr                           (84)
+	RExpr -> RExpr '>=' RExpr                          (85)
+	RExpr -> '+' RExpr                                 (86)
+	RExpr -> '-' RExpr                                 (87)
+	RExpr -> 'not' RExpr                               (88)
+	RExpr -> '^' RExpr                                 (89)
+	RExpr -> Literal                                   (90)
+	RExpr -> Ident '(' ListRExpr ')'                   (91)
+	RExpr -> '(' RExpr ')'                             (92)
+	RExpr -> LExpr                                     (93)
+	ListRExpr -> RExpr                                 (94)
+	ListRExpr -> RExpr ',' ListRExpr                   (95)
+	ListRExpr ->                                       (96)
+	Literal -> Integer                                 (97)
+	Literal -> Double                                  (98)
+	Literal -> Char                                    (99)
+	Literal -> String                                  (100)
+	Literal -> 'true'                                  (101)
+	Literal -> 'false'                                 (102)
+	Unary -> '+'                                       (103)
+	Unary -> '-'                                       (104)
+	Unary -> 'not'                                     (105)
+	Unary -> '^'                                       (106)
 
 -----------------------------------------------------------------------------
 Terminals
@@ -146,9 +151,9 @@ Terminals
 	'Integer'      { PT _ (TS _ 21) }
 	'Real'         { PT _ (TS _ 22) }
 	'String'       { PT _ (TS _ 23) }
-	'['            { PT _ (TS _ 24) }
+	'['            { PT pos (TS _ 24) }
 	']'            { PT _ (TS _ 25) }
-	'^'            { PT _ (TS _ 26) }
+	'^'            { PT pos (TS _ 26) }
 	'and'          { PT pos (TS _ 27) }
 	'array'        { PT _ (TS _ 28) }
 	'begin'        { PT _ (TS _ 29) }
@@ -217,11 +222,11 @@ Non-terminals
 	OptElse         rules 62, 63
 	CaseItem        rule  64
 	ListCaseItem    rules 65, 66, 67
-	LExpr           rules 68, 69, 70
-	RExpr           rules 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91
-	ListRExpr       rules 92, 93, 94
-	Literal         rules 95, 96, 97, 98, 99, 100
-	Unary           rules 101, 102, 103
+	LExpr           rules 68, 69, 70, 71
+	RExpr           rules 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93
+	ListRExpr       rules 94, 95, 96
+	Literal         rules 97, 98, 99, 100, 101, 102
+	Unary           rules 103, 104, 105, 106
 
 -----------------------------------------------------------------------------
 States
@@ -951,14 +956,14 @@ State 67
 
 	ProcedureAndFunctionHeading -> 'procedure' Ident . '(' ListFormalParameters ')' ';'    (rule 23)
 
-	'('            shift, and enter state 111
+	'('            shift, and enter state 112
 
 
 State 68
 
 	ProcedureAndFunctionHeading -> 'function' Ident . '(' ListFormalParameters ')' ':' Type ';'    (rule 24)
 
-	'('            shift, and enter state 110
+	'('            shift, and enter state 111
 
 
 State 69
@@ -985,17 +990,18 @@ State 71
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
 	'begin'        shift, and enter state 71
-	'case'         shift, and enter state 101
-	'false'        shift, and enter state 102
-	'for'          shift, and enter state 103
-	'if'           shift, and enter state 104
-	'not'          shift, and enter state 105
-	'repeat'       shift, and enter state 106
-	'true'         shift, and enter state 107
-	'while'        shift, and enter state 108
+	'case'         shift, and enter state 102
+	'false'        shift, and enter state 103
+	'for'          shift, and enter state 104
+	'if'           shift, and enter state 105
+	'not'          shift, and enter state 106
+	'repeat'       shift, and enter state 107
+	'true'         shift, and enter state 108
+	'while'        shift, and enter state 109
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -1199,7 +1205,7 @@ State 83
 	'^'            shift, and enter state 28
 	'array'        shift, and enter state 29
 
-	Type           goto state 145
+	Type           goto state 149
 	BasicType      goto state 22
 
 State 84
@@ -1229,9 +1235,9 @@ State 86
 State 87
 
 	LExpr -> Ident .                                    (rule 68)
-	RExpr -> Ident . '(' ListRExpr ')'                  (rule 89)
+	RExpr -> Ident . '(' ListRExpr ')'                  (rule 91)
 
-	'('            shift, and enter state 144
+	'('            shift, and enter state 148
 	')'            reduce using rule 68
 	'*'            reduce using rule 68
 	'+'            reduce using rule 68
@@ -1265,485 +1271,7 @@ State 87
 
 State 88
 
-	Literal -> Char .                                   (rule 97)
-
-	')'            reduce using rule 97
-	'*'            reduce using rule 97
-	'+'            reduce using rule 97
-	','            reduce using rule 97
-	'-'            reduce using rule 97
-	'/'            reduce using rule 97
-	';'            reduce using rule 97
-	'<'            reduce using rule 97
-	'<='           reduce using rule 97
-	'<>'           reduce using rule 97
-	'='            reduce using rule 97
-	'>'            reduce using rule 97
-	'>='           reduce using rule 97
-	']'            reduce using rule 97
-	'and'          reduce using rule 97
-	'div'          reduce using rule 97
-	'do'           reduce using rule 97
-	'downto'       reduce using rule 97
-	'else'         reduce using rule 97
-	'end'          reduce using rule 97
-	'mod'          reduce using rule 97
-	'of'           reduce using rule 97
-	'or'           reduce using rule 97
-	'then'         reduce using rule 97
-	'to'           reduce using rule 97
-	'until'        reduce using rule 97
-
-
-State 89
-
-	Literal -> Double .                                 (rule 96)
-
-	')'            reduce using rule 96
-	'*'            reduce using rule 96
-	'+'            reduce using rule 96
-	','            reduce using rule 96
-	'-'            reduce using rule 96
-	'/'            reduce using rule 96
-	';'            reduce using rule 96
-	'<'            reduce using rule 96
-	'<='           reduce using rule 96
-	'<>'           reduce using rule 96
-	'='            reduce using rule 96
-	'>'            reduce using rule 96
-	'>='           reduce using rule 96
-	']'            reduce using rule 96
-	'and'          reduce using rule 96
-	'div'          reduce using rule 96
-	'do'           reduce using rule 96
-	'downto'       reduce using rule 96
-	'else'         reduce using rule 96
-	'end'          reduce using rule 96
-	'mod'          reduce using rule 96
-	'of'           reduce using rule 96
-	'or'           reduce using rule 96
-	'then'         reduce using rule 96
-	'to'           reduce using rule 96
-	'until'        reduce using rule 96
-
-
-State 90
-
-	Literal -> Integer .                                (rule 95)
-
-	')'            reduce using rule 95
-	'*'            reduce using rule 95
-	'+'            reduce using rule 95
-	','            reduce using rule 95
-	'-'            reduce using rule 95
-	'/'            reduce using rule 95
-	';'            reduce using rule 95
-	'<'            reduce using rule 95
-	'<='           reduce using rule 95
-	'<>'           reduce using rule 95
-	'='            reduce using rule 95
-	'>'            reduce using rule 95
-	'>='           reduce using rule 95
-	']'            reduce using rule 95
-	'and'          reduce using rule 95
-	'div'          reduce using rule 95
-	'do'           reduce using rule 95
-	'downto'       reduce using rule 95
-	'else'         reduce using rule 95
-	'end'          reduce using rule 95
-	'mod'          reduce using rule 95
-	'of'           reduce using rule 95
-	'or'           reduce using rule 95
-	'then'         reduce using rule 95
-	'to'           reduce using rule 95
-	'until'        reduce using rule 95
-
-
-State 91
-
-	Literal -> String .                                 (rule 98)
-
-	')'            reduce using rule 98
-	'*'            reduce using rule 98
-	'+'            reduce using rule 98
-	','            reduce using rule 98
-	'-'            reduce using rule 98
-	'/'            reduce using rule 98
-	';'            reduce using rule 98
-	'<'            reduce using rule 98
-	'<='           reduce using rule 98
-	'<>'           reduce using rule 98
-	'='            reduce using rule 98
-	'>'            reduce using rule 98
-	'>='           reduce using rule 98
-	']'            reduce using rule 98
-	'and'          reduce using rule 98
-	'div'          reduce using rule 98
-	'do'           reduce using rule 98
-	'downto'       reduce using rule 98
-	'else'         reduce using rule 98
-	'end'          reduce using rule 98
-	'mod'          reduce using rule 98
-	'of'           reduce using rule 98
-	'or'           reduce using rule 98
-	'then'         reduce using rule 98
-	'to'           reduce using rule 98
-	'until'        reduce using rule 98
-
-
-State 92
-
-	Statement -> CompoundStatement .                    (rule 53)
-
-	';'            reduce using rule 53
-	'else'         reduce using rule 53
-	'end'          reduce using rule 53
-	'until'        reduce using rule 53
-
-
-State 93
-
-	CompoundStatement -> 'begin' ListStatement . 'end'    (rule 50)
-
-	'end'          shift, and enter state 143
-
-
-State 94
-
-	ListStatement -> Statement . ';'                    (rule 51)
-	ListStatement -> Statement . ';' ListStatement      (rule 52)
-
-	';'            shift, and enter state 142
-
-
-State 95
-
-	Statement -> LExpr . ':=' RExpr                     (rule 55)
-	LExpr -> LExpr . '[' ListRExpr ']'                  (rule 69)
-	LExpr -> LExpr . '^'                                (rule 70)
-	RExpr -> LExpr .                                    (rule 91)
-
-	'*'            reduce using rule 91
-	'+'            reduce using rule 91
-	'-'            reduce using rule 91
-	'/'            reduce using rule 91
-	':='           shift, and enter state 139
-	';'            reduce using rule 91
-	'<'            reduce using rule 91
-	'<='           reduce using rule 91
-	'<>'           reduce using rule 91
-	'='            reduce using rule 91
-	'>'            reduce using rule 91
-	'>='           reduce using rule 91
-	'['            shift, and enter state 140
-	'^'            shift, and enter state 141
-	'and'          reduce using rule 91
-	'div'          reduce using rule 91
-	'else'         reduce using rule 91
-	'end'          reduce using rule 91
-	'mod'          reduce using rule 91
-	'or'           reduce using rule 91
-	'until'        reduce using rule 91
-
-
-State 96
-
-	Statement -> RExpr .                                (rule 54)
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
-
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
-	';'            reduce using rule 54
-	'<'            shift, and enter state 129
-	'<='           shift, and enter state 130
-	'<>'           shift, and enter state 131
-	'='            shift, and enter state 132
-	'>'            shift, and enter state 133
-	'>='           shift, and enter state 134
-	'and'          shift, and enter state 135
-	'div'          shift, and enter state 136
-	'else'         reduce using rule 54
-	'end'          reduce using rule 54
-	'mod'          shift, and enter state 137
-	'or'           shift, and enter state 138
-	'until'        reduce using rule 54
-
-
-State 97
-
-	RExpr -> Literal .                                  (rule 88)
-
-	')'            reduce using rule 88
-	'*'            reduce using rule 88
-	'+'            reduce using rule 88
-	','            reduce using rule 88
-	'-'            reduce using rule 88
-	'/'            reduce using rule 88
-	';'            reduce using rule 88
-	'<'            reduce using rule 88
-	'<='           reduce using rule 88
-	'<>'           reduce using rule 88
-	'='            reduce using rule 88
-	'>'            reduce using rule 88
-	'>='           reduce using rule 88
-	']'            reduce using rule 88
-	'and'          reduce using rule 88
-	'div'          reduce using rule 88
-	'do'           reduce using rule 88
-	'downto'       reduce using rule 88
-	'else'         reduce using rule 88
-	'end'          reduce using rule 88
-	'mod'          reduce using rule 88
-	'of'           reduce using rule 88
-	'or'           reduce using rule 88
-	'then'         reduce using rule 88
-	'to'           reduce using rule 88
-	'until'        reduce using rule 88
-
-
-State 98
-
-	RExpr -> '(' . RExpr ')'                            (rule 90)
-
-	'('            shift, and enter state 98
-	'+'            shift, and enter state 99
-	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
-	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
-	L_doubl        shift, and enter state 77
-	L_integ        shift, and enter state 78
-	L_quoted       shift, and enter state 52
-
-	Ident          goto state 87
-	Char           goto state 88
-	Double         goto state 89
-	Integer        goto state 90
-	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 124
-	Literal        goto state 97
-
-State 99
-
-	RExpr -> '+' . RExpr                                (rule 85)
-
-	'('            shift, and enter state 98
-	'+'            shift, and enter state 99
-	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
-	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
-	L_doubl        shift, and enter state 77
-	L_integ        shift, and enter state 78
-	L_quoted       shift, and enter state 52
-
-	Ident          goto state 87
-	Char           goto state 88
-	Double         goto state 89
-	Integer        goto state 90
-	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 123
-	Literal        goto state 97
-
-State 100
-
-	RExpr -> '-' . RExpr                                (rule 86)
-
-	'('            shift, and enter state 98
-	'+'            shift, and enter state 99
-	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
-	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
-	L_doubl        shift, and enter state 77
-	L_integ        shift, and enter state 78
-	L_quoted       shift, and enter state 52
-
-	Ident          goto state 87
-	Char           goto state 88
-	Double         goto state 89
-	Integer        goto state 90
-	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 122
-	Literal        goto state 97
-
-State 101
-
-	Statement -> 'case' . RExpr 'of' ListCaseItem 'end'    (rule 61)
-
-	'('            shift, and enter state 98
-	'+'            shift, and enter state 99
-	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
-	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
-	L_doubl        shift, and enter state 77
-	L_integ        shift, and enter state 78
-	L_quoted       shift, and enter state 52
-
-	Ident          goto state 87
-	Char           goto state 88
-	Double         goto state 89
-	Integer        goto state 90
-	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 121
-	Literal        goto state 97
-
-State 102
-
-	Literal -> 'false' .                                (rule 100)
-
-	')'            reduce using rule 100
-	'*'            reduce using rule 100
-	'+'            reduce using rule 100
-	','            reduce using rule 100
-	'-'            reduce using rule 100
-	'/'            reduce using rule 100
-	';'            reduce using rule 100
-	'<'            reduce using rule 100
-	'<='           reduce using rule 100
-	'<>'           reduce using rule 100
-	'='            reduce using rule 100
-	'>'            reduce using rule 100
-	'>='           reduce using rule 100
-	']'            reduce using rule 100
-	'and'          reduce using rule 100
-	'div'          reduce using rule 100
-	'do'           reduce using rule 100
-	'downto'       reduce using rule 100
-	'else'         reduce using rule 100
-	'end'          reduce using rule 100
-	'mod'          reduce using rule 100
-	'of'           reduce using rule 100
-	'or'           reduce using rule 100
-	'then'         reduce using rule 100
-	'to'           reduce using rule 100
-	'until'        reduce using rule 100
-
-
-State 103
-
-	Statement -> 'for' . LExpr ':=' RExpr 'to' RExpr 'do' Statement    (rule 58)
-	Statement -> 'for' . LExpr ':=' RExpr 'downto' RExpr 'do' Statement    (rule 59)
-
-	L_Ident        shift, and enter state 2
-
-	Ident          goto state 119
-	LExpr          goto state 120
-
-State 104
-
-	Statement -> 'if' . RExpr 'then' Statement OptElse    (rule 60)
-
-	'('            shift, and enter state 98
-	'+'            shift, and enter state 99
-	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
-	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
-	L_doubl        shift, and enter state 77
-	L_integ        shift, and enter state 78
-	L_quoted       shift, and enter state 52
-
-	Ident          goto state 87
-	Char           goto state 88
-	Double         goto state 89
-	Integer        goto state 90
-	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 118
-	Literal        goto state 97
-
-State 105
-
-	RExpr -> 'not' . RExpr                              (rule 87)
-
-	'('            shift, and enter state 98
-	'+'            shift, and enter state 99
-	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
-	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
-	L_doubl        shift, and enter state 77
-	L_integ        shift, and enter state 78
-	L_quoted       shift, and enter state 52
-
-	Ident          goto state 87
-	Char           goto state 88
-	Double         goto state 89
-	Integer        goto state 90
-	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 117
-	Literal        goto state 97
-
-State 106
-
-	Statement -> 'repeat' . Statement 'until' RExpr     (rule 57)
-
-	'('            shift, and enter state 98
-	'+'            shift, and enter state 99
-	'-'            shift, and enter state 100
-	'begin'        shift, and enter state 71
-	'case'         shift, and enter state 101
-	'false'        shift, and enter state 102
-	'for'          shift, and enter state 103
-	'if'           shift, and enter state 104
-	'not'          shift, and enter state 105
-	'repeat'       shift, and enter state 106
-	'true'         shift, and enter state 107
-	'while'        shift, and enter state 108
-	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
-	L_doubl        shift, and enter state 77
-	L_integ        shift, and enter state 78
-	L_quoted       shift, and enter state 52
-
-	Ident          goto state 87
-	Char           goto state 88
-	Double         goto state 89
-	Integer        goto state 90
-	String         goto state 91
-	CompoundStatementgoto state 92
-	Statement      goto state 116
-	LExpr          goto state 95
-	RExpr          goto state 96
-	Literal        goto state 97
-
-State 107
-
-	Literal -> 'true' .                                 (rule 99)
+	Literal -> Char .                                   (rule 99)
 
 	')'            reduce using rule 99
 	'*'            reduce using rule 99
@@ -1773,18 +1301,241 @@ State 107
 	'until'        reduce using rule 99
 
 
-State 108
+State 89
 
-	Statement -> 'while' . RExpr 'do' Statement         (rule 56)
+	Literal -> Double .                                 (rule 98)
+
+	')'            reduce using rule 98
+	'*'            reduce using rule 98
+	'+'            reduce using rule 98
+	','            reduce using rule 98
+	'-'            reduce using rule 98
+	'/'            reduce using rule 98
+	';'            reduce using rule 98
+	'<'            reduce using rule 98
+	'<='           reduce using rule 98
+	'<>'           reduce using rule 98
+	'='            reduce using rule 98
+	'>'            reduce using rule 98
+	'>='           reduce using rule 98
+	']'            reduce using rule 98
+	'and'          reduce using rule 98
+	'div'          reduce using rule 98
+	'do'           reduce using rule 98
+	'downto'       reduce using rule 98
+	'else'         reduce using rule 98
+	'end'          reduce using rule 98
+	'mod'          reduce using rule 98
+	'of'           reduce using rule 98
+	'or'           reduce using rule 98
+	'then'         reduce using rule 98
+	'to'           reduce using rule 98
+	'until'        reduce using rule 98
+
+
+State 90
+
+	Literal -> Integer .                                (rule 97)
+
+	')'            reduce using rule 97
+	'*'            reduce using rule 97
+	'+'            reduce using rule 97
+	','            reduce using rule 97
+	'-'            reduce using rule 97
+	'/'            reduce using rule 97
+	';'            reduce using rule 97
+	'<'            reduce using rule 97
+	'<='           reduce using rule 97
+	'<>'           reduce using rule 97
+	'='            reduce using rule 97
+	'>'            reduce using rule 97
+	'>='           reduce using rule 97
+	']'            reduce using rule 97
+	'and'          reduce using rule 97
+	'div'          reduce using rule 97
+	'do'           reduce using rule 97
+	'downto'       reduce using rule 97
+	'else'         reduce using rule 97
+	'end'          reduce using rule 97
+	'mod'          reduce using rule 97
+	'of'           reduce using rule 97
+	'or'           reduce using rule 97
+	'then'         reduce using rule 97
+	'to'           reduce using rule 97
+	'until'        reduce using rule 97
+
+
+State 91
+
+	Literal -> String .                                 (rule 100)
+
+	')'            reduce using rule 100
+	'*'            reduce using rule 100
+	'+'            reduce using rule 100
+	','            reduce using rule 100
+	'-'            reduce using rule 100
+	'/'            reduce using rule 100
+	';'            reduce using rule 100
+	'<'            reduce using rule 100
+	'<='           reduce using rule 100
+	'<>'           reduce using rule 100
+	'='            reduce using rule 100
+	'>'            reduce using rule 100
+	'>='           reduce using rule 100
+	']'            reduce using rule 100
+	'and'          reduce using rule 100
+	'div'          reduce using rule 100
+	'do'           reduce using rule 100
+	'downto'       reduce using rule 100
+	'else'         reduce using rule 100
+	'end'          reduce using rule 100
+	'mod'          reduce using rule 100
+	'of'           reduce using rule 100
+	'or'           reduce using rule 100
+	'then'         reduce using rule 100
+	'to'           reduce using rule 100
+	'until'        reduce using rule 100
+
+
+State 92
+
+	Statement -> CompoundStatement .                    (rule 53)
+
+	';'            reduce using rule 53
+	'else'         reduce using rule 53
+	'end'          reduce using rule 53
+	'until'        reduce using rule 53
+
+
+State 93
+
+	CompoundStatement -> 'begin' ListStatement . 'end'    (rule 50)
+
+	'end'          shift, and enter state 147
+
+
+State 94
+
+	ListStatement -> Statement . ';'                    (rule 51)
+	ListStatement -> Statement . ';' ListStatement      (rule 52)
+
+	';'            shift, and enter state 146
+
+
+State 95
+
+	Statement -> LExpr . ':=' RExpr                     (rule 55)
+	LExpr -> LExpr . '[' ListRExpr ']'                  (rule 69)
+	LExpr -> LExpr . '^'                                (rule 70)
+	RExpr -> LExpr .                                    (rule 93)
+
+	'*'            reduce using rule 93
+	'+'            reduce using rule 93
+	'-'            reduce using rule 93
+	'/'            reduce using rule 93
+	':='           shift, and enter state 143
+	';'            reduce using rule 93
+	'<'            reduce using rule 93
+	'<='           reduce using rule 93
+	'<>'           reduce using rule 93
+	'='            reduce using rule 93
+	'>'            reduce using rule 93
+	'>='           reduce using rule 93
+	'['            shift, and enter state 144
+	'^'            shift, and enter state 145
+	'and'          reduce using rule 93
+	'div'          reduce using rule 93
+	'else'         reduce using rule 93
+	'end'          reduce using rule 93
+	'mod'          reduce using rule 93
+	'or'           reduce using rule 93
+	'until'        reduce using rule 93
+
+
+State 96
+
+	Statement -> RExpr .                                (rule 54)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
+
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
+	';'            reduce using rule 54
+	'<'            shift, and enter state 133
+	'<='           shift, and enter state 134
+	'<>'           shift, and enter state 135
+	'='            shift, and enter state 136
+	'>'            shift, and enter state 137
+	'>='           shift, and enter state 138
+	'and'          shift, and enter state 139
+	'div'          shift, and enter state 140
+	'else'         reduce using rule 54
+	'end'          reduce using rule 54
+	'mod'          shift, and enter state 141
+	'or'           shift, and enter state 142
+	'until'        reduce using rule 54
+
+
+State 97
+
+	RExpr -> Literal .                                  (rule 90)
+
+	')'            reduce using rule 90
+	'*'            reduce using rule 90
+	'+'            reduce using rule 90
+	','            reduce using rule 90
+	'-'            reduce using rule 90
+	'/'            reduce using rule 90
+	';'            reduce using rule 90
+	'<'            reduce using rule 90
+	'<='           reduce using rule 90
+	'<>'           reduce using rule 90
+	'='            reduce using rule 90
+	'>'            reduce using rule 90
+	'>='           reduce using rule 90
+	']'            reduce using rule 90
+	'and'          reduce using rule 90
+	'div'          reduce using rule 90
+	'do'           reduce using rule 90
+	'downto'       reduce using rule 90
+	'else'         reduce using rule 90
+	'end'          reduce using rule 90
+	'mod'          reduce using rule 90
+	'of'           reduce using rule 90
+	'or'           reduce using rule 90
+	'then'         reduce using rule 90
+	'to'           reduce using rule 90
+	'until'        reduce using rule 90
+
+
+State 98
+
+	LExpr -> '(' . LExpr ')'                            (rule 71)
+	RExpr -> '(' . RExpr ')'                            (rule 92)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -1794,11 +1545,302 @@ State 108
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 115
+	LExpr          goto state 127
+	RExpr          goto state 128
 	Literal        goto state 97
 
+State 99
+
+	RExpr -> '+' . RExpr                                (rule 86)
+
+	'('            shift, and enter state 98
+	'+'            shift, and enter state 99
+	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
+	L_Ident        shift, and enter state 2
+	L_charac       shift, and enter state 110
+	L_doubl        shift, and enter state 77
+	L_integ        shift, and enter state 78
+	L_quoted       shift, and enter state 52
+
+	Ident          goto state 87
+	Char           goto state 88
+	Double         goto state 89
+	Integer        goto state 90
+	String         goto state 91
+	LExpr          goto state 115
+	RExpr          goto state 126
+	Literal        goto state 97
+
+State 100
+
+	RExpr -> '-' . RExpr                                (rule 87)
+
+	'('            shift, and enter state 98
+	'+'            shift, and enter state 99
+	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
+	L_Ident        shift, and enter state 2
+	L_charac       shift, and enter state 110
+	L_doubl        shift, and enter state 77
+	L_integ        shift, and enter state 78
+	L_quoted       shift, and enter state 52
+
+	Ident          goto state 87
+	Char           goto state 88
+	Double         goto state 89
+	Integer        goto state 90
+	String         goto state 91
+	LExpr          goto state 115
+	RExpr          goto state 125
+	Literal        goto state 97
+
+State 101
+
+	RExpr -> '^' . RExpr                                (rule 89)
+
+	'('            shift, and enter state 98
+	'+'            shift, and enter state 99
+	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
+	L_Ident        shift, and enter state 2
+	L_charac       shift, and enter state 110
+	L_doubl        shift, and enter state 77
+	L_integ        shift, and enter state 78
+	L_quoted       shift, and enter state 52
+
+	Ident          goto state 87
+	Char           goto state 88
+	Double         goto state 89
+	Integer        goto state 90
+	String         goto state 91
+	LExpr          goto state 115
+	RExpr          goto state 124
+	Literal        goto state 97
+
+State 102
+
+	Statement -> 'case' . RExpr 'of' ListCaseItem 'end'    (rule 61)
+
+	'('            shift, and enter state 98
+	'+'            shift, and enter state 99
+	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
+	L_Ident        shift, and enter state 2
+	L_charac       shift, and enter state 110
+	L_doubl        shift, and enter state 77
+	L_integ        shift, and enter state 78
+	L_quoted       shift, and enter state 52
+
+	Ident          goto state 87
+	Char           goto state 88
+	Double         goto state 89
+	Integer        goto state 90
+	String         goto state 91
+	LExpr          goto state 115
+	RExpr          goto state 123
+	Literal        goto state 97
+
+State 103
+
+	Literal -> 'false' .                                (rule 102)
+
+	')'            reduce using rule 102
+	'*'            reduce using rule 102
+	'+'            reduce using rule 102
+	','            reduce using rule 102
+	'-'            reduce using rule 102
+	'/'            reduce using rule 102
+	';'            reduce using rule 102
+	'<'            reduce using rule 102
+	'<='           reduce using rule 102
+	'<>'           reduce using rule 102
+	'='            reduce using rule 102
+	'>'            reduce using rule 102
+	'>='           reduce using rule 102
+	']'            reduce using rule 102
+	'and'          reduce using rule 102
+	'div'          reduce using rule 102
+	'do'           reduce using rule 102
+	'downto'       reduce using rule 102
+	'else'         reduce using rule 102
+	'end'          reduce using rule 102
+	'mod'          reduce using rule 102
+	'of'           reduce using rule 102
+	'or'           reduce using rule 102
+	'then'         reduce using rule 102
+	'to'           reduce using rule 102
+	'until'        reduce using rule 102
+
+
+State 104
+
+	Statement -> 'for' . LExpr ':=' RExpr 'to' RExpr 'do' Statement    (rule 58)
+	Statement -> 'for' . LExpr ':=' RExpr 'downto' RExpr 'do' Statement    (rule 59)
+
+	'('            shift, and enter state 122
+	L_Ident        shift, and enter state 2
+
+	Ident          goto state 120
+	LExpr          goto state 121
+
+State 105
+
+	Statement -> 'if' . RExpr 'then' Statement OptElse    (rule 60)
+
+	'('            shift, and enter state 98
+	'+'            shift, and enter state 99
+	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
+	L_Ident        shift, and enter state 2
+	L_charac       shift, and enter state 110
+	L_doubl        shift, and enter state 77
+	L_integ        shift, and enter state 78
+	L_quoted       shift, and enter state 52
+
+	Ident          goto state 87
+	Char           goto state 88
+	Double         goto state 89
+	Integer        goto state 90
+	String         goto state 91
+	LExpr          goto state 115
+	RExpr          goto state 119
+	Literal        goto state 97
+
+State 106
+
+	RExpr -> 'not' . RExpr                              (rule 88)
+
+	'('            shift, and enter state 98
+	'+'            shift, and enter state 99
+	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
+	L_Ident        shift, and enter state 2
+	L_charac       shift, and enter state 110
+	L_doubl        shift, and enter state 77
+	L_integ        shift, and enter state 78
+	L_quoted       shift, and enter state 52
+
+	Ident          goto state 87
+	Char           goto state 88
+	Double         goto state 89
+	Integer        goto state 90
+	String         goto state 91
+	LExpr          goto state 115
+	RExpr          goto state 118
+	Literal        goto state 97
+
+State 107
+
+	Statement -> 'repeat' . Statement 'until' RExpr     (rule 57)
+
+	'('            shift, and enter state 98
+	'+'            shift, and enter state 99
+	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
+	'begin'        shift, and enter state 71
+	'case'         shift, and enter state 102
+	'false'        shift, and enter state 103
+	'for'          shift, and enter state 104
+	'if'           shift, and enter state 105
+	'not'          shift, and enter state 106
+	'repeat'       shift, and enter state 107
+	'true'         shift, and enter state 108
+	'while'        shift, and enter state 109
+	L_Ident        shift, and enter state 2
+	L_charac       shift, and enter state 110
+	L_doubl        shift, and enter state 77
+	L_integ        shift, and enter state 78
+	L_quoted       shift, and enter state 52
+
+	Ident          goto state 87
+	Char           goto state 88
+	Double         goto state 89
+	Integer        goto state 90
+	String         goto state 91
+	CompoundStatementgoto state 92
+	Statement      goto state 117
+	LExpr          goto state 95
+	RExpr          goto state 96
+	Literal        goto state 97
+
+State 108
+
+	Literal -> 'true' .                                 (rule 101)
+
+	')'            reduce using rule 101
+	'*'            reduce using rule 101
+	'+'            reduce using rule 101
+	','            reduce using rule 101
+	'-'            reduce using rule 101
+	'/'            reduce using rule 101
+	';'            reduce using rule 101
+	'<'            reduce using rule 101
+	'<='           reduce using rule 101
+	'<>'           reduce using rule 101
+	'='            reduce using rule 101
+	'>'            reduce using rule 101
+	'>='           reduce using rule 101
+	']'            reduce using rule 101
+	'and'          reduce using rule 101
+	'div'          reduce using rule 101
+	'do'           reduce using rule 101
+	'downto'       reduce using rule 101
+	'else'         reduce using rule 101
+	'end'          reduce using rule 101
+	'mod'          reduce using rule 101
+	'of'           reduce using rule 101
+	'or'           reduce using rule 101
+	'then'         reduce using rule 101
+	'to'           reduce using rule 101
+	'until'        reduce using rule 101
+
+
 State 109
+
+	Statement -> 'while' . RExpr 'do' Statement         (rule 56)
+
+	'('            shift, and enter state 98
+	'+'            shift, and enter state 99
+	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
+	L_Ident        shift, and enter state 2
+	L_charac       shift, and enter state 110
+	L_doubl        shift, and enter state 77
+	L_integ        shift, and enter state 78
+	L_quoted       shift, and enter state 52
+
+	Ident          goto state 87
+	Char           goto state 88
+	Double         goto state 89
+	Integer        goto state 90
+	String         goto state 91
+	LExpr          goto state 115
+	RExpr          goto state 116
+	Literal        goto state 97
+
+State 110
 
 	Char -> L_charac .                                  (rule 2)
 
@@ -1830,9 +1872,23 @@ State 109
 	'until'        reduce using rule 2
 
 
-State 110
+State 111
 
 	ProcedureAndFunctionHeading -> 'function' Ident '(' . ListFormalParameters ')' ':' Type ';'    (rule 24)
+
+	')'            reduce using rule 26
+	':'            reduce using rule 29
+	'valres'       shift, and enter state 10
+	'var'          shift, and enter state 11
+	L_Ident        reduce using rule 29
+
+	FormalParametersgoto state 7
+	ListFormalParametersgoto state 114
+	OptModality    goto state 9
+
+State 112
+
+	ProcedureAndFunctionHeading -> 'procedure' Ident '(' . ListFormalParameters ')' ';'    (rule 23)
 
 	')'            reduce using rule 26
 	':'            reduce using rule 29
@@ -1844,129 +1900,309 @@ State 110
 	ListFormalParametersgoto state 113
 	OptModality    goto state 9
 
-State 111
-
-	ProcedureAndFunctionHeading -> 'procedure' Ident '(' . ListFormalParameters ')' ';'    (rule 23)
-
-	')'            reduce using rule 26
-	':'            reduce using rule 29
-	'valres'       shift, and enter state 10
-	'var'          shift, and enter state 11
-	L_Ident        reduce using rule 29
-
-	FormalParametersgoto state 7
-	ListFormalParametersgoto state 112
-	OptModality    goto state 9
-
-State 112
+State 113
 
 	ProcedureAndFunctionHeading -> 'procedure' Ident '(' ListFormalParameters . ')' ';'    (rule 23)
 
-	')'            shift, and enter state 172
-
-
-State 113
-
-	ProcedureAndFunctionHeading -> 'function' Ident '(' ListFormalParameters . ')' ':' Type ';'    (rule 24)
-
-	')'            shift, and enter state 171
+	')'            shift, and enter state 178
 
 
 State 114
 
-	LExpr -> LExpr . '[' ListRExpr ']'                  (rule 69)
-	LExpr -> LExpr . '^'                                (rule 70)
-	RExpr -> LExpr .                                    (rule 91)
+	ProcedureAndFunctionHeading -> 'function' Ident '(' ListFormalParameters . ')' ':' Type ';'    (rule 24)
 
-	')'            reduce using rule 91
-	'*'            reduce using rule 91
-	'+'            reduce using rule 91
-	','            reduce using rule 91
-	'-'            reduce using rule 91
-	'/'            reduce using rule 91
-	';'            reduce using rule 91
-	'<'            reduce using rule 91
-	'<='           reduce using rule 91
-	'<>'           reduce using rule 91
-	'='            reduce using rule 91
-	'>'            reduce using rule 91
-	'>='           reduce using rule 91
-	'['            shift, and enter state 140
-	']'            reduce using rule 91
-	'^'            shift, and enter state 141
-	'and'          reduce using rule 91
-	'div'          reduce using rule 91
-	'do'           reduce using rule 91
-	'downto'       reduce using rule 91
-	'else'         reduce using rule 91
-	'end'          reduce using rule 91
-	'mod'          reduce using rule 91
-	'of'           reduce using rule 91
-	'or'           reduce using rule 91
-	'then'         reduce using rule 91
-	'to'           reduce using rule 91
-	'until'        reduce using rule 91
+	')'            shift, and enter state 177
 
 
 State 115
 
-	Statement -> 'while' RExpr . 'do' Statement         (rule 56)
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
+	LExpr -> LExpr . '[' ListRExpr ']'                  (rule 69)
+	LExpr -> LExpr . '^'                                (rule 70)
+	RExpr -> LExpr .                                    (rule 93)
 
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
-	'<'            shift, and enter state 129
-	'<='           shift, and enter state 130
-	'<>'           shift, and enter state 131
-	'='            shift, and enter state 132
-	'>'            shift, and enter state 133
-	'>='           shift, and enter state 134
-	'and'          shift, and enter state 135
-	'div'          shift, and enter state 136
-	'do'           shift, and enter state 170
-	'mod'          shift, and enter state 137
-	'or'           shift, and enter state 138
+	')'            reduce using rule 93
+	'*'            reduce using rule 93
+	'+'            reduce using rule 93
+	','            reduce using rule 93
+	'-'            reduce using rule 93
+	'/'            reduce using rule 93
+	';'            reduce using rule 93
+	'<'            reduce using rule 93
+	'<='           reduce using rule 93
+	'<>'           reduce using rule 93
+	'='            reduce using rule 93
+	'>'            reduce using rule 93
+	'>='           reduce using rule 93
+	'['            shift, and enter state 144
+	']'            reduce using rule 93
+	'^'            shift, and enter state 145
+	'and'          reduce using rule 93
+	'div'          reduce using rule 93
+	'do'           reduce using rule 93
+	'downto'       reduce using rule 93
+	'else'         reduce using rule 93
+	'end'          reduce using rule 93
+	'mod'          reduce using rule 93
+	'of'           reduce using rule 93
+	'or'           reduce using rule 93
+	'then'         reduce using rule 93
+	'to'           reduce using rule 93
+	'until'        reduce using rule 93
 
 
 State 116
 
-	Statement -> 'repeat' Statement . 'until' RExpr     (rule 57)
+	Statement -> 'while' RExpr . 'do' Statement         (rule 56)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
 
-	'until'        shift, and enter state 169
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
+	'<'            shift, and enter state 133
+	'<='           shift, and enter state 134
+	'<>'           shift, and enter state 135
+	'='            shift, and enter state 136
+	'>'            shift, and enter state 137
+	'>='           shift, and enter state 138
+	'and'          shift, and enter state 139
+	'div'          shift, and enter state 140
+	'do'           shift, and enter state 176
+	'mod'          shift, and enter state 141
+	'or'           shift, and enter state 142
 
 
 State 117
 
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
-	RExpr -> 'not' RExpr .                              (rule 87)
+	Statement -> 'repeat' Statement . 'until' RExpr     (rule 57)
+
+	'until'        shift, and enter state 175
+
+
+State 118
+
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
+	RExpr -> 'not' RExpr .                              (rule 88)
+
+	')'            reduce using rule 88
+	'*'            reduce using rule 88
+	'+'            reduce using rule 88
+	','            reduce using rule 88
+	'-'            reduce using rule 88
+	'/'            reduce using rule 88
+	';'            reduce using rule 88
+	'<'            reduce using rule 88
+	'<='           reduce using rule 88
+	'<>'           reduce using rule 88
+	'='            reduce using rule 88
+	'>'            reduce using rule 88
+	'>='           reduce using rule 88
+	']'            reduce using rule 88
+	'and'          reduce using rule 88
+	'div'          reduce using rule 88
+	'do'           reduce using rule 88
+	'downto'       reduce using rule 88
+	'else'         reduce using rule 88
+	'end'          reduce using rule 88
+	'mod'          reduce using rule 88
+	'of'           reduce using rule 88
+	'or'           reduce using rule 88
+	'then'         reduce using rule 88
+	'to'           reduce using rule 88
+	'until'        reduce using rule 88
+
+
+State 119
+
+	Statement -> 'if' RExpr . 'then' Statement OptElse    (rule 60)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
+
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
+	'<'            shift, and enter state 133
+	'<='           shift, and enter state 134
+	'<>'           shift, and enter state 135
+	'='            shift, and enter state 136
+	'>'            shift, and enter state 137
+	'>='           shift, and enter state 138
+	'and'          shift, and enter state 139
+	'div'          shift, and enter state 140
+	'mod'          shift, and enter state 141
+	'or'           shift, and enter state 142
+	'then'         shift, and enter state 174
+
+
+State 120
+
+	LExpr -> Ident .                                    (rule 68)
+
+	')'            reduce using rule 68
+	':='           reduce using rule 68
+	'['            reduce using rule 68
+	'^'            reduce using rule 68
+
+
+State 121
+
+	Statement -> 'for' LExpr . ':=' RExpr 'to' RExpr 'do' Statement    (rule 58)
+	Statement -> 'for' LExpr . ':=' RExpr 'downto' RExpr 'do' Statement    (rule 59)
+	LExpr -> LExpr . '[' ListRExpr ']'                  (rule 69)
+	LExpr -> LExpr . '^'                                (rule 70)
+
+	':='           shift, and enter state 173
+	'['            shift, and enter state 144
+	'^'            shift, and enter state 145
+
+
+State 122
+
+	LExpr -> '(' . LExpr ')'                            (rule 71)
+
+	'('            shift, and enter state 122
+	L_Ident        shift, and enter state 2
+
+	Ident          goto state 120
+	LExpr          goto state 172
+
+State 123
+
+	Statement -> 'case' RExpr . 'of' ListCaseItem 'end'    (rule 61)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
+
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
+	'<'            shift, and enter state 133
+	'<='           shift, and enter state 134
+	'<>'           shift, and enter state 135
+	'='            shift, and enter state 136
+	'>'            shift, and enter state 137
+	'>='           shift, and enter state 138
+	'and'          shift, and enter state 139
+	'div'          shift, and enter state 140
+	'mod'          shift, and enter state 141
+	'of'           shift, and enter state 171
+	'or'           shift, and enter state 142
+
+
+State 124
+
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
+	RExpr -> '^' RExpr .                                (rule 89)
+
+	')'            reduce using rule 89
+	'*'            reduce using rule 89
+	'+'            reduce using rule 89
+	','            reduce using rule 89
+	'-'            reduce using rule 89
+	'/'            reduce using rule 89
+	';'            reduce using rule 89
+	'<'            reduce using rule 89
+	'<='           reduce using rule 89
+	'<>'           reduce using rule 89
+	'='            reduce using rule 89
+	'>'            reduce using rule 89
+	'>='           reduce using rule 89
+	']'            reduce using rule 89
+	'and'          reduce using rule 89
+	'div'          reduce using rule 89
+	'do'           reduce using rule 89
+	'downto'       reduce using rule 89
+	'else'         reduce using rule 89
+	'end'          reduce using rule 89
+	'mod'          reduce using rule 89
+	'of'           reduce using rule 89
+	'or'           reduce using rule 89
+	'then'         reduce using rule 89
+	'to'           reduce using rule 89
+	'until'        reduce using rule 89
+
+
+State 125
+
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
+	RExpr -> '-' RExpr .                                (rule 87)
 
 	')'            reduce using rule 87
 	'*'            reduce using rule 87
@@ -1996,114 +2232,23 @@ State 117
 	'until'        reduce using rule 87
 
 
-State 118
+State 126
 
-	Statement -> 'if' RExpr . 'then' Statement OptElse    (rule 60)
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
-
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
-	'<'            shift, and enter state 129
-	'<='           shift, and enter state 130
-	'<>'           shift, and enter state 131
-	'='            shift, and enter state 132
-	'>'            shift, and enter state 133
-	'>='           shift, and enter state 134
-	'and'          shift, and enter state 135
-	'div'          shift, and enter state 136
-	'mod'          shift, and enter state 137
-	'or'           shift, and enter state 138
-	'then'         shift, and enter state 168
-
-
-State 119
-
-	LExpr -> Ident .                                    (rule 68)
-
-	':='           reduce using rule 68
-	'['            reduce using rule 68
-	'^'            reduce using rule 68
-
-
-State 120
-
-	Statement -> 'for' LExpr . ':=' RExpr 'to' RExpr 'do' Statement    (rule 58)
-	Statement -> 'for' LExpr . ':=' RExpr 'downto' RExpr 'do' Statement    (rule 59)
-	LExpr -> LExpr . '[' ListRExpr ']'                  (rule 69)
-	LExpr -> LExpr . '^'                                (rule 70)
-
-	':='           shift, and enter state 167
-	'['            shift, and enter state 140
-	'^'            shift, and enter state 141
-
-
-State 121
-
-	Statement -> 'case' RExpr . 'of' ListCaseItem 'end'    (rule 61)
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
-
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
-	'<'            shift, and enter state 129
-	'<='           shift, and enter state 130
-	'<>'           shift, and enter state 131
-	'='            shift, and enter state 132
-	'>'            shift, and enter state 133
-	'>='           shift, and enter state 134
-	'and'          shift, and enter state 135
-	'div'          shift, and enter state 136
-	'mod'          shift, and enter state 137
-	'of'           shift, and enter state 166
-	'or'           shift, and enter state 138
-
-
-State 122
-
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
-	RExpr -> '-' RExpr .                                (rule 86)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
+	RExpr -> '+' RExpr .                                (rule 86)
 
 	')'            reduce using rule 86
 	'*'            reduce using rule 86
@@ -2133,199 +2278,82 @@ State 122
 	'until'        reduce using rule 86
 
 
-State 123
-
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
-	RExpr -> '+' RExpr .                                (rule 85)
-
-	')'            reduce using rule 85
-	'*'            reduce using rule 85
-	'+'            reduce using rule 85
-	','            reduce using rule 85
-	'-'            reduce using rule 85
-	'/'            reduce using rule 85
-	';'            reduce using rule 85
-	'<'            reduce using rule 85
-	'<='           reduce using rule 85
-	'<>'           reduce using rule 85
-	'='            reduce using rule 85
-	'>'            reduce using rule 85
-	'>='           reduce using rule 85
-	']'            reduce using rule 85
-	'and'          reduce using rule 85
-	'div'          reduce using rule 85
-	'do'           reduce using rule 85
-	'downto'       reduce using rule 85
-	'else'         reduce using rule 85
-	'end'          reduce using rule 85
-	'mod'          reduce using rule 85
-	'of'           reduce using rule 85
-	'or'           reduce using rule 85
-	'then'         reduce using rule 85
-	'to'           reduce using rule 85
-	'until'        reduce using rule 85
-
-
-State 124
-
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
-	RExpr -> '(' RExpr . ')'                            (rule 90)
-
-	')'            shift, and enter state 165
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
-	'<'            shift, and enter state 129
-	'<='           shift, and enter state 130
-	'<>'           shift, and enter state 131
-	'='            shift, and enter state 132
-	'>'            shift, and enter state 133
-	'>='           shift, and enter state 134
-	'and'          shift, and enter state 135
-	'div'          shift, and enter state 136
-	'mod'          shift, and enter state 137
-	'or'           shift, and enter state 138
-
-
-State 125
-
-	RExpr -> RExpr '*' . RExpr                          (rule 73)
-
-	'('            shift, and enter state 98
-	'+'            shift, and enter state 99
-	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
-	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
-	L_doubl        shift, and enter state 77
-	L_integ        shift, and enter state 78
-	L_quoted       shift, and enter state 52
-
-	Ident          goto state 87
-	Char           goto state 88
-	Double         goto state 89
-	Integer        goto state 90
-	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 164
-	Literal        goto state 97
-
-State 126
-
-	RExpr -> RExpr '+' . RExpr                          (rule 71)
-
-	'('            shift, and enter state 98
-	'+'            shift, and enter state 99
-	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
-	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
-	L_doubl        shift, and enter state 77
-	L_integ        shift, and enter state 78
-	L_quoted       shift, and enter state 52
-
-	Ident          goto state 87
-	Char           goto state 88
-	Double         goto state 89
-	Integer        goto state 90
-	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 163
-	Literal        goto state 97
-
 State 127
 
-	RExpr -> RExpr '-' . RExpr                          (rule 72)
+	LExpr -> LExpr . '[' ListRExpr ']'                  (rule 69)
+	LExpr -> LExpr . '^'                                (rule 70)
+	LExpr -> '(' LExpr . ')'                            (rule 71)
+	RExpr -> LExpr .                                    (rule 93)
 
-	'('            shift, and enter state 98
-	'+'            shift, and enter state 99
-	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
-	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
-	L_doubl        shift, and enter state 77
-	L_integ        shift, and enter state 78
-	L_quoted       shift, and enter state 52
+	')'            shift, and enter state 170
+			(reduce using rule 93)
 
-	Ident          goto state 87
-	Char           goto state 88
-	Double         goto state 89
-	Integer        goto state 90
-	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 162
-	Literal        goto state 97
+	'*'            reduce using rule 93
+	'+'            reduce using rule 93
+	'-'            reduce using rule 93
+	'/'            reduce using rule 93
+	'<'            reduce using rule 93
+	'<='           reduce using rule 93
+	'<>'           reduce using rule 93
+	'='            reduce using rule 93
+	'>'            reduce using rule 93
+	'>='           reduce using rule 93
+	'['            shift, and enter state 144
+	'^'            shift, and enter state 145
+	'and'          reduce using rule 93
+	'div'          reduce using rule 93
+	'mod'          reduce using rule 93
+	'or'           reduce using rule 93
+
 
 State 128
 
-	RExpr -> RExpr '/' . RExpr                          (rule 74)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
+	RExpr -> '(' RExpr . ')'                            (rule 92)
 
-	'('            shift, and enter state 98
-	'+'            shift, and enter state 99
-	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
-	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
-	L_doubl        shift, and enter state 77
-	L_integ        shift, and enter state 78
-	L_quoted       shift, and enter state 52
+	')'            shift, and enter state 169
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
+	'<'            shift, and enter state 133
+	'<='           shift, and enter state 134
+	'<>'           shift, and enter state 135
+	'='            shift, and enter state 136
+	'>'            shift, and enter state 137
+	'>='           shift, and enter state 138
+	'and'          shift, and enter state 139
+	'div'          shift, and enter state 140
+	'mod'          shift, and enter state 141
+	'or'           shift, and enter state 142
 
-	Ident          goto state 87
-	Char           goto state 88
-	Double         goto state 89
-	Integer        goto state 90
-	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 161
-	Literal        goto state 97
 
 State 129
 
-	RExpr -> RExpr '<' . RExpr                          (rule 81)
+	RExpr -> RExpr '*' . RExpr                          (rule 74)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -2335,22 +2363,23 @@ State 129
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 160
+	LExpr          goto state 115
+	RExpr          goto state 168
 	Literal        goto state 97
 
 State 130
 
-	RExpr -> RExpr '<=' . RExpr                         (rule 82)
+	RExpr -> RExpr '+' . RExpr                          (rule 72)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -2360,22 +2389,23 @@ State 130
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 159
+	LExpr          goto state 115
+	RExpr          goto state 167
 	Literal        goto state 97
 
 State 131
 
-	RExpr -> RExpr '<>' . RExpr                         (rule 80)
+	RExpr -> RExpr '-' . RExpr                          (rule 73)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -2385,22 +2415,23 @@ State 131
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 158
+	LExpr          goto state 115
+	RExpr          goto state 166
 	Literal        goto state 97
 
 State 132
 
-	RExpr -> RExpr '=' . RExpr                          (rule 79)
+	RExpr -> RExpr '/' . RExpr                          (rule 75)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -2410,22 +2441,23 @@ State 132
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 157
+	LExpr          goto state 115
+	RExpr          goto state 165
 	Literal        goto state 97
 
 State 133
 
-	RExpr -> RExpr '>' . RExpr                          (rule 83)
+	RExpr -> RExpr '<' . RExpr                          (rule 82)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -2435,22 +2467,23 @@ State 133
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 156
+	LExpr          goto state 115
+	RExpr          goto state 164
 	Literal        goto state 97
 
 State 134
 
-	RExpr -> RExpr '>=' . RExpr                         (rule 84)
+	RExpr -> RExpr '<=' . RExpr                         (rule 83)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -2460,22 +2493,23 @@ State 134
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 155
+	LExpr          goto state 115
+	RExpr          goto state 163
 	Literal        goto state 97
 
 State 135
 
-	RExpr -> RExpr 'and' . RExpr                        (rule 78)
+	RExpr -> RExpr '<>' . RExpr                         (rule 81)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -2485,22 +2519,23 @@ State 135
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 154
+	LExpr          goto state 115
+	RExpr          goto state 162
 	Literal        goto state 97
 
 State 136
 
-	RExpr -> RExpr 'div' . RExpr                        (rule 75)
+	RExpr -> RExpr '=' . RExpr                          (rule 80)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -2510,22 +2545,23 @@ State 136
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 153
+	LExpr          goto state 115
+	RExpr          goto state 161
 	Literal        goto state 97
 
 State 137
 
-	RExpr -> RExpr 'mod' . RExpr                        (rule 76)
+	RExpr -> RExpr '>' . RExpr                          (rule 84)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -2535,22 +2571,23 @@ State 137
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 152
+	LExpr          goto state 115
+	RExpr          goto state 160
 	Literal        goto state 97
 
 State 138
 
-	RExpr -> RExpr 'or' . RExpr                         (rule 77)
+	RExpr -> RExpr '>=' . RExpr                         (rule 85)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -2560,22 +2597,127 @@ State 138
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 151
+	LExpr          goto state 115
+	RExpr          goto state 159
 	Literal        goto state 97
 
 State 139
+
+	RExpr -> RExpr 'and' . RExpr                        (rule 79)
+
+	'('            shift, and enter state 98
+	'+'            shift, and enter state 99
+	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
+	L_Ident        shift, and enter state 2
+	L_charac       shift, and enter state 110
+	L_doubl        shift, and enter state 77
+	L_integ        shift, and enter state 78
+	L_quoted       shift, and enter state 52
+
+	Ident          goto state 87
+	Char           goto state 88
+	Double         goto state 89
+	Integer        goto state 90
+	String         goto state 91
+	LExpr          goto state 115
+	RExpr          goto state 158
+	Literal        goto state 97
+
+State 140
+
+	RExpr -> RExpr 'div' . RExpr                        (rule 76)
+
+	'('            shift, and enter state 98
+	'+'            shift, and enter state 99
+	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
+	L_Ident        shift, and enter state 2
+	L_charac       shift, and enter state 110
+	L_doubl        shift, and enter state 77
+	L_integ        shift, and enter state 78
+	L_quoted       shift, and enter state 52
+
+	Ident          goto state 87
+	Char           goto state 88
+	Double         goto state 89
+	Integer        goto state 90
+	String         goto state 91
+	LExpr          goto state 115
+	RExpr          goto state 157
+	Literal        goto state 97
+
+State 141
+
+	RExpr -> RExpr 'mod' . RExpr                        (rule 77)
+
+	'('            shift, and enter state 98
+	'+'            shift, and enter state 99
+	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
+	L_Ident        shift, and enter state 2
+	L_charac       shift, and enter state 110
+	L_doubl        shift, and enter state 77
+	L_integ        shift, and enter state 78
+	L_quoted       shift, and enter state 52
+
+	Ident          goto state 87
+	Char           goto state 88
+	Double         goto state 89
+	Integer        goto state 90
+	String         goto state 91
+	LExpr          goto state 115
+	RExpr          goto state 156
+	Literal        goto state 97
+
+State 142
+
+	RExpr -> RExpr 'or' . RExpr                         (rule 78)
+
+	'('            shift, and enter state 98
+	'+'            shift, and enter state 99
+	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
+	L_Ident        shift, and enter state 2
+	L_charac       shift, and enter state 110
+	L_doubl        shift, and enter state 77
+	L_integ        shift, and enter state 78
+	L_quoted       shift, and enter state 52
+
+	Ident          goto state 87
+	Char           goto state 88
+	Double         goto state 89
+	Integer        goto state 90
+	String         goto state 91
+	LExpr          goto state 115
+	RExpr          goto state 155
+	Literal        goto state 97
+
+State 143
 
 	Statement -> LExpr ':=' . RExpr                     (rule 55)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -2585,23 +2727,24 @@ State 139
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 150
+	LExpr          goto state 115
+	RExpr          goto state 154
 	Literal        goto state 97
 
-State 140
+State 144
 
 	LExpr -> LExpr '[' . ListRExpr ']'                  (rule 69)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	']'            reduce using rule 94
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	']'            reduce using rule 96
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -2611,12 +2754,12 @@ State 140
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 146
-	ListRExpr      goto state 149
+	LExpr          goto state 115
+	RExpr          goto state 150
+	ListRExpr      goto state 153
 	Literal        goto state 97
 
-State 141
+State 145
 
 	LExpr -> LExpr '^' .                                (rule 70)
 
@@ -2651,7 +2794,7 @@ State 141
 	'until'        reduce using rule 70
 
 
-State 142
+State 146
 
 	ListStatement -> Statement ';' .                    (rule 51)
 	ListStatement -> Statement ';' . ListStatement      (rule 52)
@@ -2659,18 +2802,19 @@ State 142
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
 	'begin'        shift, and enter state 71
-	'case'         shift, and enter state 101
+	'case'         shift, and enter state 102
 	'end'          reduce using rule 51
-	'false'        shift, and enter state 102
-	'for'          shift, and enter state 103
-	'if'           shift, and enter state 104
-	'not'          shift, and enter state 105
-	'repeat'       shift, and enter state 106
-	'true'         shift, and enter state 107
-	'while'        shift, and enter state 108
+	'false'        shift, and enter state 103
+	'for'          shift, and enter state 104
+	'if'           shift, and enter state 105
+	'not'          shift, and enter state 106
+	'repeat'       shift, and enter state 107
+	'true'         shift, and enter state 108
+	'while'        shift, and enter state 109
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -2681,13 +2825,13 @@ State 142
 	Integer        goto state 90
 	String         goto state 91
 	CompoundStatementgoto state 92
-	ListStatement  goto state 148
+	ListStatement  goto state 152
 	Statement      goto state 94
 	LExpr          goto state 95
 	RExpr          goto state 96
 	Literal        goto state 97
 
-State 143
+State 147
 
 	CompoundStatement -> 'begin' ListStatement 'end' .    (rule 50)
 
@@ -2699,19 +2843,20 @@ State 143
 	'until'        reduce using rule 50
 
 
-State 144
+State 148
 
-	RExpr -> Ident '(' . ListRExpr ')'                  (rule 89)
+	RExpr -> Ident '(' . ListRExpr ')'                  (rule 91)
 
 	'('            shift, and enter state 98
-	')'            reduce using rule 94
+	')'            reduce using rule 96
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -2721,12 +2866,12 @@ State 144
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 146
-	ListRExpr      goto state 147
+	LExpr          goto state 115
+	RExpr          goto state 150
+	ListRExpr      goto state 151
 	Literal        goto state 97
 
-State 145
+State 149
 
 	Type -> 'array' '[' ListIndexType ']' 'of' Type .    (rule 32)
 
@@ -2735,142 +2880,188 @@ State 145
 	';'            reduce using rule 32
 
 
-State 146
+State 150
 
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
-	ListRExpr -> RExpr .                                (rule 92)
-	ListRExpr -> RExpr . ',' ListRExpr                  (rule 93)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
+	ListRExpr -> RExpr .                                (rule 94)
+	ListRExpr -> RExpr . ',' ListRExpr                  (rule 95)
 
-	')'            reduce using rule 92
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	','            shift, and enter state 184
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
-	'<'            shift, and enter state 129
-	'<='           shift, and enter state 130
-	'<>'           shift, and enter state 131
-	'='            shift, and enter state 132
-	'>'            shift, and enter state 133
-	'>='           shift, and enter state 134
-	']'            reduce using rule 92
-	'and'          shift, and enter state 135
-	'div'          shift, and enter state 136
-	'mod'          shift, and enter state 137
-	'or'           shift, and enter state 138
-
-
-State 147
-
-	RExpr -> Ident '(' ListRExpr . ')'                  (rule 89)
-
-	')'            shift, and enter state 183
+	')'            reduce using rule 94
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	','            shift, and enter state 190
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
+	'<'            shift, and enter state 133
+	'<='           shift, and enter state 134
+	'<>'           shift, and enter state 135
+	'='            shift, and enter state 136
+	'>'            shift, and enter state 137
+	'>='           shift, and enter state 138
+	']'            reduce using rule 94
+	'and'          shift, and enter state 139
+	'div'          shift, and enter state 140
+	'mod'          shift, and enter state 141
+	'or'           shift, and enter state 142
 
 
-State 148
+State 151
+
+	RExpr -> Ident '(' ListRExpr . ')'                  (rule 91)
+
+	')'            shift, and enter state 189
+
+
+State 152
 
 	ListStatement -> Statement ';' ListStatement .      (rule 52)
 
 	'end'          reduce using rule 52
 
 
-State 149
+State 153
 
 	LExpr -> LExpr '[' ListRExpr . ']'                  (rule 69)
 
-	']'            shift, and enter state 182
+	']'            shift, and enter state 188
 
 
-State 150
+State 154
 
 	Statement -> LExpr ':=' RExpr .                     (rule 55)
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
 
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
 	';'            reduce using rule 55
-	'<'            shift, and enter state 129
-	'<='           shift, and enter state 130
-	'<>'           shift, and enter state 131
-	'='            shift, and enter state 132
-	'>'            shift, and enter state 133
-	'>='           shift, and enter state 134
-	'and'          shift, and enter state 135
-	'div'          shift, and enter state 136
+	'<'            shift, and enter state 133
+	'<='           shift, and enter state 134
+	'<>'           shift, and enter state 135
+	'='            shift, and enter state 136
+	'>'            shift, and enter state 137
+	'>='           shift, and enter state 138
+	'and'          shift, and enter state 139
+	'div'          shift, and enter state 140
 	'else'         reduce using rule 55
 	'end'          reduce using rule 55
-	'mod'          shift, and enter state 137
-	'or'           shift, and enter state 138
+	'mod'          shift, and enter state 141
+	'or'           shift, and enter state 142
 	'until'        reduce using rule 55
 
 
-State 151
+State 155
 
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr 'or' RExpr .                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr 'or' RExpr .                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
+
+	')'            reduce using rule 78
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	','            reduce using rule 78
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
+	';'            reduce using rule 78
+	'<'            shift, and enter state 133
+	'<='           shift, and enter state 134
+	'<>'           shift, and enter state 135
+	'='            shift, and enter state 136
+	'>'            shift, and enter state 137
+	'>='           shift, and enter state 138
+	']'            reduce using rule 78
+	'and'          shift, and enter state 139
+	'div'          shift, and enter state 140
+	'do'           reduce using rule 78
+	'downto'       reduce using rule 78
+	'else'         reduce using rule 78
+	'end'          reduce using rule 78
+	'mod'          shift, and enter state 141
+	'of'           reduce using rule 78
+	'or'           reduce using rule 78
+	'then'         reduce using rule 78
+	'to'           reduce using rule 78
+	'until'        reduce using rule 78
+
+
+State 156
+
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr 'mod' RExpr .                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
 
 	')'            reduce using rule 77
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
+	'*'            reduce using rule 77
+	'+'            reduce using rule 77
 	','            reduce using rule 77
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
+	'-'            reduce using rule 77
+	'/'            reduce using rule 77
 	';'            reduce using rule 77
-	'<'            shift, and enter state 129
-	'<='           shift, and enter state 130
-	'<>'           shift, and enter state 131
-	'='            shift, and enter state 132
-	'>'            shift, and enter state 133
-	'>='           shift, and enter state 134
+	'<'            reduce using rule 77
+	'<='           reduce using rule 77
+	'<>'           reduce using rule 77
+	'='            reduce using rule 77
+	'>'            reduce using rule 77
+	'>='           reduce using rule 77
 	']'            reduce using rule 77
-	'and'          shift, and enter state 135
-	'div'          shift, and enter state 136
+	'and'          reduce using rule 77
+	'div'          reduce using rule 77
 	'do'           reduce using rule 77
 	'downto'       reduce using rule 77
 	'else'         reduce using rule 77
 	'end'          reduce using rule 77
-	'mod'          shift, and enter state 137
+	'mod'          reduce using rule 77
 	'of'           reduce using rule 77
 	'or'           reduce using rule 77
 	'then'         reduce using rule 77
@@ -2878,23 +3069,23 @@ State 151
 	'until'        reduce using rule 77
 
 
-State 152
+State 157
 
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr 'mod' RExpr .                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr 'div' RExpr .                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
 
 	')'            reduce using rule 76
 	'*'            reduce using rule 76
@@ -2924,23 +3115,345 @@ State 152
 	'until'        reduce using rule 76
 
 
-State 153
+State 158
 
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr 'div' RExpr .                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr 'and' RExpr .                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
+
+	')'            reduce using rule 79
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	','            reduce using rule 79
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
+	';'            reduce using rule 79
+	'<'            shift, and enter state 133
+	'<='           shift, and enter state 134
+	'<>'           shift, and enter state 135
+	'='            shift, and enter state 136
+	'>'            shift, and enter state 137
+	'>='           shift, and enter state 138
+	']'            reduce using rule 79
+	'and'          reduce using rule 79
+	'div'          shift, and enter state 140
+	'do'           reduce using rule 79
+	'downto'       reduce using rule 79
+	'else'         reduce using rule 79
+	'end'          reduce using rule 79
+	'mod'          shift, and enter state 141
+	'of'           reduce using rule 79
+	'or'           reduce using rule 79
+	'then'         reduce using rule 79
+	'to'           reduce using rule 79
+	'until'        reduce using rule 79
+
+
+State 159
+
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
+	RExpr -> RExpr '>=' RExpr .                         (rule 85)
+
+	')'            reduce using rule 85
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	','            reduce using rule 85
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
+	';'            reduce using rule 85
+	'<'            reduce using rule 85
+	'<='           reduce using rule 85
+	'<>'           reduce using rule 85
+	'='            reduce using rule 85
+	'>'            reduce using rule 85
+	'>='           reduce using rule 85
+	']'            reduce using rule 85
+	'and'          reduce using rule 85
+	'div'          shift, and enter state 140
+	'do'           reduce using rule 85
+	'downto'       reduce using rule 85
+	'else'         reduce using rule 85
+	'end'          reduce using rule 85
+	'mod'          shift, and enter state 141
+	'of'           reduce using rule 85
+	'or'           reduce using rule 85
+	'then'         reduce using rule 85
+	'to'           reduce using rule 85
+	'until'        reduce using rule 85
+
+
+State 160
+
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr '>' RExpr .                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
+
+	')'            reduce using rule 84
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	','            reduce using rule 84
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
+	';'            reduce using rule 84
+	'<'            reduce using rule 84
+	'<='           reduce using rule 84
+	'<>'           reduce using rule 84
+	'='            reduce using rule 84
+	'>'            reduce using rule 84
+	'>='           reduce using rule 84
+	']'            reduce using rule 84
+	'and'          reduce using rule 84
+	'div'          shift, and enter state 140
+	'do'           reduce using rule 84
+	'downto'       reduce using rule 84
+	'else'         reduce using rule 84
+	'end'          reduce using rule 84
+	'mod'          shift, and enter state 141
+	'of'           reduce using rule 84
+	'or'           reduce using rule 84
+	'then'         reduce using rule 84
+	'to'           reduce using rule 84
+	'until'        reduce using rule 84
+
+
+State 161
+
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr '=' RExpr .                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
+
+	')'            reduce using rule 80
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	','            reduce using rule 80
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
+	';'            reduce using rule 80
+	'<'            reduce using rule 80
+	'<='           reduce using rule 80
+	'<>'           reduce using rule 80
+	'='            reduce using rule 80
+	'>'            reduce using rule 80
+	'>='           reduce using rule 80
+	']'            reduce using rule 80
+	'and'          reduce using rule 80
+	'div'          shift, and enter state 140
+	'do'           reduce using rule 80
+	'downto'       reduce using rule 80
+	'else'         reduce using rule 80
+	'end'          reduce using rule 80
+	'mod'          shift, and enter state 141
+	'of'           reduce using rule 80
+	'or'           reduce using rule 80
+	'then'         reduce using rule 80
+	'to'           reduce using rule 80
+	'until'        reduce using rule 80
+
+
+State 162
+
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr '<>' RExpr .                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
+
+	')'            reduce using rule 81
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	','            reduce using rule 81
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
+	';'            reduce using rule 81
+	'<'            reduce using rule 81
+	'<='           reduce using rule 81
+	'<>'           reduce using rule 81
+	'='            reduce using rule 81
+	'>'            reduce using rule 81
+	'>='           reduce using rule 81
+	']'            reduce using rule 81
+	'and'          reduce using rule 81
+	'div'          shift, and enter state 140
+	'do'           reduce using rule 81
+	'downto'       reduce using rule 81
+	'else'         reduce using rule 81
+	'end'          reduce using rule 81
+	'mod'          shift, and enter state 141
+	'of'           reduce using rule 81
+	'or'           reduce using rule 81
+	'then'         reduce using rule 81
+	'to'           reduce using rule 81
+	'until'        reduce using rule 81
+
+
+State 163
+
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr '<=' RExpr .                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
+
+	')'            reduce using rule 83
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	','            reduce using rule 83
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
+	';'            reduce using rule 83
+	'<'            reduce using rule 83
+	'<='           reduce using rule 83
+	'<>'           reduce using rule 83
+	'='            reduce using rule 83
+	'>'            reduce using rule 83
+	'>='           reduce using rule 83
+	']'            reduce using rule 83
+	'and'          reduce using rule 83
+	'div'          shift, and enter state 140
+	'do'           reduce using rule 83
+	'downto'       reduce using rule 83
+	'else'         reduce using rule 83
+	'end'          reduce using rule 83
+	'mod'          shift, and enter state 141
+	'of'           reduce using rule 83
+	'or'           reduce using rule 83
+	'then'         reduce using rule 83
+	'to'           reduce using rule 83
+	'until'        reduce using rule 83
+
+
+State 164
+
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr '<' RExpr .                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
+
+	')'            reduce using rule 82
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	','            reduce using rule 82
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
+	';'            reduce using rule 82
+	'<'            reduce using rule 82
+	'<='           reduce using rule 82
+	'<>'           reduce using rule 82
+	'='            reduce using rule 82
+	'>'            reduce using rule 82
+	'>='           reduce using rule 82
+	']'            reduce using rule 82
+	'and'          reduce using rule 82
+	'div'          shift, and enter state 140
+	'do'           reduce using rule 82
+	'downto'       reduce using rule 82
+	'else'         reduce using rule 82
+	'end'          reduce using rule 82
+	'mod'          shift, and enter state 141
+	'of'           reduce using rule 82
+	'or'           reduce using rule 82
+	'then'         reduce using rule 82
+	'to'           reduce using rule 82
+	'until'        reduce using rule 82
+
+
+State 165
+
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr '/' RExpr .                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
 
 	')'            reduce using rule 75
 	'*'            reduce using rule 75
@@ -2970,345 +3483,115 @@ State 153
 	'until'        reduce using rule 75
 
 
-State 154
+State 166
 
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr 'and' RExpr .                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr '-' RExpr .                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
 
-	')'            reduce using rule 78
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	','            reduce using rule 78
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
-	';'            reduce using rule 78
-	'<'            shift, and enter state 129
-	'<='           shift, and enter state 130
-	'<>'           shift, and enter state 131
-	'='            shift, and enter state 132
-	'>'            shift, and enter state 133
-	'>='           shift, and enter state 134
-	']'            reduce using rule 78
-	'and'          reduce using rule 78
-	'div'          shift, and enter state 136
-	'do'           reduce using rule 78
-	'downto'       reduce using rule 78
-	'else'         reduce using rule 78
-	'end'          reduce using rule 78
-	'mod'          shift, and enter state 137
-	'of'           reduce using rule 78
-	'or'           reduce using rule 78
-	'then'         reduce using rule 78
-	'to'           reduce using rule 78
-	'until'        reduce using rule 78
-
-
-State 155
-
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
-	RExpr -> RExpr '>=' RExpr .                         (rule 84)
-
-	')'            reduce using rule 84
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	','            reduce using rule 84
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
-	';'            reduce using rule 84
-	'<'            reduce using rule 84
-	'<='           reduce using rule 84
-	'<>'           reduce using rule 84
-	'='            reduce using rule 84
-	'>'            reduce using rule 84
-	'>='           reduce using rule 84
-	']'            reduce using rule 84
-	'and'          reduce using rule 84
-	'div'          shift, and enter state 136
-	'do'           reduce using rule 84
-	'downto'       reduce using rule 84
-	'else'         reduce using rule 84
-	'end'          reduce using rule 84
-	'mod'          shift, and enter state 137
-	'of'           reduce using rule 84
-	'or'           reduce using rule 84
-	'then'         reduce using rule 84
-	'to'           reduce using rule 84
-	'until'        reduce using rule 84
+	')'            reduce using rule 73
+	'*'            shift, and enter state 129
+	'+'            reduce using rule 73
+	','            reduce using rule 73
+	'-'            reduce using rule 73
+	'/'            shift, and enter state 132
+	';'            reduce using rule 73
+	'<'            reduce using rule 73
+	'<='           reduce using rule 73
+	'<>'           reduce using rule 73
+	'='            reduce using rule 73
+	'>'            reduce using rule 73
+	'>='           reduce using rule 73
+	']'            reduce using rule 73
+	'and'          reduce using rule 73
+	'div'          shift, and enter state 140
+	'do'           reduce using rule 73
+	'downto'       reduce using rule 73
+	'else'         reduce using rule 73
+	'end'          reduce using rule 73
+	'mod'          shift, and enter state 141
+	'of'           reduce using rule 73
+	'or'           reduce using rule 73
+	'then'         reduce using rule 73
+	'to'           reduce using rule 73
+	'until'        reduce using rule 73
 
 
-State 156
+State 167
 
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr '>' RExpr .                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr '+' RExpr .                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
 
-	')'            reduce using rule 83
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	','            reduce using rule 83
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
-	';'            reduce using rule 83
-	'<'            reduce using rule 83
-	'<='           reduce using rule 83
-	'<>'           reduce using rule 83
-	'='            reduce using rule 83
-	'>'            reduce using rule 83
-	'>='           reduce using rule 83
-	']'            reduce using rule 83
-	'and'          reduce using rule 83
-	'div'          shift, and enter state 136
-	'do'           reduce using rule 83
-	'downto'       reduce using rule 83
-	'else'         reduce using rule 83
-	'end'          reduce using rule 83
-	'mod'          shift, and enter state 137
-	'of'           reduce using rule 83
-	'or'           reduce using rule 83
-	'then'         reduce using rule 83
-	'to'           reduce using rule 83
-	'until'        reduce using rule 83
-
-
-State 157
-
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr '=' RExpr .                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
-
-	')'            reduce using rule 79
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	','            reduce using rule 79
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
-	';'            reduce using rule 79
-	'<'            reduce using rule 79
-	'<='           reduce using rule 79
-	'<>'           reduce using rule 79
-	'='            reduce using rule 79
-	'>'            reduce using rule 79
-	'>='           reduce using rule 79
-	']'            reduce using rule 79
-	'and'          reduce using rule 79
-	'div'          shift, and enter state 136
-	'do'           reduce using rule 79
-	'downto'       reduce using rule 79
-	'else'         reduce using rule 79
-	'end'          reduce using rule 79
-	'mod'          shift, and enter state 137
-	'of'           reduce using rule 79
-	'or'           reduce using rule 79
-	'then'         reduce using rule 79
-	'to'           reduce using rule 79
-	'until'        reduce using rule 79
+	')'            reduce using rule 72
+	'*'            shift, and enter state 129
+	'+'            reduce using rule 72
+	','            reduce using rule 72
+	'-'            reduce using rule 72
+	'/'            shift, and enter state 132
+	';'            reduce using rule 72
+	'<'            reduce using rule 72
+	'<='           reduce using rule 72
+	'<>'           reduce using rule 72
+	'='            reduce using rule 72
+	'>'            reduce using rule 72
+	'>='           reduce using rule 72
+	']'            reduce using rule 72
+	'and'          reduce using rule 72
+	'div'          shift, and enter state 140
+	'do'           reduce using rule 72
+	'downto'       reduce using rule 72
+	'else'         reduce using rule 72
+	'end'          reduce using rule 72
+	'mod'          shift, and enter state 141
+	'of'           reduce using rule 72
+	'or'           reduce using rule 72
+	'then'         reduce using rule 72
+	'to'           reduce using rule 72
+	'until'        reduce using rule 72
 
 
-State 158
+State 168
 
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr '<>' RExpr .                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
-
-	')'            reduce using rule 80
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	','            reduce using rule 80
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
-	';'            reduce using rule 80
-	'<'            reduce using rule 80
-	'<='           reduce using rule 80
-	'<>'           reduce using rule 80
-	'='            reduce using rule 80
-	'>'            reduce using rule 80
-	'>='           reduce using rule 80
-	']'            reduce using rule 80
-	'and'          reduce using rule 80
-	'div'          shift, and enter state 136
-	'do'           reduce using rule 80
-	'downto'       reduce using rule 80
-	'else'         reduce using rule 80
-	'end'          reduce using rule 80
-	'mod'          shift, and enter state 137
-	'of'           reduce using rule 80
-	'or'           reduce using rule 80
-	'then'         reduce using rule 80
-	'to'           reduce using rule 80
-	'until'        reduce using rule 80
-
-
-State 159
-
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr '<=' RExpr .                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
-
-	')'            reduce using rule 82
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	','            reduce using rule 82
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
-	';'            reduce using rule 82
-	'<'            reduce using rule 82
-	'<='           reduce using rule 82
-	'<>'           reduce using rule 82
-	'='            reduce using rule 82
-	'>'            reduce using rule 82
-	'>='           reduce using rule 82
-	']'            reduce using rule 82
-	'and'          reduce using rule 82
-	'div'          shift, and enter state 136
-	'do'           reduce using rule 82
-	'downto'       reduce using rule 82
-	'else'         reduce using rule 82
-	'end'          reduce using rule 82
-	'mod'          shift, and enter state 137
-	'of'           reduce using rule 82
-	'or'           reduce using rule 82
-	'then'         reduce using rule 82
-	'to'           reduce using rule 82
-	'until'        reduce using rule 82
-
-
-State 160
-
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr '<' RExpr .                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
-
-	')'            reduce using rule 81
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	','            reduce using rule 81
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
-	';'            reduce using rule 81
-	'<'            reduce using rule 81
-	'<='           reduce using rule 81
-	'<>'           reduce using rule 81
-	'='            reduce using rule 81
-	'>'            reduce using rule 81
-	'>='           reduce using rule 81
-	']'            reduce using rule 81
-	'and'          reduce using rule 81
-	'div'          shift, and enter state 136
-	'do'           reduce using rule 81
-	'downto'       reduce using rule 81
-	'else'         reduce using rule 81
-	'end'          reduce using rule 81
-	'mod'          shift, and enter state 137
-	'of'           reduce using rule 81
-	'or'           reduce using rule 81
-	'then'         reduce using rule 81
-	'to'           reduce using rule 81
-	'until'        reduce using rule 81
-
-
-State 161
-
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr '/' RExpr .                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr '*' RExpr .                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
 
 	')'            reduce using rule 74
 	'*'            reduce using rule 74
@@ -3338,76 +3621,49 @@ State 161
 	'until'        reduce using rule 74
 
 
-State 162
+State 169
 
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr '-' RExpr .                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
+	RExpr -> '(' RExpr ')' .                            (rule 92)
 
-	')'            reduce using rule 72
-	'*'            shift, and enter state 125
-	'+'            reduce using rule 72
-	','            reduce using rule 72
-	'-'            reduce using rule 72
-	'/'            shift, and enter state 128
-	';'            reduce using rule 72
-	'<'            reduce using rule 72
-	'<='           reduce using rule 72
-	'<>'           reduce using rule 72
-	'='            reduce using rule 72
-	'>'            reduce using rule 72
-	'>='           reduce using rule 72
-	']'            reduce using rule 72
-	'and'          reduce using rule 72
-	'div'          shift, and enter state 136
-	'do'           reduce using rule 72
-	'downto'       reduce using rule 72
-	'else'         reduce using rule 72
-	'end'          reduce using rule 72
-	'mod'          shift, and enter state 137
-	'of'           reduce using rule 72
-	'or'           reduce using rule 72
-	'then'         reduce using rule 72
-	'to'           reduce using rule 72
-	'until'        reduce using rule 72
+	')'            reduce using rule 92
+	'*'            reduce using rule 92
+	'+'            reduce using rule 92
+	','            reduce using rule 92
+	'-'            reduce using rule 92
+	'/'            reduce using rule 92
+	';'            reduce using rule 92
+	'<'            reduce using rule 92
+	'<='           reduce using rule 92
+	'<>'           reduce using rule 92
+	'='            reduce using rule 92
+	'>'            reduce using rule 92
+	'>='           reduce using rule 92
+	']'            reduce using rule 92
+	'and'          reduce using rule 92
+	'div'          reduce using rule 92
+	'do'           reduce using rule 92
+	'downto'       reduce using rule 92
+	'else'         reduce using rule 92
+	'end'          reduce using rule 92
+	'mod'          reduce using rule 92
+	'of'           reduce using rule 92
+	'or'           reduce using rule 92
+	'then'         reduce using rule 92
+	'to'           reduce using rule 92
+	'until'        reduce using rule 92
 
 
-State 163
+State 170
 
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr '+' RExpr .                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
+	LExpr -> '(' LExpr ')' .                            (rule 71)
 
 	')'            reduce using rule 71
-	'*'            shift, and enter state 125
+	'*'            reduce using rule 71
 	'+'            reduce using rule 71
 	','            reduce using rule 71
 	'-'            reduce using rule 71
-	'/'            shift, and enter state 128
+	'/'            reduce using rule 71
+	':='           reduce using rule 71
 	';'            reduce using rule 71
 	'<'            reduce using rule 71
 	'<='           reduce using rule 71
@@ -3415,14 +3671,16 @@ State 163
 	'='            reduce using rule 71
 	'>'            reduce using rule 71
 	'>='           reduce using rule 71
+	'['            reduce using rule 71
 	']'            reduce using rule 71
+	'^'            reduce using rule 71
 	'and'          reduce using rule 71
-	'div'          shift, and enter state 136
+	'div'          reduce using rule 71
 	'do'           reduce using rule 71
 	'downto'       reduce using rule 71
 	'else'         reduce using rule 71
 	'end'          reduce using rule 71
-	'mod'          shift, and enter state 137
+	'mod'          reduce using rule 71
 	'of'           reduce using rule 71
 	'or'           reduce using rule 71
 	'then'         reduce using rule 71
@@ -3430,85 +3688,7 @@ State 163
 	'until'        reduce using rule 71
 
 
-State 164
-
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr '*' RExpr .                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
-
-	')'            reduce using rule 73
-	'*'            reduce using rule 73
-	'+'            reduce using rule 73
-	','            reduce using rule 73
-	'-'            reduce using rule 73
-	'/'            reduce using rule 73
-	';'            reduce using rule 73
-	'<'            reduce using rule 73
-	'<='           reduce using rule 73
-	'<>'           reduce using rule 73
-	'='            reduce using rule 73
-	'>'            reduce using rule 73
-	'>='           reduce using rule 73
-	']'            reduce using rule 73
-	'and'          reduce using rule 73
-	'div'          reduce using rule 73
-	'do'           reduce using rule 73
-	'downto'       reduce using rule 73
-	'else'         reduce using rule 73
-	'end'          reduce using rule 73
-	'mod'          reduce using rule 73
-	'of'           reduce using rule 73
-	'or'           reduce using rule 73
-	'then'         reduce using rule 73
-	'to'           reduce using rule 73
-	'until'        reduce using rule 73
-
-
-State 165
-
-	RExpr -> '(' RExpr ')' .                            (rule 90)
-
-	')'            reduce using rule 90
-	'*'            reduce using rule 90
-	'+'            reduce using rule 90
-	','            reduce using rule 90
-	'-'            reduce using rule 90
-	'/'            reduce using rule 90
-	';'            reduce using rule 90
-	'<'            reduce using rule 90
-	'<='           reduce using rule 90
-	'<>'           reduce using rule 90
-	'='            reduce using rule 90
-	'>'            reduce using rule 90
-	'>='           reduce using rule 90
-	']'            reduce using rule 90
-	'and'          reduce using rule 90
-	'div'          reduce using rule 90
-	'do'           reduce using rule 90
-	'downto'       reduce using rule 90
-	'else'         reduce using rule 90
-	'end'          reduce using rule 90
-	'mod'          reduce using rule 90
-	'of'           reduce using rule 90
-	'or'           reduce using rule 90
-	'then'         reduce using rule 90
-	'to'           reduce using rule 90
-	'until'        reduce using rule 90
-
-
-State 166
+State 171
 
 	Statement -> 'case' RExpr 'of' . ListCaseItem 'end'    (rule 61)
 
@@ -3521,12 +3701,23 @@ State 166
 	L_quoted       shift, and enter state 52
 
 	String         goto state 45
-	Constant       goto state 179
+	Constant       goto state 185
 	OptSign        goto state 49
-	CaseItem       goto state 180
-	ListCaseItem   goto state 181
+	CaseItem       goto state 186
+	ListCaseItem   goto state 187
 
-State 167
+State 172
+
+	LExpr -> LExpr . '[' ListRExpr ']'                  (rule 69)
+	LExpr -> LExpr . '^'                                (rule 70)
+	LExpr -> '(' LExpr . ')'                            (rule 71)
+
+	')'            shift, and enter state 170
+	'['            shift, and enter state 144
+	'^'            shift, and enter state 145
+
+
+State 173
 
 	Statement -> 'for' LExpr ':=' . RExpr 'to' RExpr 'do' Statement    (rule 58)
 	Statement -> 'for' LExpr ':=' . RExpr 'downto' RExpr 'do' Statement    (rule 59)
@@ -3534,11 +3725,12 @@ State 167
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -3548,28 +3740,29 @@ State 167
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 178
+	LExpr          goto state 115
+	RExpr          goto state 184
 	Literal        goto state 97
 
-State 168
+State 174
 
 	Statement -> 'if' RExpr 'then' . Statement OptElse    (rule 60)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
 	'begin'        shift, and enter state 71
-	'case'         shift, and enter state 101
-	'false'        shift, and enter state 102
-	'for'          shift, and enter state 103
-	'if'           shift, and enter state 104
-	'not'          shift, and enter state 105
-	'repeat'       shift, and enter state 106
-	'true'         shift, and enter state 107
-	'while'        shift, and enter state 108
+	'case'         shift, and enter state 102
+	'false'        shift, and enter state 103
+	'for'          shift, and enter state 104
+	'if'           shift, and enter state 105
+	'not'          shift, and enter state 106
+	'repeat'       shift, and enter state 107
+	'true'         shift, and enter state 108
+	'while'        shift, and enter state 109
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -3580,23 +3773,24 @@ State 168
 	Integer        goto state 90
 	String         goto state 91
 	CompoundStatementgoto state 92
-	Statement      goto state 177
+	Statement      goto state 183
 	LExpr          goto state 95
 	RExpr          goto state 96
 	Literal        goto state 97
 
-State 169
+State 175
 
 	Statement -> 'repeat' Statement 'until' . RExpr     (rule 57)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -3606,28 +3800,29 @@ State 169
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 176
+	LExpr          goto state 115
+	RExpr          goto state 182
 	Literal        goto state 97
 
-State 170
+State 176
 
 	Statement -> 'while' RExpr 'do' . Statement         (rule 56)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
 	'begin'        shift, and enter state 71
-	'case'         shift, and enter state 101
-	'false'        shift, and enter state 102
-	'for'          shift, and enter state 103
-	'if'           shift, and enter state 104
-	'not'          shift, and enter state 105
-	'repeat'       shift, and enter state 106
-	'true'         shift, and enter state 107
-	'while'        shift, and enter state 108
+	'case'         shift, and enter state 102
+	'false'        shift, and enter state 103
+	'for'          shift, and enter state 104
+	'if'           shift, and enter state 105
+	'not'          shift, and enter state 106
+	'repeat'       shift, and enter state 107
+	'true'         shift, and enter state 108
+	'while'        shift, and enter state 109
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -3638,26 +3833,26 @@ State 170
 	Integer        goto state 90
 	String         goto state 91
 	CompoundStatementgoto state 92
-	Statement      goto state 175
+	Statement      goto state 181
 	LExpr          goto state 95
 	RExpr          goto state 96
 	Literal        goto state 97
 
-State 171
+State 177
 
 	ProcedureAndFunctionHeading -> 'function' Ident '(' ListFormalParameters ')' . ':' Type ';'    (rule 24)
 
-	':'            shift, and enter state 174
+	':'            shift, and enter state 180
 
 
-State 172
+State 178
 
 	ProcedureAndFunctionHeading -> 'procedure' Ident '(' ListFormalParameters ')' . ';'    (rule 23)
 
-	';'            shift, and enter state 173
+	';'            shift, and enter state 179
 
 
-State 173
+State 179
 
 	ProcedureAndFunctionHeading -> 'procedure' Ident '(' ListFormalParameters ')' ';' .    (rule 23)
 
@@ -3670,7 +3865,7 @@ State 173
 	L_Ident        reduce using rule 23
 
 
-State 174
+State 180
 
 	ProcedureAndFunctionHeading -> 'function' Ident '(' ListFormalParameters ')' ':' . Type ';'    (rule 24)
 
@@ -3682,10 +3877,10 @@ State 174
 	'^'            shift, and enter state 28
 	'array'        shift, and enter state 29
 
-	Type           goto state 193
+	Type           goto state 199
 	BasicType      goto state 22
 
-State 175
+State 181
 
 	Statement -> 'while' RExpr 'do' Statement .         (rule 56)
 
@@ -3695,118 +3890,118 @@ State 175
 	'until'        reduce using rule 56
 
 
-State 176
+State 182
 
 	Statement -> 'repeat' Statement 'until' RExpr .     (rule 57)
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
 
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
 	';'            reduce using rule 57
-	'<'            shift, and enter state 129
-	'<='           shift, and enter state 130
-	'<>'           shift, and enter state 131
-	'='            shift, and enter state 132
-	'>'            shift, and enter state 133
-	'>='           shift, and enter state 134
-	'and'          shift, and enter state 135
-	'div'          shift, and enter state 136
+	'<'            shift, and enter state 133
+	'<='           shift, and enter state 134
+	'<>'           shift, and enter state 135
+	'='            shift, and enter state 136
+	'>'            shift, and enter state 137
+	'>='           shift, and enter state 138
+	'and'          shift, and enter state 139
+	'div'          shift, and enter state 140
 	'else'         reduce using rule 57
 	'end'          reduce using rule 57
-	'mod'          shift, and enter state 137
-	'or'           shift, and enter state 138
+	'mod'          shift, and enter state 141
+	'or'           shift, and enter state 142
 	'until'        reduce using rule 57
 
 
-State 177
+State 183
 
 	Statement -> 'if' RExpr 'then' Statement . OptElse    (rule 60)
 
 	';'            reduce using rule 62
-	'else'         shift, and enter state 192
+	'else'         shift, and enter state 198
 			(reduce using rule 62)
 
 	'end'          reduce using rule 62
 	'until'        reduce using rule 62
 
-	OptElse        goto state 191
+	OptElse        goto state 197
 
-State 178
+State 184
 
 	Statement -> 'for' LExpr ':=' RExpr . 'to' RExpr 'do' Statement    (rule 58)
 	Statement -> 'for' LExpr ':=' RExpr . 'downto' RExpr 'do' Statement    (rule 59)
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
 
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
-	'<'            shift, and enter state 129
-	'<='           shift, and enter state 130
-	'<>'           shift, and enter state 131
-	'='            shift, and enter state 132
-	'>'            shift, and enter state 133
-	'>='           shift, and enter state 134
-	'and'          shift, and enter state 135
-	'div'          shift, and enter state 136
-	'downto'       shift, and enter state 189
-	'mod'          shift, and enter state 137
-	'or'           shift, and enter state 138
-	'to'           shift, and enter state 190
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
+	'<'            shift, and enter state 133
+	'<='           shift, and enter state 134
+	'<>'           shift, and enter state 135
+	'='            shift, and enter state 136
+	'>'            shift, and enter state 137
+	'>='           shift, and enter state 138
+	'and'          shift, and enter state 139
+	'div'          shift, and enter state 140
+	'downto'       shift, and enter state 195
+	'mod'          shift, and enter state 141
+	'or'           shift, and enter state 142
+	'to'           shift, and enter state 196
 
 
-State 179
+State 185
 
 	CaseItem -> Constant . ':' Statement                (rule 64)
 
-	':'            shift, and enter state 188
+	':'            shift, and enter state 194
 
 
-State 180
+State 186
 
 	ListCaseItem -> CaseItem .                          (rule 66)
 	ListCaseItem -> CaseItem . ';' ListCaseItem         (rule 67)
 
-	';'            shift, and enter state 187
+	';'            shift, and enter state 193
 	'end'          reduce using rule 66
 
 
-State 181
+State 187
 
 	Statement -> 'case' RExpr 'of' ListCaseItem . 'end'    (rule 61)
 
-	'end'          shift, and enter state 186
+	'end'          shift, and enter state 192
 
 
-State 182
+State 188
 
 	LExpr -> LExpr '[' ListRExpr ']' .                  (rule 69)
 
@@ -3841,52 +4036,53 @@ State 182
 	'until'        reduce using rule 69
 
 
-State 183
+State 189
 
-	RExpr -> Ident '(' ListRExpr ')' .                  (rule 89)
+	RExpr -> Ident '(' ListRExpr ')' .                  (rule 91)
 
-	')'            reduce using rule 89
-	'*'            reduce using rule 89
-	'+'            reduce using rule 89
-	','            reduce using rule 89
-	'-'            reduce using rule 89
-	'/'            reduce using rule 89
-	';'            reduce using rule 89
-	'<'            reduce using rule 89
-	'<='           reduce using rule 89
-	'<>'           reduce using rule 89
-	'='            reduce using rule 89
-	'>'            reduce using rule 89
-	'>='           reduce using rule 89
-	']'            reduce using rule 89
-	'and'          reduce using rule 89
-	'div'          reduce using rule 89
-	'do'           reduce using rule 89
-	'downto'       reduce using rule 89
-	'else'         reduce using rule 89
-	'end'          reduce using rule 89
-	'mod'          reduce using rule 89
-	'of'           reduce using rule 89
-	'or'           reduce using rule 89
-	'then'         reduce using rule 89
-	'to'           reduce using rule 89
-	'until'        reduce using rule 89
+	')'            reduce using rule 91
+	'*'            reduce using rule 91
+	'+'            reduce using rule 91
+	','            reduce using rule 91
+	'-'            reduce using rule 91
+	'/'            reduce using rule 91
+	';'            reduce using rule 91
+	'<'            reduce using rule 91
+	'<='           reduce using rule 91
+	'<>'           reduce using rule 91
+	'='            reduce using rule 91
+	'>'            reduce using rule 91
+	'>='           reduce using rule 91
+	']'            reduce using rule 91
+	'and'          reduce using rule 91
+	'div'          reduce using rule 91
+	'do'           reduce using rule 91
+	'downto'       reduce using rule 91
+	'else'         reduce using rule 91
+	'end'          reduce using rule 91
+	'mod'          reduce using rule 91
+	'of'           reduce using rule 91
+	'or'           reduce using rule 91
+	'then'         reduce using rule 91
+	'to'           reduce using rule 91
+	'until'        reduce using rule 91
 
 
-State 184
+State 190
 
-	ListRExpr -> RExpr ',' . ListRExpr                  (rule 93)
+	ListRExpr -> RExpr ',' . ListRExpr                  (rule 95)
 
 	'('            shift, and enter state 98
-	')'            reduce using rule 94
+	')'            reduce using rule 96
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	']'            reduce using rule 94
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	']'            reduce using rule 96
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -3896,20 +4092,20 @@ State 184
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 146
-	ListRExpr      goto state 185
+	LExpr          goto state 115
+	RExpr          goto state 150
+	ListRExpr      goto state 191
 	Literal        goto state 97
 
-State 185
+State 191
 
-	ListRExpr -> RExpr ',' ListRExpr .                  (rule 93)
+	ListRExpr -> RExpr ',' ListRExpr .                  (rule 95)
 
-	')'            reduce using rule 93
-	']'            reduce using rule 93
+	')'            reduce using rule 95
+	']'            reduce using rule 95
 
 
-State 186
+State 192
 
 	Statement -> 'case' RExpr 'of' ListCaseItem 'end' .    (rule 61)
 
@@ -3919,7 +4115,7 @@ State 186
 	'until'        reduce using rule 61
 
 
-State 187
+State 193
 
 	ListCaseItem -> CaseItem ';' . ListCaseItem         (rule 67)
 
@@ -3932,29 +4128,30 @@ State 187
 	L_quoted       shift, and enter state 52
 
 	String         goto state 45
-	Constant       goto state 179
+	Constant       goto state 185
 	OptSign        goto state 49
-	CaseItem       goto state 180
-	ListCaseItem   goto state 199
+	CaseItem       goto state 186
+	ListCaseItem   goto state 205
 
-State 188
+State 194
 
 	CaseItem -> Constant ':' . Statement                (rule 64)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
 	'begin'        shift, and enter state 71
-	'case'         shift, and enter state 101
-	'false'        shift, and enter state 102
-	'for'          shift, and enter state 103
-	'if'           shift, and enter state 104
-	'not'          shift, and enter state 105
-	'repeat'       shift, and enter state 106
-	'true'         shift, and enter state 107
-	'while'        shift, and enter state 108
+	'case'         shift, and enter state 102
+	'false'        shift, and enter state 103
+	'for'          shift, and enter state 104
+	'if'           shift, and enter state 105
+	'not'          shift, and enter state 106
+	'repeat'       shift, and enter state 107
+	'true'         shift, and enter state 108
+	'while'        shift, and enter state 109
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -3965,23 +4162,24 @@ State 188
 	Integer        goto state 90
 	String         goto state 91
 	CompoundStatementgoto state 92
-	Statement      goto state 198
+	Statement      goto state 204
 	LExpr          goto state 95
 	RExpr          goto state 96
 	Literal        goto state 97
 
-State 189
+State 195
 
 	Statement -> 'for' LExpr ':=' RExpr 'downto' . RExpr 'do' Statement    (rule 59)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -3991,22 +4189,23 @@ State 189
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 197
+	LExpr          goto state 115
+	RExpr          goto state 203
 	Literal        goto state 97
 
-State 190
+State 196
 
 	Statement -> 'for' LExpr ':=' RExpr 'to' . RExpr 'do' Statement    (rule 58)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
-	'false'        shift, and enter state 102
-	'not'          shift, and enter state 105
-	'true'         shift, and enter state 107
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 103
+	'not'          shift, and enter state 106
+	'true'         shift, and enter state 108
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -4016,11 +4215,11 @@ State 190
 	Double         goto state 89
 	Integer        goto state 90
 	String         goto state 91
-	LExpr          goto state 114
-	RExpr          goto state 196
+	LExpr          goto state 115
+	RExpr          goto state 202
 	Literal        goto state 97
 
-State 191
+State 197
 
 	Statement -> 'if' RExpr 'then' Statement OptElse .    (rule 60)
 
@@ -4030,24 +4229,25 @@ State 191
 	'until'        reduce using rule 60
 
 
-State 192
+State 198
 
 	OptElse -> 'else' . Statement                       (rule 63)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
 	'begin'        shift, and enter state 71
-	'case'         shift, and enter state 101
-	'false'        shift, and enter state 102
-	'for'          shift, and enter state 103
-	'if'           shift, and enter state 104
-	'not'          shift, and enter state 105
-	'repeat'       shift, and enter state 106
-	'true'         shift, and enter state 107
-	'while'        shift, and enter state 108
+	'case'         shift, and enter state 102
+	'false'        shift, and enter state 103
+	'for'          shift, and enter state 104
+	'if'           shift, and enter state 105
+	'not'          shift, and enter state 106
+	'repeat'       shift, and enter state 107
+	'true'         shift, and enter state 108
+	'while'        shift, and enter state 109
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -4058,19 +4258,19 @@ State 192
 	Integer        goto state 90
 	String         goto state 91
 	CompoundStatementgoto state 92
-	Statement      goto state 195
+	Statement      goto state 201
 	LExpr          goto state 95
 	RExpr          goto state 96
 	Literal        goto state 97
 
-State 193
+State 199
 
 	ProcedureAndFunctionHeading -> 'function' Ident '(' ListFormalParameters ')' ':' Type . ';'    (rule 24)
 
-	';'            shift, and enter state 194
+	';'            shift, and enter state 200
 
 
-State 194
+State 200
 
 	ProcedureAndFunctionHeading -> 'function' Ident '(' ListFormalParameters ')' ':' Type ';' .    (rule 24)
 
@@ -4083,7 +4283,7 @@ State 194
 	L_Ident        reduce using rule 24
 
 
-State 195
+State 201
 
 	OptElse -> 'else' Statement .                       (rule 63)
 
@@ -4093,77 +4293,77 @@ State 195
 	'until'        reduce using rule 63
 
 
-State 196
+State 202
 
 	Statement -> 'for' LExpr ':=' RExpr 'to' RExpr . 'do' Statement    (rule 58)
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
 
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
-	'<'            shift, and enter state 129
-	'<='           shift, and enter state 130
-	'<>'           shift, and enter state 131
-	'='            shift, and enter state 132
-	'>'            shift, and enter state 133
-	'>='           shift, and enter state 134
-	'and'          shift, and enter state 135
-	'div'          shift, and enter state 136
-	'do'           shift, and enter state 201
-	'mod'          shift, and enter state 137
-	'or'           shift, and enter state 138
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
+	'<'            shift, and enter state 133
+	'<='           shift, and enter state 134
+	'<>'           shift, and enter state 135
+	'='            shift, and enter state 136
+	'>'            shift, and enter state 137
+	'>='           shift, and enter state 138
+	'and'          shift, and enter state 139
+	'div'          shift, and enter state 140
+	'do'           shift, and enter state 207
+	'mod'          shift, and enter state 141
+	'or'           shift, and enter state 142
 
 
-State 197
+State 203
 
 	Statement -> 'for' LExpr ':=' RExpr 'downto' RExpr . 'do' Statement    (rule 59)
-	RExpr -> RExpr . '+' RExpr                          (rule 71)
-	RExpr -> RExpr . '-' RExpr                          (rule 72)
-	RExpr -> RExpr . '*' RExpr                          (rule 73)
-	RExpr -> RExpr . '/' RExpr                          (rule 74)
-	RExpr -> RExpr . 'div' RExpr                        (rule 75)
-	RExpr -> RExpr . 'mod' RExpr                        (rule 76)
-	RExpr -> RExpr . 'or' RExpr                         (rule 77)
-	RExpr -> RExpr . 'and' RExpr                        (rule 78)
-	RExpr -> RExpr . '=' RExpr                          (rule 79)
-	RExpr -> RExpr . '<>' RExpr                         (rule 80)
-	RExpr -> RExpr . '<' RExpr                          (rule 81)
-	RExpr -> RExpr . '<=' RExpr                         (rule 82)
-	RExpr -> RExpr . '>' RExpr                          (rule 83)
-	RExpr -> RExpr . '>=' RExpr                         (rule 84)
+	RExpr -> RExpr . '+' RExpr                          (rule 72)
+	RExpr -> RExpr . '-' RExpr                          (rule 73)
+	RExpr -> RExpr . '*' RExpr                          (rule 74)
+	RExpr -> RExpr . '/' RExpr                          (rule 75)
+	RExpr -> RExpr . 'div' RExpr                        (rule 76)
+	RExpr -> RExpr . 'mod' RExpr                        (rule 77)
+	RExpr -> RExpr . 'or' RExpr                         (rule 78)
+	RExpr -> RExpr . 'and' RExpr                        (rule 79)
+	RExpr -> RExpr . '=' RExpr                          (rule 80)
+	RExpr -> RExpr . '<>' RExpr                         (rule 81)
+	RExpr -> RExpr . '<' RExpr                          (rule 82)
+	RExpr -> RExpr . '<=' RExpr                         (rule 83)
+	RExpr -> RExpr . '>' RExpr                          (rule 84)
+	RExpr -> RExpr . '>=' RExpr                         (rule 85)
 
-	'*'            shift, and enter state 125
-	'+'            shift, and enter state 126
-	'-'            shift, and enter state 127
-	'/'            shift, and enter state 128
-	'<'            shift, and enter state 129
-	'<='           shift, and enter state 130
-	'<>'           shift, and enter state 131
-	'='            shift, and enter state 132
-	'>'            shift, and enter state 133
-	'>='           shift, and enter state 134
-	'and'          shift, and enter state 135
-	'div'          shift, and enter state 136
-	'do'           shift, and enter state 200
-	'mod'          shift, and enter state 137
-	'or'           shift, and enter state 138
+	'*'            shift, and enter state 129
+	'+'            shift, and enter state 130
+	'-'            shift, and enter state 131
+	'/'            shift, and enter state 132
+	'<'            shift, and enter state 133
+	'<='           shift, and enter state 134
+	'<>'           shift, and enter state 135
+	'='            shift, and enter state 136
+	'>'            shift, and enter state 137
+	'>='           shift, and enter state 138
+	'and'          shift, and enter state 139
+	'div'          shift, and enter state 140
+	'do'           shift, and enter state 206
+	'mod'          shift, and enter state 141
+	'or'           shift, and enter state 142
 
 
-State 198
+State 204
 
 	CaseItem -> Constant ':' Statement .                (rule 64)
 
@@ -4171,31 +4371,32 @@ State 198
 	'end'          reduce using rule 64
 
 
-State 199
+State 205
 
 	ListCaseItem -> CaseItem ';' ListCaseItem .         (rule 67)
 
 	'end'          reduce using rule 67
 
 
-State 200
+State 206
 
 	Statement -> 'for' LExpr ':=' RExpr 'downto' RExpr 'do' . Statement    (rule 59)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
 	'begin'        shift, and enter state 71
-	'case'         shift, and enter state 101
-	'false'        shift, and enter state 102
-	'for'          shift, and enter state 103
-	'if'           shift, and enter state 104
-	'not'          shift, and enter state 105
-	'repeat'       shift, and enter state 106
-	'true'         shift, and enter state 107
-	'while'        shift, and enter state 108
+	'case'         shift, and enter state 102
+	'false'        shift, and enter state 103
+	'for'          shift, and enter state 104
+	'if'           shift, and enter state 105
+	'not'          shift, and enter state 106
+	'repeat'       shift, and enter state 107
+	'true'         shift, and enter state 108
+	'while'        shift, and enter state 109
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -4206,29 +4407,30 @@ State 200
 	Integer        goto state 90
 	String         goto state 91
 	CompoundStatementgoto state 92
-	Statement      goto state 203
+	Statement      goto state 209
 	LExpr          goto state 95
 	RExpr          goto state 96
 	Literal        goto state 97
 
-State 201
+State 207
 
 	Statement -> 'for' LExpr ':=' RExpr 'to' RExpr 'do' . Statement    (rule 58)
 
 	'('            shift, and enter state 98
 	'+'            shift, and enter state 99
 	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
 	'begin'        shift, and enter state 71
-	'case'         shift, and enter state 101
-	'false'        shift, and enter state 102
-	'for'          shift, and enter state 103
-	'if'           shift, and enter state 104
-	'not'          shift, and enter state 105
-	'repeat'       shift, and enter state 106
-	'true'         shift, and enter state 107
-	'while'        shift, and enter state 108
+	'case'         shift, and enter state 102
+	'false'        shift, and enter state 103
+	'for'          shift, and enter state 104
+	'if'           shift, and enter state 105
+	'not'          shift, and enter state 106
+	'repeat'       shift, and enter state 107
+	'true'         shift, and enter state 108
+	'while'        shift, and enter state 109
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 109
+	L_charac       shift, and enter state 110
 	L_doubl        shift, and enter state 77
 	L_integ        shift, and enter state 78
 	L_quoted       shift, and enter state 52
@@ -4239,12 +4441,12 @@ State 201
 	Integer        goto state 90
 	String         goto state 91
 	CompoundStatementgoto state 92
-	Statement      goto state 202
+	Statement      goto state 208
 	LExpr          goto state 95
 	RExpr          goto state 96
 	Literal        goto state 97
 
-State 202
+State 208
 
 	Statement -> 'for' LExpr ':=' RExpr 'to' RExpr 'do' Statement .    (rule 58)
 
@@ -4254,7 +4456,7 @@ State 202
 	'until'        reduce using rule 58
 
 
-State 203
+State 209
 
 	Statement -> 'for' LExpr ':=' RExpr 'downto' RExpr 'do' Statement .    (rule 59)
 
@@ -4267,7 +4469,7 @@ State 203
 -----------------------------------------------------------------------------
 Grammar Totals
 -----------------------------------------------------------------------------
-Number of rules: 104
+Number of rules: 107
 Number of terminals: 59
 Number of non-terminals: 36
-Number of states: 204
+Number of states: 210

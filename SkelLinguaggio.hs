@@ -107,17 +107,18 @@ transCaseItem x = case x of
 
 transLExpr :: AbsLinguaggio.LExpr () () () -> Result
 transLExpr x = case x of
-  AbsLinguaggio.LId ident -> failure x
-  AbsLinguaggio.LArr lexpr rexprs -> failure x
-  AbsLinguaggio.LDeref lexpr -> failure x
+  AbsLinguaggio.LId ident ty -> failure x
+  AbsLinguaggio.LArr lexpr rexprs ty loc -> failure x
+  AbsLinguaggio.LDeref lexpr ty loc -> failure x
 
 transRExpr :: AbsLinguaggio.RExpr () () () -> Result
 transRExpr x = case x of
   AbsLinguaggio.Binary rexpr1 binary rexpr2 ty -> failure x
   AbsLinguaggio.Unary unary rexpr ty -> failure x
+  AbsLinguaggio.Ref unary lexpr ty -> failure x
   AbsLinguaggio.Lit literal _ -> failure x
   AbsLinguaggio.FCall ident rexprs loc -> failure x
-  AbsLinguaggio.LExpr lexpr -> failure x
+  AbsLinguaggio.LExpr lexpr ty -> failure x
 
 transLiteral :: AbsLinguaggio.Literal -> Result
 transLiteral x = case x of

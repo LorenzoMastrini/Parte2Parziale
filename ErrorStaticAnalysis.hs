@@ -22,6 +22,9 @@ data Error ty varInfo funInfo
     | IncompatibleAssignment SimpleType SimpleType
     | NotBooleanOperation String SimpleType SimpleType
     | FunArgTypeMismatch SimpleType SimpleType
+    | NotLExpr Unary
+    | NotAPointer
+    | NotAnArray
     -- Warnings
     | WarVarNameUsedForFunc (Ident ty varInfo funInfo)
 {-
@@ -131,6 +134,15 @@ errorType x =
         
         FunArgTypeMismatch (BasicType argType) (BasicType paramType) ->
             errorMsg "Argument type mismatch in function call: expected " ++ show paramType ++ " type, got " ++ show argType ++ " instead." ++ " [Type Error]"
+        
+        NotLExpr op@(UnaryRef loc) ->
+            errorMsg "Cannot use reference operator " ++ show op ++ " on a non-L-expression (e.g., a literal or an r-value)." ++ " [Pointer Error]"
+
+        NotAPointer ->
+            errorMsg "Cannot dereference a non-pointer type. " ++ " [Pointer Error]"
+        
+        NotAnArray ->
+            errorMsg "Cannot index a non-array type. " ++ " [Array Error]"
         
 {-
         

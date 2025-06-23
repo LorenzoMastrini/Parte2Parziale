@@ -86,13 +86,14 @@ data RExpr ty varInfo funInfo
   | Unary Unary (RExpr ty varInfo funInfo) ty
   | Lit Literal ty
   | FCall (Ident ty varInfo funInfo) [RExpr ty varInfo funInfo] Loc
-  | LExpr (LExpr ty varInfo funInfo)
+  | Ref Unary (RExpr ty varInfo funInfo) ty
+  | LExpr (LExpr ty varInfo funInfo) ty
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data LExpr ty varInfo funInfo
-  = LId (Ident ty varInfo funInfo)
-  | LArr (LExpr ty varInfo funInfo) [RExpr ty varInfo funInfo]
-  | LDeref (LExpr ty varInfo funInfo)
+  = LId (Ident ty varInfo funInfo) ty
+  | LArr (LExpr ty varInfo funInfo) [RExpr ty varInfo funInfo] ty Loc
+  | LDeref (LExpr ty varInfo funInfo) ty Loc
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Literal
@@ -125,6 +126,7 @@ data Unary
   = UnaryPlus Loc
   | UnaryMinus Loc
   | UnaryNot Loc
+  | UnaryRef Loc
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Ident ty varInfo funInfo
