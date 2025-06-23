@@ -116,7 +116,7 @@ transRExpr x = case x of
   AbsLinguaggio.Binary rexpr1 binary rexpr2 ty -> failure x
   AbsLinguaggio.Unary unary rexpr ty -> failure x
   AbsLinguaggio.Lit literal _ -> failure x
-  AbsLinguaggio.FCall ident rexprs -> failure x
+  AbsLinguaggio.FCall ident rexprs loc -> failure x
   AbsLinguaggio.LExpr lexpr -> failure x
 
 transLiteral :: AbsLinguaggio.Literal -> Result

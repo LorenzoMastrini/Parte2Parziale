@@ -300,32 +300,45 @@ checkRExpr env expr = case expr of
             (env3, typeInfo) = checkUnaryOp env op t
         in (env3, Unary op eEnriched typeInfo)
     Lit lit _ -> (env, enrichLitExpr lit)
-    FCall ident@(Ident name loc _ _ _) args -> case lookupByName env name of
+    FCall ident@(Ident name _ _ _ _) args loc -> case lookupByName env name of
         Nothing ->
-            (addError env (FunNotDefined ident, loc), FCall (enrichIdentUnknown ident) []) -- Function doesn't exist
-        Just (ConstVarEntry _ _ _ loc, _) ->
-            (addError env (NotAFunction ident, loc), FCall (enrichIdentUnknown ident) []) -- Not a function
-        Just (ProcFunEntry params retTy loc, _) ->
+            (addError env (FunNotDefined ident, loc), FCall (enrichIdentUnknown ident) [] loc) -- Function doesn't exist
+        Just (ConstVarEntry {}, _) ->
+            (addError env (NotAFunction ident, loc), FCall (enrichIdentUnknown ident) [] loc) -- Not a function
+        Just (ProcFunEntry params retTy _, _) ->
             let
-                (env1, argsEnriched) = checkArgs env args params loc
-            in (env1, FCall (enrichIdent ident retTy NoVarInfo (FunInfo retTy  params)) argsEnriched)
+                (env1, argsEnriched, hasTypeError) = checkArgsNumWithTypeError env args (paramsToList params) loc
+                identEnriched = if hasTypeError
+                    then setIdentTypeInfo (enrichIdent ident retTy NoVarInfo (FunInfo retTy params)) TUnknown
+                    else enrichIdent ident retTy NoVarInfo (FunInfo retTy params)
+            in (env1, FCall identEnriched argsEnriched loc)
     LExpr lexpr -> 
         let
             (env1, lexprEnriched) = checkLExpr env lexpr
         in (env1, LExpr lexprEnriched)
 
-checkArgs :: Env -> [SimpleRExpr] -> [SimpleFormalParameters] -> Loc -> (Env, [RExpr TypeInfo VarInfo FunInfo])
-checkArgs env [] [] loc = (env, []) -- No args to check
-checkArgs env (arg:args) (param:params) loc =
-    if length (arg:args) /= length (param:params)
-        then
-            let
-                env1 = addError env (FunArgsMismatch (length args) (length params), loc) -- Mismatch in number of arguments
-            in (env1, [])
-        else let
-            (env1, argEnriched) = checkRExpr env arg
-            (env2, argsEnriched) = checkArgs env1 args params loc
-        in (env2, argEnriched:argsEnriched)
+checkArgsNumWithTypeError :: Env -> [SimpleRExpr] -> [SimpleFormalParameters] -> Loc -> (Env, [RExpr TypeInfo VarInfo FunInfo], Bool)
+checkArgsNumWithTypeError env [] [] loc = (env, [], False)
+checkArgsNumWithTypeError env [] params loc =
+    let env1 = addError env (FunArgsNumMismatch 0 (length params), loc)
+    in (env1, [], True)
+checkArgsNumWithTypeError env args [] loc =
+    let env1 = addError env (FunArgsNumMismatch (length args) 0, loc)
+    in (env1, [], True)
+checkArgsNumWithTypeError env (a:as) (p:ps) loc =
+    let
+        (env1, argEnriched) = checkRExpr env a
+        (env2, compatible) = checkArgType env1 argEnriched p loc
+        (env3, argsEnriched, hasTypeErrorRest) = checkArgsNumWithTypeError env2 as ps loc
+        hasTypeError = not compatible || hasTypeErrorRest
+    in (env3, argEnriched : argsEnriched, hasTypeError)
+
+checkArgType :: Env -> RExpr TypeInfo VarInfo FunInfo -> SimpleFormalParameters -> Loc -> (Env, Bool)
+checkArgType env argEnriched (FormParam _ _ paramType) loc =
+    let
+        argType = getRExprType argEnriched
+        (env1, compatible) = argCompatible env argType paramType loc
+    in (env1, compatible)
 
 checkLExpr :: Env -> SimpleLExpr -> (Env, LExpr TypeInfo VarInfo FunInfo)
 checkLExpr env lexpr = case lexpr of
@@ -435,8 +448,6 @@ compatibleAssignment env targetType sourceType loc = case (targetType, sourceTyp
             env1 = addError env (IncompatibleAssignment targetType sourceType, loc)
         in (env1, False)
 
-
-
 ------------------------------------------------
 -------------------- CHECKS --------------------
 ------------------------------------------------
@@ -540,7 +551,6 @@ checkUnaryOp env op t = case op of
             (env1, typeInfo) = checkBooleanType env "not" t loc
         in (env1, typeInfo)
 
-
 checkIntegerType :: Env -> String -> SimpleType -> Loc -> (Env, TypeInfo)
 checkIntegerType env op t loc = case t of
     BasicType Integer -> (env, TInteger)
@@ -559,6 +569,11 @@ checkNumericType env op t loc = case t of
     BasicType Real -> (env, TReal)
     _ -> (addError env (NotNumericType op t, loc), TUnknown)
 
+-------------------- FCall --------------------
+argCompatible :: Env -> SimpleType -> SimpleType -> Loc -> (Env, Bool)
+argCompatible env argType paramType loc = if argType /= paramType
+    then (addError env (FunArgTypeMismatch argType paramType, loc), False)
+    else (env, True)
 
 {-
 checkLoopCmd::Env -> LoopCmd -> Env
@@ -940,7 +955,7 @@ getRExprTypeInfo :: RExpr TypeInfo VarInfo FunInfo -> TypeInfo
 getRExprTypeInfo (Binary _ _ _ ty) = ty
 getRExprTypeInfo (Unary _ _ ty)   = ty
 getRExprTypeInfo (Lit _ ty)        = ty
-getRExprTypeInfo (FCall ident _)   = getIdentTypeInfo ident
+getRExprTypeInfo (FCall ident _ _)   = getIdentTypeInfo ident
 getRExprTypeInfo (LExpr lexpr)     = getLExprTypeInfo lexpr
 
 -- Extract type from LExpr
@@ -967,7 +982,20 @@ typeFromTypeInfo TUnknown = BasicType Integer  -- Default fallback for unknown t
 typeFromTypeInfo (TArray _ _) = BasicType Integer  -- TODO: Implement proper array type
 typeFromTypeInfo (TPointer _) = BasicType Integer  -- TODO: Implement proper pointer type
 
+setRExprTypeInfo :: RExpr TypeInfo VarInfo FunInfo -> TypeInfo -> RExpr TypeInfo VarInfo FunInfo
+setRExprTypeInfo (Binary e1 op e2 _) ty = Binary e1 op e2 ty
+setRExprTypeInfo (Unary op e _) ty = Unary op e ty
+setRExprTypeInfo (Lit lit _) ty = Lit lit ty
+setRExprTypeInfo (FCall ident args loc) ty = FCall (setIdentTypeInfo ident ty) args loc
+setRExprTypeInfo (LExpr lexpr) ty = LExpr (setLExprTypeInfo lexpr ty)
 
+setIdentTypeInfo :: Ident TypeInfo VarInfo FunInfo -> TypeInfo -> Ident TypeInfo VarInfo FunInfo
+setIdentTypeInfo (Ident name loc _ v f) ty = Ident name loc ty v f
+
+setLExprTypeInfo :: LExpr TypeInfo VarInfo FunInfo -> TypeInfo -> LExpr TypeInfo VarInfo FunInfo
+setLExprTypeInfo (LId ident) ty = LId (setIdentTypeInfo ident ty)
+setLExprTypeInfo (LArr lexpr indices) ty = LArr (setLExprTypeInfo lexpr ty) indices
+setLExprTypeInfo (LDeref lexpr) ty = LDeref (setLExprTypeInfo lexpr ty)
 
 -----------------------------------------------------------
 -------------------- SUPPORT FUNCTIONS --------------------
@@ -1013,6 +1041,11 @@ promoteNumericType t = case t of
     BasicType Integer -> BasicType Integer
     BasicType Real -> BasicType Real
 
+
+paramsToList :: [SimpleFormalParameters] -> [SimpleFormalParameters]
+paramsToList = concatMap expandParam
+  where
+    expandParam (FormParam mod idents ty) = [FormParam mod [ident] ty | ident <- idents]
 
 
 -----------------------------------------------------------

@@ -1257,10 +1257,11 @@ happyReduction_89 (happy_x_4 `HappyStk`
         happy_x_1 `HappyStk`
         happyRest)
          = case happyOut5 happy_x_1 of { (HappyWrap5 happy_var_1) -> 
+        case happyOutTok happy_x_2 of { happy_var_2 -> 
         case happyOut37 happy_x_3 of { (HappyWrap37 happy_var_3) -> 
         happyIn36
-                 (AbsLinguaggio.FCall happy_var_1 happy_var_3
-        ) `HappyStk` happyRest}}
+                 (AbsLinguaggio.FCall happy_var_1 happy_var_3 (posToLoc (getPos happy_var_2))
+        ) `HappyStk` happyRest}}}
 
 happyReduce_90 = happySpecReduce_3  31# happyReduction_90
 happyReduction_90 happy_x_3
@@ -1362,7 +1363,7 @@ happyReduction_103 happy_x_1
         )}
 
 happyTerminalToTok term = case term of {
-        PT _ (TS _ 1) -> 2#;
+        PT pos (TS _ 1) -> 2#;
         PT _ (TS _ 2) -> 3#;
         PT pos (TS _ 3) -> 4#;
         PT pos (TS _ 4) -> 5#;

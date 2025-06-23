@@ -285,7 +285,7 @@ instance Print (AbsLinguaggio.RExpr () () ()) where
     AbsLinguaggio.Binary rexpr1 binary rexpr2 ty -> prPrec i 0 (concatD [prt 0 rexpr1, prt 0 binary, prt 0 rexpr2])
     AbsLinguaggio.Unary unary rexpr ty -> prPrec i 0 (concatD [prt 0 unary, prt 0 rexpr])
     AbsLinguaggio.Lit literal _ -> prPrec i 0 (concatD [prt 0 literal])
-    AbsLinguaggio.FCall id_ rexprs -> prPrec i 0 (concatD [prt 0 id_, doc (showString "("), prt 0 rexprs, doc (showString ")")])
+    AbsLinguaggio.FCall id_ rexprs loc -> prPrec i 0 (concatD [prt 0 id_, doc (showString "("), prt 0 rexprs, doc (showString ")")])
     AbsLinguaggio.LExpr lexpr -> prPrec i 0 (concatD [prt 0 lexpr])
 
 instance Print [AbsLinguaggio.RExpr () () ()] where

@@ -8,8 +8,8 @@ var
     e: String;
 
 begin
+    // VALID CASES
     // Arithmetic operations (+, -, *, /, div, mod)
-    // Valid cases:
     1 + 2;           // Integer + Integer = Integer
     1.5 + 2.7;       // Real + Real = Real
     1 + 3.0;         // Integer + Real = Real (promotion)
@@ -29,7 +29,6 @@ begin
     10.0 / 2.0;      // Real / Real = Real
     10 / 2.5;        // Integer / Real = Real (promotion)
     15.8 / 3;        // Real / Integer = Real (promotion)
-
     
     10 div 3;        // Integer div Integer = Integer
     10 mod 3;        // Integer mod Integer = Integer
@@ -42,7 +41,6 @@ begin
     c or false;      // Boolean or Boolean = Boolean
     
     // Comparison operations (=, <>, <, <=, >, >=)
-    // Valid cases:
     1 = 2;           // Integer = Integer = Boolean
     1.5 = 2.0;       // Real = Real = Boolean
     1 = 2.0;         // Integer = Real = Boolean (compatible)
@@ -81,10 +79,10 @@ begin
     'b' >= 'a';      // Character >= Character = Boolean
     'a' <> 'b';      // Character <> Character = Boolean
     
-    "hello" = "world"; // String = String = Boolean
-    "hello" < "world"; // String < String = Boolean
+    "hello" = "world";  // String = String = Boolean
+    "hello" < "world";  // String < String = Boolean
     "hello" <= "world"; // String <= String = Boolean
-    "world" > "hello"; // String > String = Boolean
+    "world" > "hello";  // String > String = Boolean
     "world" >= "hello"; // String >= String = Boolean
     "hello" <> "world"; // String <> String = Boolean
     
@@ -96,8 +94,7 @@ begin
 
 
 
-    // ERROR CASES - Should generate "Incompatible types" errors [TypeError]:
-
+    // ERROR CASES - Should generate "Incompatible types" errors [TypeError]
     // Arithmetic operations with non-numeric types
     1 + true;             // Integer + Boolean = ERROR
     1.5 + false;          // Real + Boolean = ERROR

@@ -1,7 +1,6 @@
 module ErrorStaticAnalysis where
 
 import AbsLinguaggio
-import Utils
 import PrettyPrinter
 
 
@@ -11,7 +10,7 @@ data Error ty varInfo funInfo
     | RedeclaredProcFun SimpleIdent
     | FunNotDefined SimpleIdent
     | NotAFunction SimpleIdent
-    | FunArgsMismatch Int Int 
+    | FunArgsNumMismatch Int Int 
     | UnknownIdentifier SimpleIdent
     | IncompatibleArrPtrType
     | IncompatiblePtrArrType
@@ -22,7 +21,10 @@ data Error ty varInfo funInfo
     | NotNumericType String SimpleType
     | IncompatibleAssignment SimpleType SimpleType
     | NotBooleanOperation String SimpleType SimpleType
-
+    | FunArgTypeMismatch SimpleType SimpleType
+    -- Warnings
+    | WarVarNameUsedForFunc (Ident ty varInfo funInfo)
+{-
     | RedeclaredFunction (Ident ty varInfo funInfo)
     | RedeclaredParameter (Ident ty varInfo funInfo)
     | TypeMismatch Loc (Type ty varInfo funInfo) (Type ty varInfo funInfo)
@@ -65,14 +67,13 @@ data Error ty varInfo funInfo
     | FunctionAsIdentifier Loc
     | ReturnInForLoop Loc String
     | CustomError String
-    -- warnings
-    | WarVarNameUsedForFunc (Ident ty varInfo funInfo)
     | WarEmptyCase Loc
     | UnsusedValue Loc
     | UnitializedVariable (Ident ty varInfo funInfo)
     | DeathCode Loc
     | NoMain Loc
     | InfiniteLoop Loc
+-}
 
 errorType :: Error ty varInfo funInfo -> String
 errorType x =
@@ -93,8 +94,8 @@ errorType x =
         NotAFunction (Ident name loc _ _ _) -> 
             errorMsg "'" ++ name ++ "' is a variable, not a function." ++ " [Declaration Error]."
         
-        FunArgsMismatch nArgs nFormParams -> 
-            errorMsg "Function arguments mismatch: expected "++ show nFormParams ++ " parameters, got " ++ show nArgs  ++ " arguments." ++ " [Declaration Error]."
+        FunArgsNumMismatch nArgs nFormParams -> 
+            errorMsg "Mismatch in arguments number: expected "++ show nFormParams ++ " parameters, got " ++ show nArgs  ++ " arguments." ++ " [Declaration Error]."
         
         UnknownIdentifier (Ident name loc _ _ _) -> 
             errorMsg "Unknown identifier '" ++ name ++ "'." ++ " [Declaration Error]."
@@ -128,7 +129,10 @@ errorType x =
         IncompatibleAssignment (BasicType targetType) (BasicType sourceType) ->
             errorMsg "Cannot assign " ++ show sourceType ++ " type to " ++ show targetType ++ " ." ++ " [Type Error]"
         
-
+        FunArgTypeMismatch (BasicType argType) (BasicType paramType) ->
+            errorMsg "Argument type mismatch in function call: expected " ++ show paramType ++ " type, got " ++ show argType ++ " instead." ++ " [Type Error]"
+        
+{-
         
         --RedeclaredFunction (Ident ((loc),name)) -> 
         --    errorMsg "Symbol name '"++ name ++ "' for function declaration already used. " 
@@ -261,7 +265,7 @@ errorType x =
             errorMsg "Cannot use the statement '" ++ stmt ++ "' inside a deterministic 'for' loop. " ++ " [ControlFlowAnalysis]."
 
         CustomError msg -> errorMsg msg
-
+-}
 -------------------------------------------------
 ------------------ WARNINGS ---------------------
 -------------------------------------------------
@@ -269,7 +273,7 @@ errorType x =
         WarVarNameUsedForFunc (Ident name _ _ _ _) ->
             warningMsg "The identifier '" ++ name ++ "' has already been used for a function." ++ " [DeclError]."
 
-
+{-
         WarEmptyCase loc ->
             warningMsg "Empty 'case' statement." ++ " [ControlFlowAnalysis]."
 
@@ -286,3 +290,4 @@ errorType x =
 
         InfiniteLoop loc ->
             warningMsg "Infinite loop." ++ " [ControlFlowAnalysis]."
+-}

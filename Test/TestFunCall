@@ -1,0 +1,53 @@
+program TestFunCall();
+
+var
+    a: Integer;
+    b: Real;
+    c: Boolean;
+    d: Character;
+    e: String;
+
+    // Sum of two integers
+    function sum(x: Integer, y: Integer): Integer;
+        begin
+            x + y;
+        end;
+
+    // Concatenate two strings
+    function concatenate(s1, s2: String): String;
+        begin
+            s1;
+        end;
+
+    // Returns the opposite boolean value
+    function invert(b: Boolean): Boolean;
+        begin
+            not b;
+        end;
+
+begin
+    // VALID CASES
+    // Function call
+    sum(1, 2);                              // Integer, Integer -> Integer
+    sum(a, 5);                              // Integer, Integer -> Integer
+    concatenate("Hello", " world");         // String, String -> String
+    concatenate(e, "!");                    // String, String -> String
+    invert(true);                           // Boolean -> Boolean
+    invert(c);                              // Boolean -> Boolean
+    sum(sum(1,2), 3);                       // Nested Function: (Integer, Integer -> Integer), Integer -> Integer
+    concatenate(concatenate("a","b"), "c"); // Nested Function: (String, String -> String), String -> String
+
+    // ERROR CASES - Should generate "Incompatible types" errors [TypeError]
+    d();                    // ERROR (NotAFunction)
+    h();                    // ERROR (FunNotDefined)
+    sum(1.5, 2);            // Real, Integer = ERROR (FunArgTypeMismatch)
+    sum("a", 2);            // String, Integer = ERROR (FunArgTypeMismatch)
+    sum(true, false);       // Boolean, Boolean = ERROR (FunArgTypeMismatch)
+    concatenate(1, 2);      // Integer, Integer = ERROR (FunArgTypeMismatch)
+    concatenate("a", 2);    // String, Integer = ERROR (FunArgTypeMismatch)
+    invert(1);              // Integer = ERROR (FunArgTypeMismatch)
+    invert("true");         // String = ERROR (FunArgTypeMismatch)
+    sum(1);                 // ERROR (FunArgsNumMismatch)
+    concatenate("a");       // Numero di argomenti errato = ERROR (FunArgsNumMismatch)
+    invert();               // Numero di argomenti errato = ERROR (FunArgsNumMismatch)
+end.

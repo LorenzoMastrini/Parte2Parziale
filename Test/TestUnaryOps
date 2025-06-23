@@ -8,8 +8,8 @@ var
     e: String;
 
 begin
+    // VALID CASES
     // Unary operations (+, -, not)
-    // Valid cases:
     +10;             // + Integer = Integer
     -20;             // - Integer = Integer
     +15.5;           // + Real = Real
@@ -18,8 +18,8 @@ begin
     not false;       // not Boolean = Boolean
 
 
-    // ERROR CASES - Should generate "Incompatible types" errors [TypeError]:
 
+    // ERROR CASES - Should generate "Incompatible types" errors [TypeError]
     // Unary plus on non-numeric types
     +true;           // + Boolean = ERROR
     +'a';            // + Character = ERROR

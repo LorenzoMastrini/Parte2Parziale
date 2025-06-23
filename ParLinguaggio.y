@@ -33,7 +33,7 @@ import LexLinguaggio
 
 
 %token
-  '('         { PT _ (TS _ 1)  }
+  '('         { PT pos (TS _ 1)  }
   ')'         { PT _ (TS _ 2)  }
   '*'         { PT pos (TS _ 3)  }
   '+'         { PT pos (TS _ 4)  }
@@ -273,7 +273,7 @@ RExpr
   | '-' RExpr %prec UnaryMinus { AbsLinguaggio.Unary (AbsLinguaggio.UnaryMinus (posToLoc (getPos $1))) $2 () }
   | 'not' RExpr %prec 'not' { AbsLinguaggio.Unary (AbsLinguaggio.UnaryNot (posToLoc (getPos $1))) $2 () }
   | Literal { AbsLinguaggio.Lit $1 () }
-  | Ident '(' ListRExpr ')' { AbsLinguaggio.FCall $1 $3 }
+  | Ident '(' ListRExpr ')' { AbsLinguaggio.FCall $1 $3 (posToLoc (getPos $2)) }
   | '(' RExpr ')' { $2 }
   | LExpr { AbsLinguaggio.LExpr $1 }
 

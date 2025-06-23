@@ -85,7 +85,7 @@ data RExpr ty varInfo funInfo
   = Binary (RExpr ty varInfo funInfo) Binary (RExpr ty varInfo funInfo) ty
   | Unary Unary (RExpr ty varInfo funInfo) ty
   | Lit Literal ty
-  | FCall (Ident ty varInfo funInfo) [RExpr ty varInfo funInfo]
+  | FCall (Ident ty varInfo funInfo) [RExpr ty varInfo funInfo] Loc
   | LExpr (LExpr ty varInfo funInfo)
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 

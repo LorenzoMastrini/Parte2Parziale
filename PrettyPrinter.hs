@@ -482,7 +482,7 @@ instance PrintTree EnrichedRExpr where
   buildTree (Binary r1 op r2 ty) = colorExpr ("Binary " ++ show op ++ " " ++ colorGrey (show ty)) : (paddingMultiple (buildTree r1) ++ paddingSingle (buildTree r2))
   buildTree (Unary op r ty) = colorExpr ("Unary " ++ show op ++ " " ++ colorGrey (show ty)) : paddingSingle (buildTree r)
   buildTree (Lit lit ty) = colorExpr ("Lit " ++ colorGrey (show ty)) : paddingSingle (buildTree lit)
-  buildTree (FCall id rexprs) = (colorExpr "FCall " ++ showId id) : buildTree rexprs
+  buildTree (FCall id rexprs loc) = (colorExpr "FCall " ++ showId id) : buildTree rexprs
   buildTree (LExpr lexpr) = colorExpr "LExpr" : paddingSingle (buildTree lexpr)
 
 instance PrintTree Literal where
