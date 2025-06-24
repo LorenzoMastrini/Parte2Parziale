@@ -7,6 +7,7 @@ import PrettyPrinter
 data Error ty varInfo funInfo
     = RedeclaredVar SimpleIdent
     | RedeclaredConst SimpleIdent
+    | NotConstantValue String
     | RedeclaredProcFun SimpleIdent
     | FunNotDefined SimpleIdent
     | NotAFunction SimpleIdent
@@ -26,6 +27,7 @@ data Error ty varInfo funInfo
     | NotAPointer
     | NotAnArray
     | OutOfBound [Integer] Loc
+    | NegativeArrIndex
     -- Warnings
     | WarVarNameUsedForFunc (Ident ty varInfo funInfo)
 {-
@@ -87,6 +89,9 @@ errorType x =
 
         RedeclaredConst (Ident name loc _ _ _) -> 
             errorMsg "The identifier '" ++ name ++ "' has already been used for a constant." ++ " [Declaration Error]."
+        
+        NotConstantValue idName ->
+            errorMsg "The value '" ++ idName ++ "' must be a constant." ++ " [Declaration Error]."
 
         RedeclaredProcFun (Ident name loc _ _ _) -> 
             errorMsg "The identifier '" ++ name ++ "' has already been used for a procedure/function." ++ " [Declaration Error]."
@@ -98,7 +103,7 @@ errorType x =
             errorMsg "'" ++ name ++ "' is a variable, not a function." ++ " [Declaration Error]."
         
         FunArgsNumMismatch nArgs nFormParams -> 
-            errorMsg "Mismatch in arguments number: expected "++ show nFormParams ++ " parameters, got " ++ show nArgs  ++ " arguments." ++ " [Declaration Error]."
+            errorMsg "Mismatch in arguments number: expected "++ show nFormParams ++ " parameters, got " ++ show nArgs  ++ "." ++ " [Declaration Error]."
         
         UnknownIdentifier (Ident name loc _ _ _) -> 
             errorMsg "Unknown identifier '" ++ name ++ "'." ++ " [Declaration Error]."
@@ -112,7 +117,7 @@ errorType x =
             errorMsg "Pointer type must match array element type."
         
         IncompatibleTypes op (BasicType t1) (BasicType t2) ->
-            errorMsg "Cannot perform " ++ show op ++ "operation: type " ++ show t1 ++ " is not compatible with type " ++ show t2 ++ "." ++ " [Type Error]"
+            errorMsg "Cannot perform " ++ show op ++ " operation: type " ++ show t1 ++ " is not compatible with type " ++ show t2 ++ "." ++ " [Type Error]"
 
         ComparisonTypeMismatch op (BasicType t1) (BasicType t2) ->
             errorMsg "Type mismatch in comparison operation " ++ show op ++ ". [Type Error]"
@@ -148,8 +153,9 @@ errorType x =
             1 -> errorMsg "Index " ++ show (head outOfBoundIndices) ++ " out of bound." ++ " [Array Error]"
             _ -> errorMsg "Indices " ++ show outOfBoundIndices ++ " out of bound." ++ " [Array Error]"
         
+        NegativeArrIndex ->
+            errorMsg "Array index cannot be negative." ++ " [Array Error]"
 {-
-        
         --RedeclaredFunction (Ident ((loc),name)) -> 
         --    errorMsg "Symbol name '"++ name ++ "' for function declaration already used. " 
         --    ++ (lineAndColumn l c) ++  " [DeclError]."
@@ -281,6 +287,7 @@ errorType x =
             errorMsg "Cannot use the statement '" ++ stmt ++ "' inside a deterministic 'for' loop. " ++ " [ControlFlowAnalysis]."
 
         CustomError msg -> errorMsg msg
+
 -}
 -------------------------------------------------
 ------------------ WARNINGS ---------------------

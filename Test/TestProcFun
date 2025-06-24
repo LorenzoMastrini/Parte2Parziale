@@ -1,0 +1,35 @@
+program TestFunzioniProcedure();
+
+var
+    x: Integer;
+    y: Real;
+
+    procedure PrintInt(val: Integer);
+    begin
+        0;
+    end;
+
+    function Sum(a, b: Integer): Integer;
+    begin
+        a + b;
+    end;
+
+    //function NoReturn(a: Integer);   // ERROR (Missing return type)
+    //begin
+    //    0;
+    //end;
+
+    procedure PrintInt(val: Integer); // ERROR (RedeclaredProcFun)
+    begin
+        0;
+    end;
+
+begin
+    Sum(3, 4);
+    PrintInt(x);
+    Sum(2, (Sum(3, 2)));
+    Sum(1);                     // ERRORE: numero di argomenti errato
+    Sum(1, 2, 3, 4, 5);         // ERRORE: numero di argomenti errato
+    Sum(1, "hello");            // ERROR (FunArgTypeMismatch)
+    FunzioneNonDefinita(1);     // ERRORE: funzione non definita
+end. 

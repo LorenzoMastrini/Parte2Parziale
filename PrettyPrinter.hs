@@ -329,24 +329,6 @@ showAttr (FuncAttrs callat params ty)
 -- PRETTY TREE:
 ------------------------------------------------------
 
-type EnrichedProgram                         = Program TypeInfo VarInfo FunInfo
-type EnrichedFormalParameters                = FormalParameters TypeInfo VarInfo FunInfo
-type EnrichedBlock                           = Block TypeInfo VarInfo FunInfo
-type EnrichedConstantDefinition              = ConstantDefinition TypeInfo VarInfo FunInfo
-type EnrichedVariableDeclaration             = VariableDeclaration TypeInfo VarInfo FunInfo
-type EnrichedIdent                           = Ident TypeInfo VarInfo FunInfo
-type EnrichedType                            = Type TypeInfo VarInfo FunInfo
-type EnrichedProcedureAndFunctionDeclaration = ProcedureAndFunctionDeclaration TypeInfo VarInfo FunInfo
-type EnrichedProcedureAndFunctionHeading     = ProcedureAndFunctionHeading TypeInfo VarInfo FunInfo
-type EnrichedIndexType                       = IndexType TypeInfo VarInfo FunInfo
-type EnrichedConstant                        = Constant TypeInfo VarInfo FunInfo
-type EnrichedCompoundStatement               = CompoundStatement TypeInfo VarInfo FunInfo
-type EnrichedStatement                       = Statement TypeInfo VarInfo FunInfo
-type EnrichedOptElse                         = OptElse TypeInfo VarInfo FunInfo
-type EnrichedCaseItem                        = CaseItem TypeInfo VarInfo FunInfo
-type EnrichedLExpr                           = LExpr TypeInfo VarInfo FunInfo
-type EnrichedRExpr                           = RExpr TypeInfo VarInfo FunInfo
-
 
 pad :: String -> String -> [String] -> [String]
 pad first rest lines = zipWith (++) (first : repeat rest) lines
@@ -436,6 +418,8 @@ instance PrintTree EnrichedConstant where
     buildTree (ConstInt sign i) = [show sign ++ " " ++ show i]
     buildTree (ConstDouble sign d) = [show sign ++ " " ++ show d]
     buildTree (ConstStr s) = ["\"" ++ s ++ "\""]
+    buildTree (ConstChar c) = [" " ++ show c]
+    buildTree (ConstBool b) = [" " ++ show b]
 
 instance PrintTree EnrichedCompoundStatement where
   buildTree (CompStmt stmts) = (colorStmt "CompoundStmt") : buildTree stmts
@@ -497,7 +481,7 @@ instance PrintTree Literal where
 -- Istanze per i tipi semplici usati in VarInfo
 instance PrintTree (Constant () () ()) where
     buildTree (ConstId sign id) = [show sign ++ " " ++ showId (idToEnriched id)]
-        where idToEnriched (Ident s l _ _ _) = Ident s l TUnknown NoVarInfo NoFunInfo
+        where idToEnriched (Ident s l _ _ _) = Ident s l Nothing NoVarInfo NoFunInfo
     buildTree (ConstInt sign i) = [show sign ++ " " ++ show i]
     buildTree (ConstDouble sign d) = [show sign ++ " " ++ show d]
     buildTree (ConstStr s) = ["\"" ++ s ++ "\""]

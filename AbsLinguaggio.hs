@@ -4,7 +4,6 @@ module AbsLinguaggio where
 
 import Prelude (Char, Double, Integer, String, Int, Bool, Maybe)
 import qualified Prelude as C (Eq, Ord, Show, Read)
-import qualified Data.String
 
 
 --------------------------------------------------------------
@@ -73,6 +72,8 @@ data Constant ty varInfo funInfo
   | ConstInt OptSign Integer
   | ConstDouble OptSign Double
   | ConstStr String
+  | ConstChar Char
+  | ConstBool Bool
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data OptSign
@@ -164,38 +165,43 @@ type SimpleFormalParameters                = FormalParameters () () ()
 type SimpleBlock                           = Block () () ()
 type SimpleConstantDefinition              = ConstantDefinition () () ()
 type SimpleVariableDeclaration             = VariableDeclaration () () ()
-type SimpleIdent                           = Ident () () ()
-type SimpleType                            = Type () () ()
+type SimpleConstant                        = Constant () () ()
 type SimpleProcedureAndFunctionDeclaration = ProcedureAndFunctionDeclaration () () ()
 type SimpleProcedureAndFunctionHeading     = ProcedureAndFunctionHeading () () ()
-type SimpleRExpr                           = RExpr () () ()
 type SimpleCompoundStatement               = CompoundStatement () () ()
 type SimpleStatement                       = Statement () () ()
+type SimpleRExpr                           = RExpr () () ()
 type SimpleLExpr                           = LExpr () () ()
+type SimpleIdent                           = Ident () () ()
+type SimpleType                            = Type () () ()
 type SimpleIndexType                       = IndexType () () ()
 
+-- Type aliases for the enriched AST nodes
+type EnrichedProgram                          = Program (Maybe SimpleType) VarInfo FunInfo
+type EnrichedFormalParameters                 = FormalParameters (Maybe SimpleType) VarInfo FunInfo
+type EnrichedBlock                            = Block (Maybe SimpleType) VarInfo FunInfo
+type EnrichedConstantDefinition               = ConstantDefinition (Maybe SimpleType) VarInfo FunInfo
+type EnrichedVariableDeclaration              = VariableDeclaration (Maybe SimpleType) VarInfo FunInfo
+type EnrichedProcedureAndFunctionDeclaration  = ProcedureAndFunctionDeclaration (Maybe SimpleType) VarInfo FunInfo
+type EnrichedProcedureAndFunctionHeading      = ProcedureAndFunctionHeading (Maybe SimpleType) VarInfo FunInfo
+type EnrichedCompoundStatement                = CompoundStatement (Maybe SimpleType) VarInfo FunInfo
+type EnrichedStatement                        = Statement (Maybe SimpleType) VarInfo FunInfo
+type EnrichedRExpr                            = RExpr (Maybe SimpleType) VarInfo FunInfo
+type EnrichedLExpr                            = LExpr (Maybe SimpleType) VarInfo FunInfo
+type EnrichedIdent                            = Ident (Maybe SimpleType) VarInfo FunInfo
+type EnrichedType                             = Type (Maybe SimpleType) VarInfo FunInfo
+type EnrichedIndexType                        = IndexType (Maybe SimpleType) VarInfo FunInfo
+type EnrichedConstant                         = Constant (Maybe SimpleType) VarInfo FunInfo
+type EnrichedOptElse                          = OptElse (Maybe SimpleType) VarInfo FunInfo
+type EnrichedCaseItem                         = CaseItem (Maybe SimpleType) VarInfo FunInfo
 
 -- Definition of the position of the tokens
 data Loc = Loc {line, column :: Int}
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
--- Type information for the enriched AST
-data TypeInfo
-  = TArray [SimpleIndexType] SimpleType
-  | TPointer SimpleType
-  | TInteger
-  | TReal
-  | TBoolean
-  | TCharacter
-  | TString
-  | TVoid
-  | TUnknown
-  deriving (C.Eq, C.Ord, C.Show)
-
 -- Variable informations for the enriched AST
 data VarInfo =
   VarInfo {
-    --ty :: Type TypeInfo () (),        -- Variable Type.
     --constCompTime :: Bool,            -- True if is const at CompileTime
     --varLoc :: Loc,                    -- location (line, column)
     init :: Maybe (Constant () () ()),  -- Value of a constant known at compile time (if present)
@@ -207,15 +213,9 @@ data VarInfo =
 -- Function informations for the enriched AST
 data FunInfo =
   FunInfo {
-    retType :: SimpleType,               -- Function return type
+    retType :: SimpleType,              -- Function return type
     params :: [SimpleFormalParameters]  -- List of parameters
-    --pos :: Loc                                    -- Location (line, column)
+    --pos :: Loc                        -- Location (line, column)
   }
   | NoFunInfo
   deriving (C.Eq, C.Show)
-
-{-
-DA aggiungere all'AST:
-  - tipi delle RExpr
-  -
--}

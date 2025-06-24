@@ -1,0 +1,38 @@
+program TestCaseIfWhileFor;
+
+var
+    i: Integer;
+    flag: Boolean;
+
+begin
+    if flag then
+        i := 1
+    else
+        i := 2;
+
+    case i of
+        1: flag := true;
+        2: flag := false;
+        3: flag := 1;         // ERRORE: assegnamento tipo errato
+    end;
+
+    while i < 10 do
+        i := i + 1;
+
+    while "test" do          // ERRORE: condizione non booleana
+        i := 0;
+
+    for i := 1 to 5 do
+        flag := not flag;
+
+    for i := 1 to "x" do     // ERRORE: tipo non numerico
+        flag := false;
+
+    repeat
+        i := i - 1;
+    until i = 0;
+
+    repeat
+        i := i + 1;
+    until "stop";            // ERRORE: condizione non booleana
+end. 

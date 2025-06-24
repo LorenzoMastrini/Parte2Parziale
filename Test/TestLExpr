@@ -25,17 +25,22 @@ begin
     pa^;
     pp^^;
     ^pa;
-    parr^;
+    parr^;  // Integer
     ^pp^;
+
+    // Combinations
+    ^arr[1];    // ^Integer
 
 
 
     // ERROR CASES
     parr^[1];       // ERROR (NotAnArray)
+    parr[1];        // ERROR (NotAnArray)
     a[1];           // ERROR (NotAnArray)
     arr[6];         // ERROR (OutOfBound)
     arr[3*8];       // ERROR (OutOfBound)
     mat[0][1];      // ERROR (OutOfBound)
     arr[2]^;        // ERROR (NotAPointer)
     b^;             // ERROR (NotAPointer)
+    pmat^[4][1];    // ERROR (OutOfBound)
 end.

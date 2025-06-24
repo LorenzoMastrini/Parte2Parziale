@@ -204,6 +204,9 @@ Constant
   | OptSign Integer { AbsLinguaggio.ConstInt $1 $2 }
   | OptSign Double { AbsLinguaggio.ConstDouble $1 $2 }
   | String { AbsLinguaggio.ConstStr $1 }
+  | Char { AbsLinguaggio.ConstChar $1 }
+  | 'true' { AbsLinguaggio.ConstBool True }
+  | 'false' { AbsLinguaggio.ConstBool False }
 
 OptSign :: { AbsLinguaggio.OptSign }
 OptSign

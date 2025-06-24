@@ -16,6 +16,8 @@ begin
     // Unary operations (+, -, not, ^)
     +10;                // +Integer = Integer
     +15.5;              // +Real = Real
+    +5;                 // +Integer = Integer
+    -a;                 // +Integer = Integer
     
     -20;                // -Integer = Integer
     -25.5;              // -Real = Real
@@ -24,7 +26,6 @@ begin
     not false;          // not Boolean = Boolean
 
     ^a;                 // Ref: address of variable (Pointer to Integer)
-    ^arr[1];            // Ref: address of array element
     ^arr;               // (Pointer to Array of String) 
     ^p^;                // Ref: address of dereferenced pointer (Ponter to Integer)
     ^(p^);              // Ref: address of dereferenced pointer (Pointer to Integer)
@@ -52,11 +53,13 @@ begin
     not 1.5;            // not Real = ERROR
     not 'a';            // not Character = ERROR
     not "hello";        // not String = ERROR
+    not a;              // not Integer = ERROR
 
     // ERROR CASES - References and pointers
     ^42;              // Ref of a literal
     ^(a + 1);         // Ref of an expression
     ^"hello";         // Ref of a string literal
+    ^arr[1];            // Ref: address of array element
     ^(arr[1] + 1);    // Ref of an expression
     ^(p^ + 1);        // Ref of an expression
 end.

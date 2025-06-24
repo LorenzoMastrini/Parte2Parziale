@@ -1,0 +1,17 @@
+program TestErroriSintatticiSemantici;
+
+var
+    a: Integer;
+    a: Real;                  // ERRORE: ridichiarazione
+    b: Integer;
+
+begin
+    c := 5;                   // ERRORE: variabile non dichiarata
+    b := FunzioneNonDefinita(1); // ERRORE: funzione non definita
+    if a then                 // ERRORE: condizione non booleana
+        b := 1;
+    while 3 do                // ERRORE: condizione non booleana
+        b := 2;
+    for a := 1 to "x" do     // ERRORE: tipo non numerico
+        b := 3;
+end. 

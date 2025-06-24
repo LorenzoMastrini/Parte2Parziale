@@ -7,19 +7,16 @@ var
     d: Character;
     e: String;
 
-    // Sum of two integers
     function sum(x: Integer, y: Integer): Integer;
         begin
             x + y;
         end;
 
-    // Concatenate two strings
     function concatenate(s1, s2: String): String;
         begin
             s1;
         end;
 
-    // Returns the opposite boolean value
     function invert(b: Boolean): Boolean;
         begin
             not b;
