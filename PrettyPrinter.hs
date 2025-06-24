@@ -431,8 +431,8 @@ instance PrintTree [EnrichedStatement] where
 
 instance PrintTree EnrichedStatement where
   buildTree (Stmts stmt) = (colorStmt "Stmts") : paddingSingle (buildTree stmt)
-  buildTree (RExprStmt rexpr ty) = (colorStmt ("RExprStmt " ++ colorGrey (show ty))) : paddingSingle (buildTree rexpr)
-  buildTree (Assign lexpr rexpr loc) = (colorStmt "Assign") : (paddingMultiple (buildTree lexpr) ++ paddingSingle (buildTree rexpr))
+  buildTree (RExprStmt rexpr ty) = (colorStmt "RExprStmt " ++ colorGrey (show ty)) : paddingSingle (buildTree rexpr)
+  buildTree (Assign lexpr rexpr ty loc) = (colorStmt "Assign " ++ colorGrey (show ty)) : (paddingMultiple (buildTree lexpr) ++ paddingSingle (buildTree rexpr))
   buildTree (While rexpr stmt) = (colorStmt "While") : (paddingMultiple (buildTree rexpr) ++ paddingSingle (buildTree stmt))
   buildTree (DoWhile stmt rexpr) = (colorStmt "DoWhile") : (paddingMultiple (buildTree stmt) ++ paddingSingle (buildTree rexpr))
   buildTree (ForTo lexpr r1 r2 stmt) = (colorStmt "ForTo") : (paddingMultiple (buildTree lexpr) ++ paddingMultiple (buildTree r1) ++ paddingMultiple (buildTree r2) ++ paddingSingle (buildTree stmt))

@@ -1,0 +1,48 @@
+program TestDoWhile();
+
+var
+    i: Integer;
+    r: Real;
+    b: Boolean;
+    ch: Character;
+    s: String;
+
+begin
+    // VALID CASES
+    repeat
+        i := i + 1;
+    until i > 10;
+
+    repeat
+        b := not b;
+    until b;
+
+    repeat
+        s := "looping";
+    until s = "stop";
+
+    repeat
+        i := i - 1;
+    until (i = 0) or b;
+
+    // Nested repeat-until
+    repeat
+        repeat
+            i := i + 1;
+        until i > 5;
+        b := false;
+    until b;
+
+    // ERROR CASES
+    repeat
+        i := 1;
+    until 1;           // ERROR: condition not boolean
+
+    repeat
+        b := true;
+    until "test";      // ERROR: condition not boolean
+
+    repeat
+        ch := 'a';
+    until ch;          // ERROR: condition not boolean
+end. 

@@ -244,7 +244,7 @@ instance Print AbsLinguaggio.OptSign where
 
 instance Print (AbsLinguaggio.Statement () () ()) where
   prt i (AbsLinguaggio.RExprStmt expr ty) = prPrec i 0 (concatD [prt 0 expr])
-  prt i (AbsLinguaggio.Assign lexpr expr loc) = prPrec i 0 (concatD [prt 0 lexpr, doc (showString ":="), prt 0 expr])
+  prt i (AbsLinguaggio.Assign lexpr expr ty loc) = prPrec i 0 (concatD [prt 0 lexpr, doc (showString ":="), prt 0 expr])
   prt i (AbsLinguaggio.While expr stmt) = prPrec i 0 (concatD [doc (showString "while"), prt 0 expr, doc (showString "do"), prt 0 stmt])
   prt i (AbsLinguaggio.DoWhile stmt expr) = prPrec i 0 (concatD [doc (showString "repeat"), prt 0 stmt, doc (showString "until"), prt 0 expr])
   prt i (AbsLinguaggio.ForTo lexpr expr1 expr2 stmt) = prPrec i 0 (concatD [doc (showString "for"), prt 0 lexpr, doc (showString ":="), prt 0 expr1, doc (showString "to"), prt 0 expr2, doc (showString "do"), prt 0 stmt])

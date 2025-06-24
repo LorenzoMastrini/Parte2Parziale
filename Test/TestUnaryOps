@@ -37,7 +37,7 @@ begin
 
 
 
-    // ERROR CASES - Should generate "Incompatible types" errors [TypeError]
+    // ERROR CASES
     // Unary plus on non-numeric types
     +true;              // + Boolean = ERROR
     +'a';               // + Character = ERROR

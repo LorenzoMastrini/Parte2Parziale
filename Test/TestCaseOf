@@ -1,0 +1,62 @@
+program TestCaseOf();
+
+var
+    i: Integer;
+    r: Real;
+    b: Boolean;
+    ch: Character;
+    s: String;
+
+begin
+    // VALID CASES
+    case i of
+        1: s := "one";
+        2: s := "two";
+        3: s := "three";
+    end;
+
+    case ch of
+        'a': i := 1;
+        'b': i := 2;
+        'c': i := 3;
+    end;
+
+    case s of
+        "foo": b := true;
+        "bar": b := false;
+    end;
+
+    case i of
+        1: r := 1.0;
+        2: r := 2.0;
+        3: r := 3.0;
+        else r := 0.0;
+    end;
+
+    // Nested case
+    case i of
+        1: case ch of 'a': s := "A1"; end;
+        2: s := "B2";
+    end;
+
+    // ERROR CASES
+    case r of           // ERROR: case expression not integer, char, or string
+        1.0: i := 1;
+        2.0: i := 2;
+    end;
+
+    case b of           // ERROR: case expression not integer, char, or string
+        true: i := 1;
+        false: i := 2;
+    end;
+
+    case i of
+        "foo": s := "bad";   // ERROR: case label type mismatch
+        2: s := "ok";
+    end;
+
+    case ch of
+        1: i := 1;            // ERROR: case label type mismatch
+        'b': i := 2;
+    end;
+end. 

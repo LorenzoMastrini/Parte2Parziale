@@ -28,6 +28,7 @@ data Error ty varInfo funInfo
     | NotAnArray
     | OutOfBound [Integer] Loc
     | NegativeArrIndex
+    | AssignmentToConstant
     -- Warnings
     | WarVarNameUsedForFunc (Ident ty varInfo funInfo)
 {-
@@ -134,8 +135,11 @@ errorType x =
         NotNumericType op (BasicType t) ->
             errorMsg "Numeric type expected in " ++ show op ++ "." ++ " [Type Error]"
         
-        IncompatibleAssignment (BasicType targetType) (BasicType sourceType) ->
-            errorMsg "Cannot assign " ++ show sourceType ++ " type to " ++ show targetType ++ " ." ++ " [Type Error]"
+        IncompatibleAssignment targetType sourceType ->
+            errorMsg "Cannot assign " ++ showTy sourceType ++ " type to " ++ showTy targetType ++ "." ++ " [Type Error]"
+        
+        AssignmentToConstant ->
+            errorMsg "Cannot assign a value to a constant." ++ " [Declaration Error]"
         
         FunArgTypeMismatch (BasicType argType) (BasicType paramType) ->
             errorMsg "Argument type mismatch in function call: expected " ++ show paramType ++ " type, got " ++ show argType ++ " instead." ++ " [Type Error]"
@@ -314,3 +318,14 @@ errorType x =
         InfiniteLoop loc ->
             warningMsg "Infinite loop." ++ " [ControlFlowAnalysis]."
 -}
+
+showTy :: SimpleType -> String
+showTy ty = case ty of
+    Array _ arrTy       -> "Array of " ++ showTy arrTy
+    Pointer ptrTy       -> "Pointer to " ++ showTy ptrTy
+    BasicType Integer   -> "Integer"
+    BasicType Real      -> "Real"
+    BasicType Boolean   -> "Boolean"
+    BasicType Character -> "Character"
+    BasicType String    -> "String"
+    BasicType Void      -> "Void"

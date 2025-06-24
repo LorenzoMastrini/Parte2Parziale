@@ -1,0 +1,47 @@
+program TestWhile();
+
+var
+    i: Integer;
+    r: Real;
+    b: Boolean;
+    ch: Character;
+    s: String;
+
+begin
+    // VALID CASES
+    while i < 10 do
+        i := i + 1;
+
+    while b do
+        b := false;
+
+    while true do
+        i := 0;
+
+    while (i > 0) and b do
+        i := i - 1;
+
+    while (s = "stop") or (i < 5) do
+        s := "continue";
+
+    // Nested while
+    while i < 3 do
+    begin
+        while b do
+            b := false;
+        i := i + 1;
+    end;
+
+    // ERROR CASES
+    while 1 do           // ERROR: condition not boolean
+        i := 1;
+
+    while "test" do      // ERROR: condition not boolean
+        b := true;
+
+    while i do           // ERROR: condition not boolean
+        i := 2;
+
+    while ch do          // ERROR: condition not boolean
+        ch := 'a';
+end. 

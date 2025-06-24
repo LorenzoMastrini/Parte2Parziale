@@ -1,11 +1,11 @@
 module StaticAnalysis where
 
 import AbsLinguaggio
-import ErrorStaticAnalysis
+import ErrorStaticAnalysis hiding (showTy)
 import Data.Map (Map,toList)
 import qualified Data.Map as Map
 import Data.List (intercalate, nub)
-import Data.Maybe (isJust)
+import Data.Maybe (isJust, isNothing)
 
 
 
@@ -371,7 +371,7 @@ checkLExpr env lexpr = case lexpr of
             (env1, lexprEnriched) = checkLExpr env lexpr'
             (env2, indicesEnriched) = checkIndices env1 indices
             isArrayResult = isArray lexprEnriched
-            childHasUnknown = isJust (getLExprType lexprEnriched) || any (isJust . getRExprType) indicesEnriched
+            childHasUnknown = isNothing (getLExprType lexprEnriched) || any isNothing (map getRExprType indicesEnriched)
         in if isArrayResult && not childHasUnknown
             then
                 let
@@ -379,7 +379,7 @@ checkLExpr env lexpr = case lexpr of
                     (env3, hasError) = checkRange env2 lexprEnriched indicesEnriched loc
                     finalType = if hasError then Nothing else Just ty
                 in (env3, LArr lexprEnriched indicesEnriched finalType loc)
-            else (addError env1 (NotAnArray, loc), LArr lexprEnriched indicesEnriched Nothing loc)
+            else (addError env2 (NotAnArray, loc), LArr lexprEnriched indicesEnriched Nothing loc)
     LDeref lexpr' _ loc ->
         let
             (env1, lexprEnriched) = checkLExpr env lexpr'
@@ -444,12 +444,15 @@ checkStatement env stmt = case stmt of
         let
             (env1, exprEnriched) = checkRExpr env expr
         in (env1, RExprStmt exprEnriched (getRExprType exprEnriched))
-    Assign lexpr rexpr loc ->
+    Assign lexpr rexpr _ loc ->
         let
             (env1, lexprEnriched) = checkLExpr env lexpr
             (env2, rexprEnriched) = checkRExpr env1 rexpr
-            (env3, compatible) = compatibleAssignment env2 (getLExprType lexprEnriched) (getRExprType rexprEnriched) (Loc 0 0)
-        in (env3, Assign lexprEnriched rexprEnriched loc)
+        in if isConstant lexprEnriched
+            then (addError env (AssignmentToConstant, loc), Assign lexprEnriched rexprEnriched Nothing loc) -- If the checks didn't pass as defined in the grammar, it must be a constant
+            else let
+                (env3, assTy) = compatibleAssignment env2 (getLExprType lexprEnriched) (getRExprType rexprEnriched) loc
+                in (env3, Assign lexprEnriched rexprEnriched assTy loc)
     While rexpr stmt ->
         let
             (env1, rexprEnriched) = checkRExpr env rexpr
@@ -468,20 +471,24 @@ checkStatement env stmt = case stmt of
             (env4, stmtEnriched) = checkStatement env stmt
         in (env4, ForTo lexprEnriched rexpr1Enriched rexpr2Enriched stmtEnriched)
 
--- check the type compatibility in an assignment
-compatibleAssignment :: Env -> Maybe SimpleType -> Maybe SimpleType -> Loc -> (Env, Bool)
+-- Check the type compatibility in an assignment
+compatibleAssignment :: Env -> Maybe SimpleType -> Maybe SimpleType -> Loc -> (Env, Maybe SimpleType)
 compatibleAssignment env (Just targetType) (Just sourceType) loc = case (targetType, sourceType) of
-    (t1, t2) | t1 == t2 -> (env, True) -- Same type: compatible
+    (t1, t2) | t1 == t2 -> (env, Just targetType) -- Same type: compatible
     -- Numeric cast
-    (BasicType Real, BasicType Integer) -> (env, True) -- int -> real
-    (BasicType Integer, BasicType Real) -> (env, True) -- real -> int (loss of precision)
+    (BasicType Real, BasicType Integer) -> (env, Just targetType) -- int -> real
+    (BasicType Integer, BasicType Real) -> (env, Just targetType) -- real -> int (loss of precision)
     -- Cast between characters and strings
-    (BasicType String, BasicType Character) -> (env, True) -- char -> string
+    (BasicType String, BasicType Character) -> (env, Just targetType) -- char -> string
     -- Cast between arrays and pointers
-    (Array _ elemType, Pointer ptrType) -> if elemType == ptrType then (env, True) else (addError env (IncompatibleArrPtrType, loc), False)
-    (Pointer ptrType, Array _ elemType) -> if ptrType == elemType then (env, True) else (addError env (IncompatiblePtrArrType, loc), False)
-    _ -> (addError env (IncompatibleAssignment targetType sourceType, loc), False)
-compatibleAssignment env _ _ loc = (env, False)
+    (Array _ elemType, Pointer ptrType) -> if elemType == ptrType
+        then (env, Just targetType)
+        else (addError env (IncompatibleArrPtrType, loc), Nothing)
+    (Pointer ptrType, Array _ elemType) -> if ptrType == elemType
+        then (env, Just targetType)
+        else (addError env (IncompatiblePtrArrType, loc), Nothing)
+    _ -> (addError env (IncompatibleAssignment targetType sourceType, loc), Nothing) -- If it's not any of the above, the LExpr is actually a constant
+compatibleAssignment env _ _ loc = (env, Nothing)
 
 
 ------------------------------------------------
@@ -860,9 +867,6 @@ getArrRange :: Env -> [SimpleIndexType] -> (Integer, Integer)
 getArrRange env [] = (0, -1) -- Invalid range for an array
 getArrRange env (IndexRange c1 c2 : _) = (getConstVal env c1, getConstVal env c2)
 
-getValFromIndices :: [EnrichedRExpr] -> [Maybe Integer]
-getValFromIndices = map evalConstExpr
-
 -- Extract integer value from a constant, resolving identifiers from the environment
 getConstVal :: Env -> Constant () () () -> Integer
 getConstVal _ (ConstInt sign n) = case sign of
@@ -876,6 +880,9 @@ getConstVal env (ConstId sign ident) =
         OptSignMinus -> negate value
         _            -> value
 getConstVal _ _ = 0 -- Other constant types
+
+getValFromIndices :: [EnrichedRExpr] -> [Maybe Integer]
+getValFromIndices = map evalConstExpr
 
 evalConstExpr :: EnrichedRExpr -> Maybe Integer
 evalConstExpr (Lit (LiteralInteger n) _) = Just n
@@ -894,6 +901,14 @@ evalConstExpr (Binary e1 op e2 _) =
     _ -> Nothing
 evalConstExpr _ = Nothing
 
+-- True if the LExpr has been defined as a constant
+isConstant :: EnrichedLExpr -> Bool
+isConstant lexpr = case lexpr of
+    LId ident _ -> case ident of
+        Ident _ _ _ (VarInfo _ isConst) _ -> isConst
+        _ -> False
+    LArr l _ _ _ -> isConstant l
+    LDeref l _ _ -> isConstant l
 
 
 -----------------------------------------------------------

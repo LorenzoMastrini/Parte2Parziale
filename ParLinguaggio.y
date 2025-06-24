@@ -227,7 +227,7 @@ Statement :: { AbsLinguaggio.Statement () () () }
 Statement
   : CompoundStatement { AbsLinguaggio.Stmts $1 }
   | RExpr { AbsLinguaggio.RExprStmt $1 () }
-  | LExpr ':=' RExpr { AbsLinguaggio.Assign $1 $3 (posToLoc (getPos $2)) }
+  | LExpr ':=' RExpr { AbsLinguaggio.Assign $1 $3 () (posToLoc (getPos $2)) }
   | 'while' RExpr 'do' Statement { AbsLinguaggio.While $2 $4 }
   | 'repeat' Statement 'until' RExpr { AbsLinguaggio.DoWhile $2 $4 }
   | 'for' LExpr ':=' RExpr 'to' RExpr 'do' Statement { AbsLinguaggio.ForTo $2 $4 $6 $8 }

@@ -925,7 +925,7 @@ happyReduction_58 happy_x_3
         case happyOutTok happy_x_2 of { happy_var_2 -> 
         case happyOut36 happy_x_3 of { (HappyWrap36 happy_var_3) -> 
         happyIn31
-                 (AbsLinguaggio.Assign happy_var_1 happy_var_3 (posToLoc (getPos happy_var_2))
+                 (AbsLinguaggio.Assign happy_var_1 happy_var_3 () (posToLoc (getPos happy_var_2))
         )}}}
 
 happyReduce_59 = happyReduce 4# 26# happyReduction_59
