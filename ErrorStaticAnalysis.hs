@@ -25,6 +25,7 @@ data Error ty varInfo funInfo
     | NotLExpr Unary
     | NotAPointer
     | NotAnArray
+    | OutOfBound [Integer] Loc
     -- Warnings
     | WarVarNameUsedForFunc (Ident ty varInfo funInfo)
 {-
@@ -38,7 +39,6 @@ data Error ty varInfo funInfo
     | NonIntegerExprInArrayAccess Loc
     | NotDeclared (Ident ty varInfo funInfo)
     | DereferenceExcess (Ident ty varInfo funInfo)
-    | NotAnArray Loc
     | PointerArithmetic Loc
     | NonNumericValue Loc
     | ArithmeticError (Type ty varInfo funInfo) (Type ty varInfo funInfo) Loc String 
@@ -143,6 +143,10 @@ errorType x =
         
         NotAnArray ->
             errorMsg "Cannot index a non-array type. " ++ " [Array Error]"
+        
+        OutOfBound outOfBoundIndices loc -> case length outOfBoundIndices of
+            1 -> errorMsg "Index " ++ show (head outOfBoundIndices) ++ " out of bound." ++ " [Array Error]"
+            _ -> errorMsg "Indices " ++ show outOfBoundIndices ++ " out of bound." ++ " [Array Error]"
         
 {-
         

@@ -9,6 +9,7 @@ import Data.Map (Map, member,lookup,toList)
 import Data.ByteString.Char8 (unpack, ByteString, pack)
 import qualified Data.Map as Map
 import Data.List (intercalate)
+import Data.Maybe (catMaybes)
 
 
 
@@ -363,13 +364,16 @@ checkLExpr env lexpr = case lexpr of
             (env1, lexprEnriched) = checkLExpr env lexpr'
             (env2, indicesEnriched) = checkIndices env1 indices
             isArrayResult = isArray lexprEnriched
-        in if isArrayResult
+            childHasUnknown = getLExprTypeInfo lexprEnriched == TUnknown || any (\idx -> getRExprTypeInfo idx == TUnknown) indicesEnriched
+        in if isArrayResult && not childHasUnknown
             then
                 let
                     t = getLExprType lexprEnriched
                     (TArray i ty) = typeInfoFromType t
-                    --(env3, indicesEnrichedChecked) = checkRange env2 lexpr' indices -------------------------- TODO
-                in (env2, LArr lexprEnriched indicesEnriched (typeInfoFromType ty) loc)
+                    (env3, hasError) = checkRange env2 lexprEnriched indicesEnriched loc
+                    finalType = if hasError then TUnknown else typeInfoFromType ty
+                    larrNode = LArr lexprEnriched indicesEnriched finalType loc
+                in (env3, larrNode)
             else (addError env1 (NotAnArray, loc), LArr lexprEnriched indicesEnriched TUnknown loc)
     LDeref lexpr' _ loc ->
         let
@@ -390,6 +394,22 @@ checkIndices env (index:indices) =
         (env2, indicesEnriched) = checkIndices env1 indices
     in (env2, indexEnriched:indicesEnriched)
 
+
+checkRange :: Env -> LExpr TypeInfo VarInfo FunInfo -> [RExpr TypeInfo VarInfo FunInfo] -> Loc -> (Env, Bool)
+checkRange env lexpr indices loc =
+    case getLExprTypeInfo lexpr of
+        TArray indTy _ ->
+            let
+                (min, max) = getValFromArrIndex env indTy
+                values = getValFromIndices indices
+                -- Se tutti gli indici sono noti, controlla i bound
+                allKnown = all (\x -> case x of Just _ -> True; _ -> False) values
+                outOfBounds = [v | Just v <- values, v < min || v > max]
+            in if allKnown
+               then if null outOfBounds
+                    then (env, False)
+                    else (addError env (OutOfBound outOfBounds loc, loc), True)
+               else (env, False) -- Indici non noti: nessun errore statico
 
 
 ----------------------------------------------------
@@ -984,13 +1004,9 @@ getLExprType = typeFromTypeInfo . getLExprTypeInfo
 
 -- Extract type info from LExpr
 getLExprTypeInfo :: LExpr TypeInfo VarInfo FunInfo -> TypeInfo
-getLExprTypeInfo (LId ident _) = getIdentTypeInfo ident
-getLExprTypeInfo (LArr lexpr _ _ _) = case getLExprTypeInfo lexpr of
-    TArray _ arrTy -> typeInfoFromType arrTy
-    _              -> TUnknown
-getLExprTypeInfo (LDeref lexpr _ _) = case getLExprTypeInfo lexpr of
-    TPointer ptrTy -> typeInfoFromType ptrTy
-    _              -> TUnknown
+getLExprTypeInfo (LId _ ty) = ty
+getLExprTypeInfo (LArr _ _ ty _) = ty
+getLExprTypeInfo (LDeref _ ty _) = ty
 
 getArrIndicesType :: IndexType TypeInfo VarInfo FunInfo -> SimpleIndexType
 getArrIndicesType (IndexRange c1 c2) = IndexRange (toSimpleConstant c1) (toSimpleConstant c2)
@@ -1104,6 +1120,40 @@ isArray (LId _ (TArray {}))         = True
 isArray (LArr _ _ (TArray {}) _)    = True
 isArray (LDeref _ (TArray {}) _)    = True
 isArray _                           = False
+
+-- Gets the range of an array from its index type
+getValFromArrIndex :: Env -> [SimpleIndexType] -> (Integer, Integer)
+getValFromArrIndex env [] = (0, -1) -- Invalid range for an array
+getValFromArrIndex env (IndexRange c1 c2 : _) = (getConstVal env c1, getConstVal env c2)
+
+-- Helper to extract integer value from a constant, resolving identifiers from the environment
+getConstVal :: Env -> Constant () () () -> Integer
+getConstVal _ (ConstInt _ n) = n
+getConstVal env (ConstId _ ident) =
+    case lookupByName env (getIdentName ident) of
+        Just (ConstVarEntry _ True (Just (ConstInt _ val)) _, _) -> val
+        _ -> 0 -- Not a known integer constant, default to 0
+getConstVal _ _ = 0 -- Other constant types
+
+-- Gets the values of constant expressions used as array indices
+getValFromIndices :: [RExpr TypeInfo VarInfo FunInfo] -> [Maybe Integer]
+getValFromIndices = map evalConstExpr
+
+-- Valuta un'espressione costante a tempo di compilazione (constant folding)
+evalConstExpr :: RExpr TypeInfo VarInfo FunInfo -> Maybe Integer
+evalConstExpr (Lit (LiteralInteger n) _) = Just n
+evalConstExpr (Unary (UnaryPlus _) e _) = evalConstExpr e
+evalConstExpr (Unary (UnaryMinus _) e _) = fmap negate (evalConstExpr e)
+evalConstExpr (Binary e1 op e2 _) =
+  case (evalConstExpr e1, evalConstExpr e2, op) of
+    (Just v1, Just v2, BinaryPlus _)  -> Just (v1 + v2)
+    (Just v1, Just v2, BinaryMinus _) -> Just (v1 - v2)
+    (Just v1, Just v2, BinaryMul _)   -> Just (v1 * v2)
+    (Just v1, Just v2, BinaryIntDiv _) -> if v2 /= 0 then Just (v1 `div` v2) else Nothing
+    (Just v1, Just v2, BinaryDiv _)   -> if v2 /= 0 then Just (v1 `div` v2) else Nothing
+    (Just v1, Just v2, BinaryMod _)   -> if v2 /= 0 then Just (v1 `mod` v2) else Nothing
+    _ -> Nothing
+evalConstExpr _ = Nothing
 
 
 -----------------------------------------------------------

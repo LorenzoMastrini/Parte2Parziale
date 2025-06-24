@@ -33,9 +33,9 @@ begin
     // ERROR CASES
     parr^[1];       // ERROR (NotAnArray)
     a[1];           // ERROR (NotAnArray)
-    mat[0][1];      // ERROR: indice fuori range
-    arr[6];         // ERROR: indice fuori range
-    
+    arr[6];         // ERROR (OutOfBound)
+    arr[3*8];       // ERROR (OutOfBound)
+    mat[0][1];      // ERROR (OutOfBound)
     arr[2]^;        // ERROR (NotAPointer)
     b^;             // ERROR (NotAPointer)
 end.
