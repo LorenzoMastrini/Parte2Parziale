@@ -297,13 +297,13 @@ checkRExpr env expr = case expr of
             (env2, e2Enriched) = checkRExpr env1 e2
             t1 = getRExprType e1Enriched
             t2 = getRExprType e2Enriched
-            (env3, ty) = checkBinaryOp env op t1 t2
+            (env3, ty) = checkBinaryOp env2 op t1 t2
         in (env3, Binary e1Enriched op e2Enriched ty)
     Unary op e _ ->
         let
             (env1, eEnriched) = checkRExpr env e
             t = getRExprType eEnriched
-            (env3, ty) = checkUnaryOp env op t
+            (env3, ty) = checkUnaryOp env1 op t
         in (env3, Unary op eEnriched ty)
     Lit lit _ -> (env, enrichLitExpr lit)
     FCall ident@(Ident name _ _ _ _) args loc -> case lookupByName env name of
@@ -449,15 +449,17 @@ checkStatement env stmt = case stmt of
             (env1, lexprEnriched) = checkLExpr env lexpr
             (env2, rexprEnriched) = checkRExpr env1 rexpr
         in if isConstant lexprEnriched
-            then (addError env (AssignmentToConstant, loc), Assign lexprEnriched rexprEnriched Nothing loc) -- If the checks didn't pass as defined in the grammar, it must be a constant
+            then (addError env2 (AssignmentToConstant, loc), Assign lexprEnriched rexprEnriched Nothing loc) -- If the checks didn't pass as defined in the grammar, it must be a constant
             else let
                 (env3, assTy) = compatibleAssignment env2 (getLExprType lexprEnriched) (getRExprType rexprEnriched) loc
                 in (env3, Assign lexprEnriched rexprEnriched assTy loc)
-    While rexpr stmt ->
+    While rexpr stmt loc ->
         let
             (env1, rexprEnriched) = checkRExpr env rexpr
             (env2, stmtEnriched) = checkStatement env1 stmt
-        in (env2, While rexprEnriched stmtEnriched)
+        in if isBoolean rexprEnriched
+            then (env2, While rexprEnriched stmtEnriched loc)
+            else (addError env2 (NotBooleanCondition (getRExprType rexprEnriched), loc), While rexprEnriched stmtEnriched loc)
     DoWhile stmt rexpr ->
         let
             (env1, stmtEnriched) = checkStatement env stmt
@@ -910,6 +912,10 @@ isConstant lexpr = case lexpr of
     LArr l _ _ _ -> isConstant l
     LDeref l _ _ -> isConstant l
 
+isBoolean :: EnrichedRExpr -> Bool
+isBoolean rexpr = case getRExprType rexpr of
+    Just (BasicType Boolean) -> True
+    _ -> False
 
 -----------------------------------------------------------
 -------------------- PRINT ENVIRONMENT --------------------
@@ -960,7 +966,7 @@ showType ty = case ty of
 
 showErrors :: [(String, Loc)] -> String
 showErrors [] = "No errors"
-showErrors errs = intercalate "\n" (map showError (nub errs)) -- Function nub removes duplicated errors caused by the mutual recursion mechanism
+showErrors errs = intercalate "\n" (map showError (nub errs)) -- (nub errs) removes duplicated errors caused by the mutual recursion mechanism
     where showError (msg, loc) = showLoc loc ++ ": " ++ msg
 
 -- TODO: MUTUAL RECURSION (TWO-PASS ANALYSIS)

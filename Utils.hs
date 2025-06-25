@@ -1,11 +1,6 @@
 module Utils where
 
-import Data.ByteString.Char8 (unpack, ByteString, pack) 
-import Data.Map (Map, member, insert, lookup)
-import qualified Data.Map as Map
-import Data.Char
 import AbsLinguaggio
-import Data.List
 
 --------------------------------------------------------------------
 ------------------------- DATA TYPES -------------------------------
@@ -13,7 +8,6 @@ import Data.List
 
 --type Pos = (Int, Int)
 
-type Id = String
 {-
 data TACAddr  = Addr String | PointAddr String
   | DerefAddr String | AddrAt String TACAddr
@@ -484,18 +478,6 @@ showFunction out (t:types) =
     showFunction (out++(showType t )++",") types
 -}
 
-showLoc :: Loc -> String
-showLoc (Loc line col) = "(" ++ show line ++ ", " ++ show col ++ ")"
-
-
-showType :: BasicType -> String
-showType ty = case ty of
-  Integer -> "Integer"
-  Boolean -> "Boolean"
-  Character -> "Character"
-  Real -> "Real"
-  String -> "String"
-  Void -> "Void"
   --ErrorType -> "error"
   --VoidType -> "void"
   --PointerType t -> ('°':(showType t))

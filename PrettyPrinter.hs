@@ -2,7 +2,6 @@
 
 module PrettyPrinter where
 
-import Data.Map(Map,toList)
 import AbsLinguaggio
 --import TACGenerator
 --import Utils
@@ -65,6 +64,18 @@ colorLE = colorMagenta
 ------------------------------------------------------
 -- PRINTS:
 ------------------------------------------------------
+
+showMType :: Maybe SimpleType -> String
+showMType ty = case ty of
+    Just (Array _ arrTy)        -> "Array of " ++ showMType (Just arrTy)
+    Just (Pointer ptrTy)        -> "Pointer to " ++ showMType (Just ptrTy)
+    Just (BasicType Integer)    -> "Integer"
+    Just (BasicType Real)       -> "Real"
+    Just (BasicType Boolean)    -> "Boolean"
+    Just (BasicType Character)  -> "Character"
+    Just (BasicType String)     -> "String"
+    Nothing                     -> "Nothing"
+
 {-
 showId :: BIdent -> String 
 showId (BIdent ((x,y),z)) = 
@@ -132,7 +143,180 @@ colorLabel lab = case elem '@' lab of
          fin2 = drop (dim+1) lab
          fin = (colorBlue fin1 ++ colorCyan "@" ++ colorBlue fin2,40)
   false -> (lab, -2) 
+-}
 
+
+
+------------------------------------------------------
+-- PRETTY TREE:
+------------------------------------------------------
+
+
+pad :: String -> String -> [String] -> [String]
+pad first rest lines = zipWith (++) (first : repeat rest) lines
+
+paddingMultiple :: [String] -> [String]
+paddingMultiple = pad "   " "|  "
+
+paddingSingle :: [String] -> [String]
+paddingSingle = pad "   " "|  "
+
+
+prettyTree :: EnrichedProgram -> String
+prettyTree p = unlines (buildTree p)
+
+class PrintTree a where
+  buildTree :: a -> [String]
+
+showId :: EnrichedIdent -> String
+showId (Ident s (Loc l c) ty varInfo funInfo) = "'" ++ s ++ "' " ++ lineAndColumn l c ++
+    " " ++ colorGrey (showMType ty) ++
+    " " ++ colorGrey (show varInfo) ++
+    " " ++ colorGrey (show funInfo)
+
+
+instance PrintTree EnrichedProgram where
+  buildTree (Prog id formals block _) = (colorDecl "Program " ++ showId id) : (buildTree formals ++ buildTree block)
+
+instance PrintTree EnrichedBlock where
+  buildTree (Block consts vars procs stmt) = (colorDecl "Block") : (buildTree consts ++ buildTree vars ++ buildTree procs ++ buildTree stmt)
+
+instance PrintTree [EnrichedConstantDefinition] where
+  buildTree [] = []
+  buildTree [d] = paddingSingle (buildTree d)
+  buildTree (d:ds) = paddingMultiple (buildTree d) ++ buildTree ds
+
+instance PrintTree EnrichedConstantDefinition where
+  buildTree (ConstDef id const) = (colorDecl "ConstDef " ++ showId id) : paddingSingle (buildTree const)
+
+instance PrintTree [EnrichedVariableDeclaration] where
+  buildTree [] = []
+  buildTree [d] = paddingSingle (buildTree d)
+  buildTree (d:ds) = paddingMultiple (buildTree d) ++ buildTree ds
+
+instance PrintTree EnrichedVariableDeclaration where
+  buildTree (VarDecl ids type_) = (colorDecl "VarDecl") : (paddingMultiple (buildTree ids) ++ paddingSingle (buildTree type_))
+
+instance PrintTree [EnrichedIdent] where
+    buildTree [] = []
+    buildTree [id] = paddingSingle [showId id]
+    buildTree (id:ids) = paddingMultiple [showId id] ++ buildTree ids
+
+instance PrintTree [EnrichedProcedureAndFunctionDeclaration] where
+  buildTree [] = []
+  buildTree [d] = paddingSingle (buildTree d)
+  buildTree (d:ds) = paddingMultiple (buildTree d) ++ buildTree ds
+
+instance PrintTree EnrichedProcedureAndFunctionDeclaration where
+  buildTree (ProcFunDecl heading block) = (colorDecl "ProcFunDecl") : (paddingMultiple (buildTree heading) ++ buildTree block)
+
+instance PrintTree EnrichedProcedureAndFunctionHeading where
+  buildTree (ProcHead id params) = (colorDecl "ProcHead " ++ showId id) : buildTree params
+  buildTree (FunHead id params type_) = (colorDecl "FunHead " ++ showId id) : (buildTree params ++ paddingSingle (buildTree type_))
+
+instance PrintTree [EnrichedFormalParameters] where
+  buildTree [] = []
+  buildTree [d] = paddingSingle (buildTree d)
+  buildTree (d:ds) = paddingMultiple (buildTree d) ++ buildTree ds
+
+instance PrintTree EnrichedFormalParameters where
+  buildTree (FormParam modality ids type_) = (colorMod (show modality)) : (paddingMultiple (buildTree ids) ++ paddingSingle (buildTree type_))
+
+instance PrintTree EnrichedType where
+  buildTree (Array it ty) = (colorDecl "Array") : (paddingMultiple (buildTree it) ++ paddingSingle (buildTree ty))
+  buildTree (Pointer ty) = (colorDecl "Pointer") : paddingSingle (buildTree ty)
+  buildTree (BasicType bt) = [colorDecl ("BasicType " ++ show bt)]
+
+instance PrintTree [EnrichedIndexType] where
+    buildTree [] = []
+    buildTree [it] = paddingSingle (buildTree it)
+    buildTree (it:its) = paddingMultiple (buildTree it) ++ buildTree its
+
+instance PrintTree EnrichedIndexType where
+    buildTree (IndexRange c1 c2) = (colorDecl "IndexRange") : (paddingMultiple (buildTree c1) ++ paddingSingle (buildTree c2))
+
+instance PrintTree EnrichedConstant where
+    buildTree (ConstId sign id) = [show sign ++ " " ++ showId id]
+    buildTree (ConstInt sign i) = [show sign ++ " " ++ show i]
+    buildTree (ConstDouble sign d) = [show sign ++ " " ++ show d]
+    buildTree (ConstStr s) = ["\"" ++ s ++ "\""]
+    buildTree (ConstChar c) = [" " ++ show c]
+    buildTree (ConstBool b) = [" " ++ show b]
+
+instance PrintTree EnrichedCompoundStatement where
+  buildTree (CompStmt stmts) = (colorStmt "CompoundStmt") : buildTree stmts
+
+instance PrintTree [EnrichedStatement] where
+  buildTree [] = []
+  buildTree [s] = paddingSingle (buildTree s)
+  buildTree (s:ss) = paddingMultiple (buildTree s) ++ buildTree ss
+
+instance PrintTree EnrichedStatement where
+  buildTree (Stmts stmt) = (colorStmt "Stmts") : paddingSingle (buildTree stmt)
+  buildTree (RExprStmt rexpr ty) = (colorStmt "RExprStmt " ++ colorGrey (showMType ty)) : paddingSingle (buildTree rexpr)
+  buildTree (Assign lexpr rexpr ty loc) = (colorStmt "Assign " ++ colorGrey (showMType ty)) : (paddingMultiple (buildTree lexpr) ++ paddingSingle (buildTree rexpr))
+  buildTree (While rexpr stmt loc) = (colorStmt "While") : (paddingMultiple (buildTree rexpr) ++ paddingSingle (buildTree stmt))
+  buildTree (DoWhile stmt rexpr) = (colorStmt "DoWhile") : (paddingMultiple (buildTree stmt) ++ paddingSingle (buildTree rexpr))
+  buildTree (ForTo lexpr r1 r2 stmt) = (colorStmt "ForTo") : (paddingMultiple (buildTree lexpr) ++ paddingMultiple (buildTree r1) ++ paddingMultiple (buildTree r2) ++ paddingSingle (buildTree stmt))
+  buildTree (ForDownTo lexpr r1 r2 stmt) = (colorStmt "ForDownTo") : (paddingMultiple (buildTree lexpr) ++ paddingMultiple (buildTree r1) ++ paddingMultiple (buildTree r2) ++ paddingSingle (buildTree stmt))
+  buildTree (If rexpr stmt optElse) = (colorStmt "If") : (paddingMultiple (buildTree rexpr) ++ paddingMultiple (buildTree stmt) ++ paddingSingle (buildTree optElse))
+  buildTree (Case rexpr cases) = (colorStmt "Case") : (paddingMultiple (buildTree rexpr) ++ buildTree cases)
+
+instance PrintTree EnrichedOptElse where
+  buildTree NoElse = [colorStmt "NoElse"]
+  buildTree (Else stmt) = colorStmt "Else" : paddingSingle (buildTree stmt)
+
+instance PrintTree [EnrichedCaseItem] where
+  buildTree [] = []
+  buildTree [c] = paddingSingle (buildTree c)
+  buildTree (c:cs) = paddingMultiple (buildTree c) ++ buildTree cs
+
+instance PrintTree EnrichedCaseItem where
+  buildTree (CaseItem const stmt) = colorStmt "CaseItem" : (paddingMultiple (buildTree const) ++ paddingSingle (buildTree stmt))
+
+instance PrintTree EnrichedLExpr where
+  buildTree (LId id ty) = [colorLE ("LId " ++ colorGrey (showMType ty)) ++ " " ++ showId id]
+  buildTree (LArr lexpr rexprs ty loc) = colorLE ("LArr " ++ colorGrey (showMType ty)) : (paddingMultiple (buildTree lexpr) ++ buildTree rexprs)
+  buildTree (LDeref lexpr ty loc) = colorLE ("LDeref " ++ colorGrey (showMType ty)) : paddingSingle (buildTree lexpr)
+
+instance PrintTree [EnrichedRExpr] where
+    buildTree [] = []
+    buildTree [r] = paddingSingle (buildTree r)
+    buildTree (r:rs) = paddingMultiple (buildTree r) ++ buildTree rs
+
+instance PrintTree EnrichedRExpr where
+  buildTree (Binary r1 op r2 ty) = colorExpr ("Binary " ++ show op ++ " " ++ colorGrey (showMType ty)) : (paddingMultiple (buildTree r1) ++ paddingSingle (buildTree r2))
+  buildTree (Unary op r ty) = colorExpr ("Unary " ++ show op ++ " " ++ colorGrey (showMType ty)) : paddingSingle (buildTree r)
+  buildTree (Ref op lexpr ty) = colorExpr ("Ref " ++ colorGrey (showMType ty)) : (paddingMultiple (buildTree op) ++ paddingSingle (buildTree lexpr))
+  buildTree (Lit lit ty) = colorExpr ("Lit " ++ colorGrey (showMType ty)) : paddingSingle (buildTree lit)
+  buildTree (FCall id rexprs loc) = (colorExpr ("FCall " ++ showId id)) : buildTree rexprs
+  buildTree (LExpr lexpr ty) = colorExpr ("LExpr " ++ colorGrey (showMType ty)) : paddingSingle (buildTree lexpr)
+
+instance PrintTree Literal where
+  buildTree (LiteralInteger i) = ["Integer " ++ show i]
+  buildTree (LiteralDouble d) = ["Double " ++ show d]
+  buildTree (LiteralChar c) = ["Char '" ++ [c] ++ "'"]
+  buildTree (LiteralString s) = ["String \"" ++ s ++ "\""]
+  buildTree Literal_true = ["Bool true"]
+  buildTree Literal_false = ["Bool false"]
+
+-- Istanze per i tipi semplici usati in VarInfo
+instance PrintTree (Constant () () ()) where
+    buildTree (ConstId sign id) = [show sign ++ " " ++ showId (idToEnriched id)]
+        where idToEnriched (Ident s l _ _ _) = Ident s l Nothing NoVarInfo NoFunInfo
+    buildTree (ConstInt sign i) = [show sign ++ " " ++ show i]
+    buildTree (ConstDouble sign d) = [show sign ++ " " ++ show d]
+    buildTree (ConstStr s) = ["\"" ++ s ++ "\""]
+
+instance PrintTree Unary where
+  buildTree (UnaryPlus loc) = ["UnaryPlus " ++ show loc]
+  buildTree (UnaryMinus loc) = ["UnaryMinus " ++ show loc]
+  buildTree (UnaryNot loc) = ["UnaryNot " ++ show loc]
+  buildTree (UnaryRef loc) = ["UnaryRef " ++ show loc]
+
+
+
+{-
 ------------------------------------------------------
 -- PRETTY TAC:
 ------------------------------------------------------
@@ -319,175 +503,7 @@ showAttr (ExprAttrs addr ty)
    where (addr1,_) = showTACAddr addr
 showAttr (FuncAttrs callat params ty)
    = "{  callat = " ++ callat1 ++
-     "  retty = " ++ show ty ++
+     "  retty = " ++ showMType ty ++
      "  params = " ++ show params
   where (callat1,_) = showTACLabel callat
-
 -}
-
-------------------------------------------------------
--- PRETTY TREE:
-------------------------------------------------------
-
-
-pad :: String -> String -> [String] -> [String]
-pad first rest lines = zipWith (++) (first : repeat rest) lines
-
-paddingMultiple :: [String] -> [String]
-paddingMultiple = pad "   " "|  "
-
-paddingSingle :: [String] -> [String]
-paddingSingle = pad "   " "|  "
-
-
-prettyTree :: EnrichedProgram -> String
-prettyTree p = unlines (buildTree p)
-
-class PrintTree a where
-  buildTree :: a -> [String]
-
-showId :: EnrichedIdent -> String
-showId (Ident s (Loc l c) ty varInfo funInfo) = "'" ++ s ++ "' " ++ lineAndColumn l c ++
-    " " ++ colorGrey (show ty) ++
-    " " ++ colorGrey (show varInfo) ++
-    " " ++ colorGrey (show funInfo)
-
-
-instance PrintTree EnrichedProgram where
-  buildTree (Prog id formals block _) = (colorDecl "Program " ++ showId id) : (buildTree formals ++ buildTree block)
-
-instance PrintTree EnrichedBlock where
-  buildTree (Block consts vars procs stmt) = (colorDecl "Block") : (buildTree consts ++ buildTree vars ++ buildTree procs ++ buildTree stmt)
-
-instance PrintTree [EnrichedConstantDefinition] where
-  buildTree [] = []
-  buildTree [d] = paddingSingle (buildTree d)
-  buildTree (d:ds) = paddingMultiple (buildTree d) ++ buildTree ds
-
-instance PrintTree EnrichedConstantDefinition where
-  buildTree (ConstDef id const) = (colorDecl "ConstDef " ++ showId id) : paddingSingle (buildTree const)
-
-instance PrintTree [EnrichedVariableDeclaration] where
-  buildTree [] = []
-  buildTree [d] = paddingSingle (buildTree d)
-  buildTree (d:ds) = paddingMultiple (buildTree d) ++ buildTree ds
-
-instance PrintTree EnrichedVariableDeclaration where
-  buildTree (VarDecl ids type_) = (colorDecl "VarDecl") : (paddingMultiple (buildTree ids) ++ paddingSingle (buildTree type_))
-
-instance PrintTree [EnrichedIdent] where
-    buildTree [] = []
-    buildTree [id] = paddingSingle [showId id]
-    buildTree (id:ids) = paddingMultiple [showId id] ++ buildTree ids
-
-instance PrintTree [EnrichedProcedureAndFunctionDeclaration] where
-  buildTree [] = []
-  buildTree [d] = paddingSingle (buildTree d)
-  buildTree (d:ds) = paddingMultiple (buildTree d) ++ buildTree ds
-
-instance PrintTree EnrichedProcedureAndFunctionDeclaration where
-  buildTree (ProcFunDecl heading block) = (colorDecl "ProcFunDecl") : (paddingMultiple (buildTree heading) ++ buildTree block)
-
-instance PrintTree EnrichedProcedureAndFunctionHeading where
-  buildTree (ProcHead id params) = (colorDecl "ProcHead " ++ showId id) : buildTree params
-  buildTree (FunHead id params type_) = (colorDecl "FunHead " ++ showId id) : (buildTree params ++ paddingSingle (buildTree type_))
-
-instance PrintTree [EnrichedFormalParameters] where
-  buildTree [] = []
-  buildTree [d] = paddingSingle (buildTree d)
-  buildTree (d:ds) = paddingMultiple (buildTree d) ++ buildTree ds
-
-instance PrintTree EnrichedFormalParameters where
-  buildTree (FormParam modality ids type_) = (colorMod (show modality)) : (paddingMultiple (buildTree ids) ++ paddingSingle (buildTree type_))
-
-instance PrintTree EnrichedType where
-  buildTree (Array it ty) = (colorDecl "Array") : (paddingMultiple (buildTree it) ++ paddingSingle (buildTree ty))
-  buildTree (Pointer ty) = (colorDecl "Pointer") : paddingSingle (buildTree ty)
-  buildTree (BasicType bt) = [colorDecl ("BasicType " ++ show bt)]
-
-instance PrintTree [EnrichedIndexType] where
-    buildTree [] = []
-    buildTree [it] = paddingSingle (buildTree it)
-    buildTree (it:its) = paddingMultiple (buildTree it) ++ buildTree its
-
-instance PrintTree EnrichedIndexType where
-    buildTree (IndexRange c1 c2) = (colorDecl "IndexRange") : (paddingMultiple (buildTree c1) ++ paddingSingle (buildTree c2))
-
-instance PrintTree EnrichedConstant where
-    buildTree (ConstId sign id) = [show sign ++ " " ++ showId id]
-    buildTree (ConstInt sign i) = [show sign ++ " " ++ show i]
-    buildTree (ConstDouble sign d) = [show sign ++ " " ++ show d]
-    buildTree (ConstStr s) = ["\"" ++ s ++ "\""]
-    buildTree (ConstChar c) = [" " ++ show c]
-    buildTree (ConstBool b) = [" " ++ show b]
-
-instance PrintTree EnrichedCompoundStatement where
-  buildTree (CompStmt stmts) = (colorStmt "CompoundStmt") : buildTree stmts
-
-instance PrintTree [EnrichedStatement] where
-  buildTree [] = []
-  buildTree [s] = paddingSingle (buildTree s)
-  buildTree (s:ss) = paddingMultiple (buildTree s) ++ buildTree ss
-
-instance PrintTree EnrichedStatement where
-  buildTree (Stmts stmt) = (colorStmt "Stmts") : paddingSingle (buildTree stmt)
-  buildTree (RExprStmt rexpr ty) = (colorStmt "RExprStmt " ++ colorGrey (show ty)) : paddingSingle (buildTree rexpr)
-  buildTree (Assign lexpr rexpr ty loc) = (colorStmt "Assign " ++ colorGrey (show ty)) : (paddingMultiple (buildTree lexpr) ++ paddingSingle (buildTree rexpr))
-  buildTree (While rexpr stmt) = (colorStmt "While") : (paddingMultiple (buildTree rexpr) ++ paddingSingle (buildTree stmt))
-  buildTree (DoWhile stmt rexpr) = (colorStmt "DoWhile") : (paddingMultiple (buildTree stmt) ++ paddingSingle (buildTree rexpr))
-  buildTree (ForTo lexpr r1 r2 stmt) = (colorStmt "ForTo") : (paddingMultiple (buildTree lexpr) ++ paddingMultiple (buildTree r1) ++ paddingMultiple (buildTree r2) ++ paddingSingle (buildTree stmt))
-  buildTree (ForDownTo lexpr r1 r2 stmt) = (colorStmt "ForDownTo") : (paddingMultiple (buildTree lexpr) ++ paddingMultiple (buildTree r1) ++ paddingMultiple (buildTree r2) ++ paddingSingle (buildTree stmt))
-  buildTree (If rexpr stmt optElse) = (colorStmt "If") : (paddingMultiple (buildTree rexpr) ++ paddingMultiple (buildTree stmt) ++ paddingSingle (buildTree optElse))
-  buildTree (Case rexpr cases) = (colorStmt "Case") : (paddingMultiple (buildTree rexpr) ++ buildTree cases)
-
-instance PrintTree EnrichedOptElse where
-  buildTree NoElse = [colorStmt "NoElse"]
-  buildTree (Else stmt) = colorStmt "Else" : paddingSingle (buildTree stmt)
-
-instance PrintTree [EnrichedCaseItem] where
-  buildTree [] = []
-  buildTree [c] = paddingSingle (buildTree c)
-  buildTree (c:cs) = paddingMultiple (buildTree c) ++ buildTree cs
-
-instance PrintTree EnrichedCaseItem where
-  buildTree (CaseItem const stmt) = colorStmt "CaseItem" : (paddingMultiple (buildTree const) ++ paddingSingle (buildTree stmt))
-
-instance PrintTree EnrichedLExpr where
-  buildTree (LId id tyy) = [colorLE ("LId " ++ colorGrey (show tyy)) ++ " " ++ showId id]
-  buildTree (LArr lexpr rexprs ty loc) = colorLE ("LArr " ++ colorGrey (show ty)) : (paddingMultiple (buildTree lexpr) ++ buildTree rexprs)
-  buildTree (LDeref lexpr ty loc) = colorLE ("LDeref " ++ colorGrey (show ty)) : paddingSingle (buildTree lexpr)
-
-instance PrintTree [EnrichedRExpr] where
-    buildTree [] = []
-    buildTree [r] = paddingSingle (buildTree r)
-    buildTree (r:rs) = paddingMultiple (buildTree r) ++ buildTree rs
-
-instance PrintTree EnrichedRExpr where
-  buildTree (Binary r1 op r2 ty) = colorExpr ("Binary " ++ show op ++ " " ++ colorGrey (show ty)) : (paddingMultiple (buildTree r1) ++ paddingSingle (buildTree r2))
-  buildTree (Unary op r ty) = colorExpr ("Unary " ++ show op ++ " " ++ colorGrey (show ty)) : paddingSingle (buildTree r)
-  buildTree (Ref op lexpr ty) = colorExpr ("Ref " ++ colorGrey (show ty)) : (paddingMultiple (buildTree op) ++ paddingSingle (buildTree lexpr))
-  buildTree (Lit lit ty) = colorExpr ("Lit " ++ colorGrey (show ty)) : paddingSingle (buildTree lit)
-  buildTree (FCall id rexprs loc) = (colorExpr ("FCall " ++ showId id)) : buildTree rexprs
-  buildTree (LExpr lexpr ty) = colorExpr ("LExpr " ++ colorGrey (show ty)) : paddingSingle (buildTree lexpr)
-
-instance PrintTree Literal where
-  buildTree (LiteralInteger i) = ["Integer " ++ show i]
-  buildTree (LiteralDouble d) = ["Double " ++ show d]
-  buildTree (LiteralChar c) = ["Char '" ++ [c] ++ "'"]
-  buildTree (LiteralString s) = ["String \"" ++ s ++ "\""]
-  buildTree Literal_true = ["Bool true"]
-  buildTree Literal_false = ["Bool false"]
-
--- Istanze per i tipi semplici usati in VarInfo
-instance PrintTree (Constant () () ()) where
-    buildTree (ConstId sign id) = [show sign ++ " " ++ showId (idToEnriched id)]
-        where idToEnriched (Ident s l _ _ _) = Ident s l Nothing NoVarInfo NoFunInfo
-    buildTree (ConstInt sign i) = [show sign ++ " " ++ show i]
-    buildTree (ConstDouble sign d) = [show sign ++ " " ++ show d]
-    buildTree (ConstStr s) = ["\"" ++ s ++ "\""]
-
-instance PrintTree Unary where
-  buildTree (UnaryPlus loc) = ["UnaryPlus " ++ show loc]
-  buildTree (UnaryMinus loc) = ["UnaryMinus " ++ show loc]
-  buildTree (UnaryNot loc) = ["UnaryNot " ++ show loc]
-  buildTree (UnaryRef loc) = ["UnaryRef " ++ show loc]

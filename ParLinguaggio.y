@@ -86,7 +86,7 @@ import LexLinguaggio
   'until'     { PT _ (TS _ 51) }
   'valres'    { PT _ (TS _ 52) }
   'var'       { PT _ (TS _ 53) }
-  'while'     { PT _ (TS _ 54) }
+  'while'     { PT pos (TS _ 54) }
   L_Ident     { PT pos (TV $$) }
   L_charac    { PT _ (TC $$)   }
   L_doubl     { PT _ (TD $$)   }
@@ -228,7 +228,7 @@ Statement
   : CompoundStatement { AbsLinguaggio.Stmts $1 }
   | RExpr { AbsLinguaggio.RExprStmt $1 () }
   | LExpr ':=' RExpr { AbsLinguaggio.Assign $1 $3 () (posToLoc (getPos $2)) }
-  | 'while' RExpr 'do' Statement { AbsLinguaggio.While $2 $4 }
+  | 'while' RExpr 'do' Statement { AbsLinguaggio.While $2 $4 (posToLoc (getPos $1)) }
   | 'repeat' Statement 'until' RExpr { AbsLinguaggio.DoWhile $2 $4 }
   | 'for' LExpr ':=' RExpr 'to' RExpr 'do' Statement { AbsLinguaggio.ForTo $2 $4 $6 $8 }
   | 'for' LExpr ':=' RExpr 'downto' RExpr 'do' Statement { AbsLinguaggio.ForDownTo $2 $4 $6 $8 }

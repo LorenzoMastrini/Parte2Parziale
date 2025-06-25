@@ -88,35 +88,35 @@ begin
 
 
     // ERROR CASES
-    i := true;              // ERROR: Integer := Boolean
-    b := 1;                 // ERROR: Boolean := Integer
-    r := "hello";           // ERROR: Real := String
-    ch := 100;              // ERROR: Character := Integer
-    s := false;             // ERROR: String := Boolean
-    arr[1] := "str";        // ERROR: Array element := String
-    mat[1][1] := true;      // ERROR: 2D Array element := Boolean
-    parr^ := "str";         // ERROR: Dereferenced pointer := String
-    pch^ := 42;             // ERROR: Dereferenced pointer := Integer
-    ps^ := false;           // ERROR: Dereferenced pointer := Boolean
-    pmat^[1][2] := true;    // ERROR: Dereferenced pointer to array element := Boolean
+    i := true;              // ERROR (IncompatibleAssignment): Integer := Boolean
+    b := 1;                 // ERROR (IncompatibleAssignment): Boolean := Integer
+    r := "hello";           // ERROR (IncompatibleAssignment): Real := String
+    ch := 100;              // ERROR (IncompatibleAssignment): Character := Integer
+    s := false;             // ERROR (IncompatibleAssignment): String := Boolean
+    arr[1] := "str";        // ERROR (IncompatibleAssignment): Array element (Integer) := String
+    mat[1][1] := true;      // ERROR (IncompatibleAssignment): 2D Array element (Integer) := Boolean
+    parr^ := "str";         // ERROR (IncompatibleAssignment): Dereferenced pointer (Integer) := String
+    pch^ := 42;             // ERROR (IncompatibleAssignment): Dereferenced pointer (Character) := Integer
+    ps^ := false;           // ERROR (IncompatibleAssignment): Dereferenced pointer (String) := Boolean
+    pmat^[1][2] := true;    // ERROR (IncompatibleAssignment): Dereferenced pointer to array element (Real) := Boolean
 
-    c1 := 5;                // ERROR: Assignment to constant
-    c2 := 1.0;              // ERROR: Assignment to constant
-    c3 := 'y';              // ERROR: Assignment to constant
-    c4 := "no";             // ERROR: Assignment to constant
-    c5 := false;            // ERROR: Assignment to constant
+    c1 := 5;                // ERROR (AssignmentToConstant)
+    c2 := 1.0;              // ERROR (AssignmentToConstant)
+    c3 := 'y';              // ERROR (AssignmentToConstant)
+    c4 := "no";             // ERROR (AssignmentToConstant)
+    c5 := false;            // ERROR (AssignmentToConstant)
 
     //1 := 2;               // SINTAX ERROR (Assignment to literal)
     //(i + 1) := 3;         // SINTAX ERROR (Assignment to expression)
     //fInt() := 4;          // SINTAX ERROR (Assignment to function call)
     //(arr[1] + 1) := 5;    // SINTAX ERROR (Assignment to expression)
-    parr := 10;             // ERROR: Pointer := Integer (not address) ---------------------------------------- continuare qui
-    parr^ := parr;          // ERROR: Dereferenced pointer := Pointer
-    parr^ := ^r;            // ERROR: Dereferenced pointer := address of Real (should be Integer)
-    arr[0] := 1;            // ERROR: Out-of-bounds array assignment
-    arr[4] := 2;            // ERROR: Out-of-bounds array assignment
-    mat[3][1] := 1.1;       // ERROR: Out-of-bounds array assignment
-    pmat^[3][1] := 2.2;     // ERROR: Out-of-bounds pointer to array assignment
-    parr^ := arr;           // ERROR: Dereferenced pointer := array (type mismatch)
-    parr^ := pch^;          // ERROR: Dereferenced pointer := dereferenced pointer of different type
+    parr := 10;             // ERROR (IncompatibleAssignment): Pointer := Integer
+    parr^ := parr;          // ERROR (IncompatibleAssignment): Dereferenced pointer (Integer) := Pointer
+    parr^ := ^r;            // ERROR (IncompatibleAssignment): Dereferenced pointer (Integer) := address of Real
+    arr[0] := 1;            // ERROR (OutOfBound): Out-of-bounds array assignment
+    arr[4] := 2;            // ERROR (OutOfBound): Out-of-bounds array assignment
+    mat[3][1] := 1.1;       // ERROR (OutOfBound): Out-of-bounds array assignment
+    pmat^[3][1] := 2.2;     // ERROR (OutOfBound): Out-of-bounds pointer to array assignment
+    parr^ := arr;           // ERROR (IncompatibleAssignment): Dereferenced pointer (Integer) := array of Integer
+    parr^ := pch^;          // ERROR (IncompatibleAssignment): Dereferenced pointer (Integer) := dereferenced pointer (Character)
 end. 

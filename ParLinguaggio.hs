@@ -934,11 +934,12 @@ happyReduction_59 (happy_x_4 `HappyStk`
         happy_x_2 `HappyStk`
         happy_x_1 `HappyStk`
         happyRest)
-         = case happyOut36 happy_x_2 of { (HappyWrap36 happy_var_2) -> 
+         = case happyOutTok happy_x_1 of { happy_var_1 -> 
+        case happyOut36 happy_x_2 of { (HappyWrap36 happy_var_2) -> 
         case happyOut31 happy_x_4 of { (HappyWrap31 happy_var_4) -> 
         happyIn31
-                 (AbsLinguaggio.While happy_var_2 happy_var_4
-        ) `HappyStk` happyRest}}
+                 (AbsLinguaggio.While happy_var_2 happy_var_4 (posToLoc (getPos happy_var_1))
+        ) `HappyStk` happyRest}}}
 
 happyReduce_60 = happyReduce 4# 26# happyReduction_60
 happyReduction_60 (happy_x_4 `HappyStk`
@@ -1468,7 +1469,7 @@ happyTerminalToTok term = case term of {
         PT _ (TS _ 51) -> 52#;
         PT _ (TS _ 52) -> 53#;
         PT _ (TS _ 53) -> 54#;
-        PT _ (TS _ 54) -> 55#;
+        PT pos (TS _ 54) -> 55#;
         PT pos (TV happy_dollar_dollar) -> 56#;
         PT _ (TC happy_dollar_dollar) -> 57#;
         PT _ (TD happy_dollar_dollar) -> 58#;

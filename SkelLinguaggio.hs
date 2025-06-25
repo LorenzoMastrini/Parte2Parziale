@@ -89,7 +89,7 @@ transStatement :: AbsLinguaggio.Statement () () () -> Result
 transStatement x = case x of
   AbsLinguaggio.RExprStmt rexpr ty -> failure x
   AbsLinguaggio.Assign lexpr rexpr ty loc -> failure x
-  AbsLinguaggio.While rexpr statement -> failure x
+  AbsLinguaggio.While rexpr statement loc -> failure x
   AbsLinguaggio.DoWhile statement rexpr -> failure x
   AbsLinguaggio.ForTo lexpr rexpr1 rexpr2 statement -> failure x
   AbsLinguaggio.ForDownTo lexpr rexpr1 rexpr2 statement -> failure x

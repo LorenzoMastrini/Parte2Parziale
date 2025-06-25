@@ -184,7 +184,7 @@ Terminals
 	'until'        { PT _ (TS _ 51) }
 	'valres'       { PT _ (TS _ 52) }
 	'var'          { PT _ (TS _ 53) }
-	'while'        { PT _ (TS _ 54) }
+	'while'        { PT pos (TS _ 54) }
 	L_Ident        { PT pos (TV $$) }
 	L_charac       { PT _ (TC $$) }
 	L_doubl        { PT _ (TD $$) }

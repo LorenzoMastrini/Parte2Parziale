@@ -50,7 +50,7 @@ data Statement ty varInfo funInfo
   = Stmts (CompoundStatement ty varInfo funInfo)
   | RExprStmt (RExpr ty varInfo funInfo) ty
   | Assign (LExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) ty Loc
-  | While (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo)
+  | While (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo) Loc
   | DoWhile (Statement ty varInfo funInfo) (RExpr ty varInfo funInfo)
   | ForTo (LExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo)
   | ForDownTo (LExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo)
@@ -97,13 +97,8 @@ data LExpr ty varInfo funInfo
   | LDeref (LExpr ty varInfo funInfo) ty Loc
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data Literal
-  = LiteralInteger Integer
-  | LiteralDouble Double
-  | LiteralChar Char
-  | LiteralString String
-  | Literal_true
-  | Literal_false
+data Ident ty varInfo funInfo
+  = Ident String Loc ty varInfo funInfo
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Binary
@@ -130,14 +125,23 @@ data Unary
   | UnaryRef Loc
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data Ident ty varInfo funInfo
-  = Ident String Loc ty varInfo funInfo
+data Literal
+  = LiteralInteger Integer
+  | LiteralDouble Double
+  | LiteralChar Char
+  | LiteralString String
+  | Literal_true
+  | Literal_false
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Type ty varInfo funInfo
   = Array [IndexType ty varInfo funInfo] (Type ty varInfo funInfo)
   | Pointer (Type ty varInfo funInfo)
   | BasicType BasicType
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
+data IndexType ty varInfo funInfo
+  = IndexRange (Constant ty varInfo funInfo) (Constant ty varInfo funInfo)
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data BasicType
@@ -149,15 +153,11 @@ data BasicType
   | Void
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data IndexType ty varInfo funInfo
-  = IndexRange (Constant ty varInfo funInfo) (Constant ty varInfo funInfo)
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 
-
--------------------------------------------------------------------
--------------------- ENRICHED AST INFORMATIONS --------------------
--------------------------------------------------------------------
+------------------------------------------------------
+-------------------- ENRICHED AST --------------------
+------------------------------------------------------
 
 -- Versions of each node without the added information
 type SimpleProgram                         = Program () () ()

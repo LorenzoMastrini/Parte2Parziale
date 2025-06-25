@@ -24,24 +24,131 @@ begin
     while (s = "stop") or (i < 5) do
         s := "continue";
 
-    // Nested while
+    // Compound statement as body
+    while i < 5 do
+    begin
+        i := i + 1;
+        r := r + 1.5;
+    end;
+
+    // Nested while with compound body
     while i < 3 do
     begin
         while b do
+        begin
             b := false;
+            i := i + 2;
+        end;
         i := i + 1;
     end;
 
-    // ERROR CASES
-    while 1 do           // ERROR: condition not boolean
-        i := 1;
+    // Compound with multiple statements
+    while b do
+    begin
+        b := false;
+        i := i * 2;
+        r := r / 2.0;
+        s := "looping";
+    end;
 
-    while "test" do      // ERROR: condition not boolean
+    // While with nested compound and single statement
+    while i < 2 do
+    begin
+        i := i + 1;
+        begin
+            r := r + 0.1;
+        end;
+    end;
+
+
+
+    // ERROR CASES  
+    while 1 do              // ERROR (ConditionNotBoolean)
+        i := 1; 
+
+    while "test" do         // ERROR (ConditionNotBoolean)
         b := true;
 
-    while i do           // ERROR: condition not boolean
+    while i do              // ERROR (ConditionNotBoolean)
         i := 2;
 
-    while ch do          // ERROR: condition not boolean
+    while ch do             // ERROR (ConditionNotBoolean)
         ch := 'a';
-end. 
+
+    while 3.14 do           // ERROR (ConditionNotBoolean)
+    begin
+        r := 0.0;
+    end;
+
+    while s do              // ERROR (ConditionNotBoolean)
+    begin
+        s := "error";
+    end;
+
+    while (i + 1) do        // ERROR (ConditionNotBoolean)
+        i := 0;
+
+    while (r * 2.0) do      // ERROR (ConditionNotBoolean)
+        r := 1.0;
+
+    while i < 10 do
+        x := 1;             // ERROR (UnknownIdentifier)
+
+    while b do
+        i := true;          // ERROR (IncompatibleAssignment): Integer := Boolean
+
+    while i < 5 do
+    begin
+        r := s;             // ERROR (IncompatibleAssignment): Real := String
+    end;
+
+    while b do
+    begin
+        ch := 42;             // ERROR (IncompatibleAssignment): Character := Integer
+    end;
+
+    while i < 3 do
+    begin
+        s := 3.14;            // ERROR (IncompatibleAssignment): String := Real
+    end;
+
+    while i < 5 do
+    begin
+        ch := s;              // ERROR (IncompatibleAssignment): Character := String
+    end;
+
+    while i < 2 do
+    begin
+        y := y + 1;           // ERROR (UnknownIdentifier)
+    end;
+
+    while b do
+    begin
+        i := i + z;           // ERROR: 'z' is undeclared
+    end;
+
+    while i < 10 do
+    begin
+        r := r + b;           // ERROR (IncompatibleTypes): Real + Boolean = ERROR
+    end;
+
+    while b do
+    begin
+        s := s + 1;           // ERROR (IncompatibleTypes): String + Integer = ERROR
+    end;
+
+    //while do   // SINTAX ERROR: invalid condition (Empty)
+    //    i := 0;
+    
+    //while begin end do        // SINTAX ERROR: invalid condition (CompoundStatement)
+    //    i := 0;
+
+    //while do                  // SINTAX ERROR: missing condition
+    //    i := 0;
+
+    //while true                // SINTAX ERROR: missing 'do'
+    //    i := 0;
+
+    //while b do
+    //    ;                     // SINTAX ERROR: empty statement not allowed
+end.
