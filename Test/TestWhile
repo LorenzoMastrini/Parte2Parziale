@@ -60,7 +60,41 @@ begin
         end;
     end;
 
+    // Test break
+    while i < 5 do
+    begin
+        //if i = 2 then
+            break;
+        //i := i + 1;
+    end;
 
+    // Test continue
+    while b do
+    begin
+        continue;
+        b := false;
+    end;
+
+    // Test break and continue
+    while i < 5 do
+    begin
+        if i = 2 then
+            break;
+        else
+            continue;
+        i := i + 1;
+    end;
+
+    // Nested break/continue
+    while i < 3 do
+    begin
+        while b do
+        begin
+            break;
+            continue;
+        end;
+        i := i + 1;
+    end;
 
     // ERROR CASES  
     while 1 do              // ERROR (ConditionNotBoolean)
@@ -104,40 +138,47 @@ begin
 
     while b do
     begin
-        ch := 42;             // ERROR (IncompatibleAssignment): Character := Integer
+        ch := 42;           // ERROR (IncompatibleAssignment): Character := Integer
     end;
 
     while i < 3 do
     begin
-        s := 3.14;            // ERROR (IncompatibleAssignment): String := Real
+        s := 3.14;          // ERROR (IncompatibleAssignment): String := Real
     end;
 
     while i < 5 do
     begin
-        ch := s;              // ERROR (IncompatibleAssignment): Character := String
+        ch := s;            // ERROR (IncompatibleAssignment): Character := String
     end;
 
     while i < 2 do
     begin
-        y := y + 1;           // ERROR (UnknownIdentifier)
+        y := y + 1;         // ERROR (UnknownIdentifier)
     end;
 
     while b do
     begin
-        i := i + z;           // ERROR: 'z' is undeclared
+        i := i + z;         // ERROR: 'z' is undeclared
     end;
 
     while i < 10 do
     begin
-        r := r + b;           // ERROR (IncompatibleTypes): Real + Boolean = ERROR
+        r := r + b;         // ERROR (IncompatibleTypes): Real + Boolean = ERROR
     end;
 
     while b do
     begin
-        s := s + 1;           // ERROR (IncompatibleTypes): String + Integer = ERROR
+        s := s + 1;         // ERROR (IncompatibleTypes): String + Integer = ERROR
     end;
 
-    //while do   // SINTAX ERROR: invalid condition (Empty)
+    break;                  // ERROR (NotInLoop)
+
+    continue;               // ERROR (NotInLoop)
+
+
+
+    // ERROR CASES
+    //while do                  // SINTAX ERROR: invalid condition (Empty)
     //    i := 0;
     
     //while begin end do        // SINTAX ERROR: invalid condition (CompoundStatement)

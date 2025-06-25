@@ -33,12 +33,12 @@ begin
             s := "not nested";
 
     // ERROR CASES
-    if 1 then              // ERROR: condition not boolean
+    if 1 then              // ERROR (ConditionNotBoolean)
         i := 2;
 
-    if "test" then         // ERROR: condition not boolean
+    if "test" then         // ERROR (ConditionNotBoolean)
         s := "bad";
 
-    if ch then             // ERROR: condition not boolean
+    if ch then             // ERROR (ConditionNotBoolean)
         ch := 'a';
 end. 

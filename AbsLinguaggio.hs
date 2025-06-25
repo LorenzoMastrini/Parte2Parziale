@@ -39,7 +39,10 @@ data FormalParameters ty varInfo funInfo
   = FormParam OptModality [Ident ty varInfo funInfo] (Type ty varInfo funInfo)
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data OptModality = ByVal | ByRef | ByValRes
+data OptModality
+  = ByVal
+  | ByRef
+  | ByValRes
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data CompoundStatement ty varInfo funInfo
@@ -51,11 +54,14 @@ data Statement ty varInfo funInfo
   | RExprStmt (RExpr ty varInfo funInfo) ty
   | Assign (LExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) ty Loc
   | While (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo) Loc
-  | DoWhile (Statement ty varInfo funInfo) (RExpr ty varInfo funInfo)
+  | DoWhile (Statement ty varInfo funInfo) (RExpr ty varInfo funInfo) Loc
   | ForTo (LExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo)
   | ForDownTo (LExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo)
   | If (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo) (OptElse ty varInfo funInfo)
   | Case (RExpr ty varInfo funInfo) [CaseItem ty varInfo funInfo]
+  | ReturnStmt (RExpr ty varInfo funInfo) ty Loc
+  | BreakStmt Loc
+  | ContinueStmt Loc
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data OptElse ty varInfo funInfo

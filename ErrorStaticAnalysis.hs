@@ -29,7 +29,11 @@ data Error ty varInfo funInfo
     | OutOfBound [Integer] Loc
     | NegativeArrIndex
     | AssignmentToConstant
-    | NotBooleanCondition (Maybe SimpleType)
+    | NotBooleanCondition String (Maybe SimpleType)
+    | NotInLoop String
+    | NotInFunction
+    | ReturnInsideProcedure
+    | ReturnTypeMismatch (Maybe SimpleType) (Maybe SimpleType)
     -- Warnings
     | WarVarNameUsedForFunc (Ident ty varInfo funInfo)
 {-
@@ -144,8 +148,14 @@ errorType x =
         FunArgTypeMismatch (BasicType argType) (BasicType paramType) ->
             errorMsg "Argument type mismatch in function call: expected \"" ++ show paramType ++ "\" type, got \"" ++ show argType ++ "\" instead." ++ " [Type Error]"
         
-        NotBooleanCondition conditionType ->
-            errorMsg "The condition must be of type \"Boolean\", got \"" ++ showMType conditionType ++ "\" instead." ++ " [Type Error]"
+        NotBooleanCondition stmt conditionType ->
+            errorMsg "The condition of the " ++ show stmt ++ " statement must be of type \"Boolean\", got \"" ++ showMType conditionType ++ "\" instead." ++ " [Type Error]"
+
+        ReturnTypeMismatch returnType functionType ->
+            errorMsg "The return statement returns a value of type \"" ++ showMType returnType ++ "\", but the function is declared to return \"" ++ showMType functionType ++ "\"." ++ " [Type Error]"
+        
+        ReturnInsideProcedure ->
+            errorMsg "The \"return\" statement cannot be used inside a procedure." ++ " [Type Error]"
         
         -------------------- [Array Error] --------------------
         NotAnArray ->
@@ -165,6 +175,12 @@ errorType x =
         NotAPointer ->
             errorMsg "Cannot dereference a non-pointer type. " ++ " [Pointer Error]"
 
+        -------------------- [Control Flow Error] --------------------
+        NotInLoop stmt ->
+            errorMsg "Statement " ++ show stmt ++ " used outside a loop." ++ " [Control Flow Error]"
+
+        NotInFunction ->
+            errorMsg "Cannot use \"return\" statement outside a function." ++ " [Control Flow Error]"
 {-
         --RedeclaredFunction (Ident ((loc),name)) -> 
         --    errorMsg "Symbol name '"++ name ++ "' for function declaration already used. " 

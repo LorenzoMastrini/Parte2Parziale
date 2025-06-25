@@ -31,7 +31,6 @@ import LexLinguaggio
 %right 'not' UnaryPlus UnaryMinus
 %right '^'
 
-
 %token
   '('         { PT pos (TS _ 1)  }
   ')'         { PT _ (TS _ 2)  }
@@ -62,31 +61,34 @@ import LexLinguaggio
   'and'       { PT pos (TS _ 27) }
   'array'     { PT _ (TS _ 28) }
   'begin'     { PT _ (TS _ 29) }
-  'case'      { PT _ (TS _ 30) }
-  'const'     { PT _ (TS _ 31) }
-  'div'       { PT pos (TS _ 32) }
-  'do'        { PT _ (TS _ 33) }
-  'downto'    { PT _ (TS _ 34) }
-  'else'      { PT _ (TS _ 35) }
-  'end'       { PT _ (TS _ 36) }
-  'false'     { PT _ (TS _ 37) }
-  'for'       { PT _ (TS _ 38) }
-  'function'  { PT _ (TS _ 39) }
-  'if'        { PT _ (TS _ 40) }
-  'mod'       { PT pos (TS _ 41) }
-  'not'       { PT pos (TS _ 42) }
-  'of'        { PT _ (TS _ 43) }
-  'or'        { PT pos (TS _ 44) }
-  'procedure' { PT _ (TS _ 45) }
-  'program'   { PT pos (TS _ 46) }
-  'repeat'    { PT _ (TS _ 47) }
-  'then'      { PT _ (TS _ 48) }
-  'to'        { PT _ (TS _ 49) }
-  'true'      { PT _ (TS _ 50) }
-  'until'     { PT _ (TS _ 51) }
-  'valres'    { PT _ (TS _ 52) }
-  'var'       { PT _ (TS _ 53) }
-  'while'     { PT pos (TS _ 54) }
+  'break'     { PT pos (TS _ 30) }
+  'case'      { PT _ (TS _ 31) }
+  'const'     { PT _ (TS _ 32) }
+  'continue'  { PT pos (TS _ 33) }
+  'div'       { PT pos (TS _ 34) }
+  'do'        { PT _ (TS _ 35) }
+  'downto'    { PT _ (TS _ 36) }
+  'else'      { PT _ (TS _ 37) }
+  'end'       { PT _ (TS _ 38) }
+  'false'     { PT _ (TS _ 39) }
+  'for'       { PT _ (TS _ 40) }
+  'function'  { PT _ (TS _ 41) }
+  'if'        { PT _ (TS _ 42) }
+  'mod'       { PT pos (TS _ 43) }
+  'not'       { PT pos (TS _ 44) }
+  'of'        { PT _ (TS _ 45) }
+  'or'        { PT pos (TS _ 46) }
+  'procedure' { PT _ (TS _ 47) }
+  'program'   { PT pos (TS _ 48) }
+  'repeat'    { PT _ (TS _ 49) }
+  'return'    { PT pos (TS _ 50) }
+  'then'      { PT _ (TS _ 51) }
+  'to'        { PT _ (TS _ 52) }
+  'true'      { PT _ (TS _ 53) }
+  'until'     { PT pos (TS _ 54) }
+  'valres'    { PT _ (TS _ 55) }
+  'var'       { PT _ (TS _ 56) }
+  'while'     { PT pos (TS _ 57) }
   L_Ident     { PT pos (TV $$) }
   L_charac    { PT _ (TC $$)   }
   L_doubl     { PT _ (TD $$)   }
@@ -229,11 +231,14 @@ Statement
   | RExpr { AbsLinguaggio.RExprStmt $1 () }
   | LExpr ':=' RExpr { AbsLinguaggio.Assign $1 $3 () (posToLoc (getPos $2)) }
   | 'while' RExpr 'do' Statement { AbsLinguaggio.While $2 $4 (posToLoc (getPos $1)) }
-  | 'repeat' Statement 'until' RExpr { AbsLinguaggio.DoWhile $2 $4 }
+  | 'repeat' Statement 'until' RExpr { AbsLinguaggio.DoWhile $2 $4 (posToLoc (getPos $3)) }
   | 'for' LExpr ':=' RExpr 'to' RExpr 'do' Statement { AbsLinguaggio.ForTo $2 $4 $6 $8 }
   | 'for' LExpr ':=' RExpr 'downto' RExpr 'do' Statement { AbsLinguaggio.ForDownTo $2 $4 $6 $8 }
   | 'if' RExpr 'then' Statement OptElse { AbsLinguaggio.If $2 $4 $5 }
   | 'case' RExpr 'of' ListCaseItem 'end' { AbsLinguaggio.Case $2 $4 }
+  | 'return' RExpr { AbsLinguaggio.ReturnStmt $2 () (posToLoc (getPos $1)) }
+  | 'break' { AbsLinguaggio.BreakStmt (posToLoc (getPos $1)) }
+  | 'continue' { AbsLinguaggio.ContinueStmt (posToLoc (getPos $1)) }
 
 OptElse :: { AbsLinguaggio.OptElse () () () }
 OptElse

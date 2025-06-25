@@ -2,7 +2,7 @@ module StaticAnalysis where
 
 import AbsLinguaggio
 import ErrorStaticAnalysis hiding (showTy)
-import Data.Map (Map,toList)
+import Data.Map (Map, toList)
 import qualified Data.Map as Map
 import Data.List (intercalate, nub)
 import Data.Maybe (isJust, isNothing)
@@ -93,7 +93,7 @@ checkProgram :: SimpleProgram -> (Env, EnrichedProgram)
 checkProgram (Prog ident params block loc) =
     let
         (env1, paramsEnriched) = checkFormalParametersList defaultEnv params
-        (env2, blockEnriched) = checkBlock env1 block
+        (env2, blockEnriched) = checkBlock env1 block Nothing
     in (env2, Prog (enrichIdentUnknown ident) paramsEnriched blockEnriched loc)
 
 checkFormalParametersList :: Env -> [SimpleFormalParameters] -> (Env, [EnrichedFormalParameters])
@@ -111,8 +111,8 @@ checkFormalParameters env (FormParam mod idents ty) =
         (env1, identsEnriched) = checkIdentsList env idents ty (VarInfo Nothing False) NoFunInfo
     in (env1, FormParam mod identsEnriched tyEnriched)
 
-checkBlock :: Env -> SimpleBlock -> (Env, EnrichedBlock)
-checkBlock env (Block constDefList varDeclList procFunDeclList compStmt) =
+checkBlock :: Env -> SimpleBlock -> Maybe SimpleType -> (Env, EnrichedBlock)
+checkBlock env (Block constDefList varDeclList procFunDeclList compStmt) typeIfInsideFun =
     let
         -- Don't create new scope if already in a function scope
         localEnv = case parent env of
@@ -125,7 +125,7 @@ checkBlock env (Block constDefList varDeclList procFunDeclList compStmt) =
         (env1, constDefListEnriched) = checkConstDefList localEnv constDefList
         (env2, varDeclListEnriched) = checkVarDeclList env1 varDeclList
         (env3, procFunDeclListEnriched) = checkProcFunDeclList env2 procFunDeclList
-        (env4, compStmtEnriched) = checkCompoundStatement env3 compStmt
+        (env4, compStmtEnriched) = checkCompoundStatement env3 compStmt False typeIfInsideFun
         mergedEnv = mergeEnvs env env4
     in (mergedEnv, Block constDefListEnriched varDeclListEnriched procFunDeclListEnriched compStmtEnriched)
 
@@ -203,7 +203,7 @@ checkProcFunDecl env (ProcFunDecl heading block) =
         -- Create a scope for the function
         localEnv = enterScope env
         (localEnv1, headingEnriched) = checkProcFunHead localEnv heading
-        (finalLocalEnv, blockEnriched) = checkBlock localEnv1 block
+        (finalLocalEnv, blockEnriched) = checkBlock localEnv1 block (getFunHeadType headingEnriched)
         Just outerEnv = parent finalLocalEnv -- Get the updated outer environment
         finalOuterEnv = outerEnv { errors = errors outerEnv ++ errors finalLocalEnv } -- Propagate the errors to the outer environment
     in (finalOuterEnv, ProcFunDecl headingEnriched blockEnriched)
@@ -420,25 +420,25 @@ checkRange env lexpr indices loc =
 -------------------- STATEMENTS --------------------
 ----------------------------------------------------
 
-checkCompoundStatement :: Env -> SimpleCompoundStatement -> (Env, EnrichedCompoundStatement)
-checkCompoundStatement env (CompStmt stmts) =
+checkCompoundStatement :: Env -> SimpleCompoundStatement -> Bool -> Maybe SimpleType -> (Env, EnrichedCompoundStatement)
+checkCompoundStatement env (CompStmt stmts) isLoop  typeIfInsideFun =
     let
-        (env1, stmtsEnriched) = checkStatementList env stmts
+        (env1, stmtsEnriched) = checkStatementList env stmts isLoop typeIfInsideFun
     in (env1, CompStmt stmtsEnriched)
 
-checkStatementList :: Env -> [SimpleStatement] -> (Env, [EnrichedStatement])
-checkStatementList env [] = (env, [])
-checkStatementList env (stmt:stmts) =
+checkStatementList :: Env -> [SimpleStatement] -> Bool -> Maybe SimpleType -> (Env, [EnrichedStatement])
+checkStatementList env [] isLoop typeIfInsideFun = (env, [])
+checkStatementList env (stmt:stmts) isLoop typeIfInsideFun =
     let
-        (env1, stmtEnriched) = checkStatement env stmt
-        (env2, stmtsEnriched) = checkStatementList env1 stmts
+        (env1, stmtEnriched) = checkStatement env stmt isLoop typeIfInsideFun
+        (env2, stmtsEnriched) = checkStatementList env1 stmts isLoop typeIfInsideFun
     in (env2, stmtEnriched:stmtsEnriched)
 
-checkStatement :: Env -> SimpleStatement -> (Env, EnrichedStatement)
-checkStatement env stmt = case stmt of
+checkStatement :: Env -> SimpleStatement -> Bool -> Maybe SimpleType -> (Env, EnrichedStatement)
+checkStatement env stmt isLoop typeIfInsideFun = case stmt of
     Stmts compStmt ->
         let
-            (env1, compStmtEnriched) = checkCompoundStatement env compStmt
+            (env1, compStmtEnriched) = checkCompoundStatement env compStmt isLoop typeIfInsideFun
         in (env1, Stmts compStmtEnriched)
     RExprStmt expr _ ->
         let
@@ -456,22 +456,42 @@ checkStatement env stmt = case stmt of
     While rexpr stmt loc ->
         let
             (env1, rexprEnriched) = checkRExpr env rexpr
-            (env2, stmtEnriched) = checkStatement env1 stmt
+            (env2, stmtEnriched) = checkStatement env1 stmt True typeIfInsideFun
         in if isBoolean rexprEnriched
             then (env2, While rexprEnriched stmtEnriched loc)
-            else (addError env2 (NotBooleanCondition (getRExprType rexprEnriched), loc), While rexprEnriched stmtEnriched loc)
-    DoWhile stmt rexpr ->
+            else (addError env2 (NotBooleanCondition "while" (getRExprType rexprEnriched), loc), While rexprEnriched stmtEnriched loc)
+    DoWhile stmt rexpr loc ->
         let
-            (env1, stmtEnriched) = checkStatement env stmt
-            (env2, rexprEnriched) = checkRExpr env1 rexpr
-        in (env2, DoWhile stmtEnriched rexprEnriched)
+            (env1, rexprEnriched) = checkRExpr env rexpr
+            (env2, stmtEnriched) = checkStatement env1 stmt True typeIfInsideFun
+        in if isBoolean rexprEnriched
+            then (env2, DoWhile stmtEnriched rexprEnriched loc)
+            else (addError env2 (NotBooleanCondition "repeat-until" (getRExprType rexprEnriched), loc), DoWhile stmtEnriched rexprEnriched loc)
     ForTo lexpr rexpr1 rexpr2 stmt ->
         let
             (env1, lexprEnriched) = checkLExpr env lexpr
             (env2, rexpr1Enriched) = checkRExpr env1 rexpr1
             (env3, rexpr2Enriched) = checkRExpr env2 rexpr2
-            (env4, stmtEnriched) = checkStatement env stmt
+            (env4, stmtEnriched) = checkStatement env stmt True typeIfInsideFun
         in (env4, ForTo lexprEnriched rexpr1Enriched rexpr2Enriched stmtEnriched)
+    ReturnStmt rexpr _ loc ->
+        let (env1, rexprEnriched) = checkRExpr env rexpr in
+        case typeIfInsideFun of
+            Nothing ->
+                (addError env1 (NotInFunction, loc), ReturnStmt rexprEnriched Nothing loc)
+            Just (BasicType Void) ->
+                (addError env1 (ReturnInsideProcedure, loc), ReturnStmt rexprEnriched Nothing loc)
+            Just _ ->
+                if getRExprType rexprEnriched == typeIfInsideFun
+                    then (env1, ReturnStmt rexprEnriched typeIfInsideFun loc)
+                    else (addError env1 (ReturnTypeMismatch (getRExprType rexprEnriched) typeIfInsideFun, loc), ReturnStmt rexprEnriched typeIfInsideFun loc)
+    BreakStmt loc -> if isLoop
+        then (env, BreakStmt loc)
+        else (addError env (NotInLoop "break", loc), BreakStmt loc)
+    ContinueStmt loc -> if isLoop
+        then (env, ContinueStmt loc)
+        else (addError env (NotInLoop "continue", loc), ContinueStmt loc)
+    
 
 -- Check the type compatibility in an assignment
 compatibleAssignment :: Env -> Maybe SimpleType -> Maybe SimpleType -> Loc -> (Env, Maybe SimpleType)
@@ -916,6 +936,17 @@ isBoolean :: EnrichedRExpr -> Bool
 isBoolean rexpr = case getRExprType rexpr of
     Just (BasicType Boolean) -> True
     _ -> False
+
+getFunHeadType :: EnrichedProcedureAndFunctionHeading -> Maybe SimpleType
+getFunHeadType (ProcHead _ _)      = Just (BasicType Void)
+getFunHeadType (FunHead _ _ retTy) = getFunType retTy
+
+getFunType :: EnrichedType -> Maybe SimpleType
+getFunType (Array _ ty)     = getFunType ty
+getFunType (Pointer ty)     = getFunType ty
+getFunType (BasicType t)    = Just (BasicType t)
+
+
 
 -----------------------------------------------------------
 -------------------- PRINT ENVIRONMENT --------------------

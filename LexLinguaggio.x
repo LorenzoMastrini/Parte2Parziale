@@ -10,6 +10,7 @@
 module LexLinguaggio where
 
 import Prelude
+
 import qualified Data.Bits
 import Data.Char     (ord)
 import Data.Function (on)
@@ -18,6 +19,7 @@ import AbsLinguaggio (Loc(..))
 }
 
 -- Predefined character classes
+
 $c = [A-Z\192-\221] # [\215]  -- capital isolatin1 letter (215 = \times) FIXME
 $s = [a-z\222-\255] # [\247]  -- small   isolatin1 letter (247 = \div  ) FIXME
 $l = [$c $s]         -- letter
@@ -65,7 +67,6 @@ $d+ \. $d+ (e (\-)? $d+)?
     { tok TD }
 
 {
-
 -------------------------------------------------
 -------------------- HELPERS --------------------
 -------------------------------------------------
@@ -82,7 +83,6 @@ posToLoc pos = Loc line col
     Pn _ line col = pos
 
 -------------------------------------------------
-
 
 -- | Create a token with position.
 tok :: (String -> Tok) -> (Posn -> String -> Token)
@@ -184,36 +184,37 @@ eitherResIdent tv s = treeFind resWords
 -- | The keywords and symbols of the language organized as binary search tree.
 resWords :: BTree
 resWords =
-  b "array" 28
-    (b "<=" 14
-       (b "." 7
+  b "begin" 29
+    (b "<>" 15
+       (b ".." 8
           (b "+" 4
-             (b ")" 2 (b "(" 1 N N) (b "*" 3 N N)) (b "-" 6 (b "," 5 N N) N))
-          (b ":=" 11
-             (b "/" 9 (b ".." 8 N N) (b ":" 10 N N))
-             (b "<" 13 (b ";" 12 N N) N)))
-       (b "Integer" 21
-          (b ">=" 18
-             (b "=" 16 (b "<>" 15 N N) (b ">" 17 N N))
-             (b "Character" 20 (b "Boolean" 19 N N) N))
-          (b "]" 25
-             (b "String" 23 (b "Real" 22 N N) (b "[" 24 N N))
-             (b "and" 27 (b "^" 26 N N) N))))
-    (b "not" 42
-       (b "else" 35
-          (b "div" 32
-             (b "case" 30 (b "begin" 29 N N) (b "const" 31 N N))
-             (b "downto" 34 (b "do" 33 N N) N))
-          (b "function" 39
-             (b "false" 37 (b "end" 36 N N) (b "for" 38 N N))
-             (b "mod" 41 (b "if" 40 N N) N)))
-       (b "to" 49
-          (b "program" 46
-             (b "or" 44 (b "of" 43 N N) (b "procedure" 45 N N))
-             (b "then" 48 (b "repeat" 47 N N) N))
-          (b "valres" 52
-             (b "until" 51 (b "true" 50 N N) N)
-             (b "while" 54 (b "var" 53 N N) N))))
+             (b ")" 2 (b "(" 1 N N) (b "*" 3 N N))
+             (b "-" 6 (b "," 5 N N) (b "." 7 N N)))
+          (b ";" 12
+             (b ":" 10 (b "/" 9 N N) (b ":=" 11 N N))
+             (b "<=" 14 (b "<" 13 N N) N)))
+       (b "Real" 22
+          (b "Boolean" 19
+             (b ">" 17 (b "=" 16 N N) (b ">=" 18 N N))
+             (b "Integer" 21 (b "Character" 20 N N) N))
+          (b "^" 26
+             (b "[" 24 (b "String" 23 N N) (b "]" 25 N N))
+             (b "array" 28 (b "and" 27 N N) N))))
+    (b "not" 44
+       (b "else" 37
+          (b "continue" 33
+             (b "case" 31 (b "break" 30 N N) (b "const" 32 N N))
+             (b "do" 35 (b "div" 34 N N) (b "downto" 36 N N)))
+          (b "function" 41
+             (b "false" 39 (b "end" 38 N N) (b "for" 40 N N))
+             (b "mod" 43 (b "if" 42 N N) N)))
+       (b "then" 51
+          (b "program" 48
+             (b "or" 46 (b "of" 45 N N) (b "procedure" 47 N N))
+             (b "return" 50 (b "repeat" 49 N N) N))
+          (b "valres" 55
+             (b "true" 53 (b "to" 52 N N) (b "until" 54 N N))
+             (b "while" 57 (b "var" 56 N N) N))))
   where
   b s n = B bs (TS bs n)
     where

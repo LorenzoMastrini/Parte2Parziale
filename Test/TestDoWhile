@@ -10,39 +10,41 @@ var
 begin
     // VALID CASES
     repeat
-        i := i + 1;
+        i := i + 1
     until i > 10;
 
     repeat
-        b := not b;
+        b := not b
     until b;
 
     repeat
-        s := "looping";
+        s := "looping"
     until s = "stop";
 
     repeat
-        i := i - 1;
+        i := i - 1
     until (i = 0) or b;
 
     // Nested repeat-until
     repeat
-        repeat
-            i := i + 1;
-        until i > 5;
-        b := false;
+        begin
+            repeat
+                i := i + 1
+            until i > 5;
+            b := false;
+        end
     until b;
 
     // ERROR CASES
     repeat
-        i := 1;
-    until 1;           // ERROR: condition not boolean
+        i := 1
+    until 1;           // ERROR (ConditionNotBoolean)
 
     repeat
-        b := true;
-    until "test";      // ERROR: condition not boolean
+        b := true
+    until "test";      // ERROR (ConditionNotBoolean)
 
     repeat
-        ch := 'a';
-    until ch;          // ERROR: condition not boolean
+        ch := 'a'
+    until ch;          // ERROR (ConditionNotBoolean)
 end. 
