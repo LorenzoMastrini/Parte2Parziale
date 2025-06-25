@@ -1,0 +1,78 @@
+program TestComplexTask();
+
+const
+    maxVal = 10;
+    pi = 3.14;
+    greeting = "Hello";
+    flag = true;
+
+var
+    arr: array[1..5] of Integer;
+    i, j: Integer;
+    r: Real;
+    s: String;
+    b: Boolean;
+
+procedure PrintArray(a: array[1..5] of Integer);
+begin
+    for i := 1 to 5 do
+        writeInt(a[i]);
+end;
+
+function SumArray(a: array[1..5] of Integer): Integer;
+var sum: Integer;
+begin
+    sum := 0;
+    for j := 1 to 5 do
+        sum := sum + a[j];
+    return sum;
+end;
+
+begin
+    arr[1] := 1;
+    arr[2] := 2;
+    arr[3] := 3;
+    arr[4] := 4;
+    arr[5] := 5;
+    
+    PrintArray(arr);
+    s := greeting + " world!";
+    b := flag and false;
+    r := pi * 2;
+    
+    // ERRORE: Assegnamento a costante
+    maxVal := 20;
+    
+    // ERRORE: Uso di variabile non dichiarata
+    x := 5;
+    
+    // ERRORE: Condizione non booleana
+    if r then
+        s := "bad cond";
+    
+    // ERRORE: Mismatch tipo parametro
+    PrintArray(s);
+    
+    // ERRORE: Return in procedura
+    PrintArray(arr);
+    return 0;
+    
+    // ERRORE: Return tipo errato
+    i := SumArray(arr);
+    r := SumArray(arr);
+    
+    // ERRORE: Case su tipo non valido
+    case r of
+        1: s := "uno";
+        2: s := "due";
+        else s := "altro";
+    end;
+    
+    // ERRORE: For con variabile non intera
+    for s := 1 to 5 do
+        writeString(s);
+    
+    // ERRORE: While con condizione non booleana
+    while i do
+        i := i - 1;
+end. 

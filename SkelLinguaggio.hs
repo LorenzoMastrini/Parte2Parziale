@@ -93,7 +93,7 @@ transStatement x = case x of
   AbsLinguaggio.DoWhile statement rexpr loc -> failure x
   AbsLinguaggio.ForTo lexpr rexpr1 rexpr2 statement -> failure x
   AbsLinguaggio.ForDownTo lexpr rexpr1 rexpr2 statement -> failure x
-  AbsLinguaggio.If rexpr statement optelse -> failure x
+  AbsLinguaggio.If rexpr statement optelse loc -> failure x
   AbsLinguaggio.Case rexpr caseitems -> failure x
   AbsLinguaggio.ReturnStmt rexpr ty loc -> failure x
   AbsLinguaggio.ContinueStmt loc -> failure x

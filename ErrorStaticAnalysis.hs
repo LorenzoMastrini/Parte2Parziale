@@ -2,6 +2,7 @@ module ErrorStaticAnalysis where
 
 import AbsLinguaggio
 import PrettyPrinter
+import Data.Data (toConstr, showConstr)
 
 
 data Error ty varInfo funInfo
@@ -56,7 +57,7 @@ data Error ty varInfo funInfo
     | NegativeSizeIndex Loc
     | DivideByZero Loc
     | NonBasicType Loc (Type ty varInfo funInfo)
---  | RelError Loc (Type ty) (Type ty) Rel
+    | RelError Loc (Type ty) (Type ty) Rel
     | BoolOpError Loc (Type ty varInfo funInfo) (Type ty varInfo funInfo) String
     | BoolNotError Loc (Type ty varInfo funInfo) String
     | FuncTypesMismatch [Type ty varInfo funInfo] [Type ty varInfo funInfo] (Ident ty varInfo funInfo) Loc
@@ -145,8 +146,8 @@ errorType x =
         IncompatibleAssignment targetType sourceType ->
             errorMsg "Cannot assign \"" ++ showTy sourceType ++ "\" type to \"" ++ showTy targetType ++ "\"." ++ " [Type Error]"
         
-        FunArgTypeMismatch (BasicType argType) (BasicType paramType) ->
-            errorMsg "Argument type mismatch in function call: expected \"" ++ show paramType ++ "\" type, got \"" ++ show argType ++ "\" instead." ++ " [Type Error]"
+        FunArgTypeMismatch argType paramType ->
+            errorMsg "Argument type mismatch in function call: expected \"" ++ showTy paramType ++ "\" type, got \"" ++ showTy argType ++ "\" instead." ++ " [Type Error]"
         
         NotBooleanCondition stmt conditionType ->
             errorMsg "The condition of the " ++ show stmt ++ " statement must be of type \"Boolean\", got \"" ++ showMType conditionType ++ "\" instead." ++ " [Type Error]"
@@ -181,6 +182,8 @@ errorType x =
 
         NotInFunction ->
             errorMsg "Cannot use \"return\" statement outside a function." ++ " [Control Flow Error]"
+
+            
 {-
         --RedeclaredFunction (Ident ((loc),name)) -> 
         --    errorMsg "Symbol name '"++ name ++ "' for function declaration already used. " 
@@ -342,6 +345,8 @@ errorType x =
         InfiniteLoop loc ->
             warningMsg "Infinite loop." ++ " [ControlFlowAnalysis]."
 -}
+
+        _ -> "[UNHANDLED ERROR]"
 
 showTy :: SimpleType -> String
 showTy ty = case ty of

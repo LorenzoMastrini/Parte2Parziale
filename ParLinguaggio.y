@@ -73,7 +73,7 @@ import LexLinguaggio
   'false'     { PT _ (TS _ 39) }
   'for'       { PT _ (TS _ 40) }
   'function'  { PT _ (TS _ 41) }
-  'if'        { PT _ (TS _ 42) }
+  'if'        { PT pos (TS _ 42) }
   'mod'       { PT pos (TS _ 43) }
   'not'       { PT pos (TS _ 44) }
   'of'        { PT _ (TS _ 45) }
@@ -234,7 +234,7 @@ Statement
   | 'repeat' Statement 'until' RExpr { AbsLinguaggio.DoWhile $2 $4 (posToLoc (getPos $3)) }
   | 'for' LExpr ':=' RExpr 'to' RExpr 'do' Statement { AbsLinguaggio.ForTo $2 $4 $6 $8 }
   | 'for' LExpr ':=' RExpr 'downto' RExpr 'do' Statement { AbsLinguaggio.ForDownTo $2 $4 $6 $8 }
-  | 'if' RExpr 'then' Statement OptElse { AbsLinguaggio.If $2 $4 $5 }
+  | 'if' RExpr 'then' Statement OptElse { AbsLinguaggio.If $2 $4 $5 (posToLoc (getPos $1)) }
   | 'case' RExpr 'of' ListCaseItem 'end' { AbsLinguaggio.Case $2 $4 }
   | 'return' RExpr { AbsLinguaggio.ReturnStmt $2 () (posToLoc (getPos $1)) }
   | 'break' { AbsLinguaggio.BreakStmt (posToLoc (getPos $1)) }

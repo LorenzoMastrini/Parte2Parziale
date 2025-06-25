@@ -335,6 +335,7 @@ checkRExpr env expr = case expr of
             (env1, lexprEnriched) = checkLExpr env lexpr
             ty = getLExprType lexprEnriched
         in (env1, LExpr lexprEnriched ty)
+    _ -> error $ "DEBUG: checkStatement pattern non gestito: " ++ show expr
 
 checkArgsNumWithTypeError :: Env -> [SimpleRExpr] -> [SimpleFormalParameters] -> Int -> Int -> Loc -> (Env, [EnrichedRExpr], Bool)
 checkArgsNumWithTypeError env [] [] origArgs origParams _ = (env, [], False)
@@ -453,6 +454,15 @@ checkStatement env stmt isLoop typeIfInsideFun = case stmt of
             else let
                 (env3, assTy) = compatibleAssignment env2 (getLExprType lexprEnriched) (getRExprType rexprEnriched) loc
                 in (env3, Assign lexprEnriched rexprEnriched assTy loc)
+    If cond thenStmt optElse loc ->
+        let
+            (env1, condEnriched) = checkRExpr env cond
+            (env2, thenEnriched) = checkStatement env1 thenStmt isLoop typeIfInsideFun
+            (env3, optElseEnriched) = checkOptElse env2 optElse isLoop typeIfInsideFun
+            envFinal = if getRExprType condEnriched == Just (BasicType Boolean)
+                then env3
+                else addError env3 (NotBooleanCondition "if" (getRExprType condEnriched), loc)
+        in (envFinal, If condEnriched thenEnriched optElseEnriched loc)
     While rexpr stmt loc ->
         let
             (env1, rexprEnriched) = checkRExpr env rexpr
@@ -491,7 +501,6 @@ checkStatement env stmt isLoop typeIfInsideFun = case stmt of
     ContinueStmt loc -> if isLoop
         then (env, ContinueStmt loc)
         else (addError env (NotInLoop "continue", loc), ContinueStmt loc)
-    
 
 -- Check the type compatibility in an assignment
 compatibleAssignment :: Env -> Maybe SimpleType -> Maybe SimpleType -> Loc -> (Env, Maybe SimpleType)
@@ -511,6 +520,14 @@ compatibleAssignment env (Just targetType) (Just sourceType) loc = case (targetT
         else (addError env (IncompatiblePtrArrType, loc), Nothing)
     _ -> (addError env (IncompatibleAssignment targetType sourceType, loc), Nothing) -- If it's not any of the above, the LExpr is actually a constant
 compatibleAssignment env _ _ loc = (env, Nothing)
+
+checkOptElse :: Env -> SimpleOptElse -> Bool -> Maybe SimpleType -> (Env, EnrichedOptElse)
+checkOptElse env optElse isLoop typeIfInsideFun = case optElse of
+    NoElse -> (env, NoElse)
+    Else stmt ->
+        let (env1, stmtEnriched) = checkStatement env stmt isLoop typeIfInsideFun
+        in (env1, Else stmtEnriched)
+
 
 
 ------------------------------------------------
@@ -946,7 +963,39 @@ getFunType (Array _ ty)     = getFunType ty
 getFunType (Pointer ty)     = getFunType ty
 getFunType (BasicType t)    = Just (BasicType t)
 
+-- Helper to extract Loc from a SimpleRExpr (for error reporting in If)
+getCondLoc :: SimpleRExpr -> Loc
+getCondLoc expr = case expr of
+    Binary _ op _ _ -> getBinaryLoc op
+    Unary op _ _    -> getUnaryLoc op
+    FCall _ _ loc   -> loc
+    _               -> Loc 0 0
 
+-- Helper to extract Loc from a Binary operator
+getBinaryLoc :: Binary -> Loc
+getBinaryLoc op = case op of
+    BinaryPlus loc      -> loc
+    BinaryMinus loc     -> loc
+    BinaryMul loc       -> loc
+    BinaryDiv loc       -> loc
+    BinaryIntDiv loc    -> loc
+    BinaryMod loc       -> loc
+    BinaryOr loc        -> loc
+    BinaryAnd loc       -> loc
+    BinaryEq loc        -> loc
+    BinaryNeq loc       -> loc
+    BinaryLt loc        -> loc
+    BinaryLte loc       -> loc
+    BinaryGt loc        -> loc
+    BinaryGte loc       -> loc
+
+-- Helper to extract Loc from a Unary operator
+getUnaryLoc :: Unary -> Loc
+getUnaryLoc op = case op of
+    UnaryPlus loc   -> loc
+    UnaryMinus loc  -> loc
+    UnaryNot loc    -> loc
+    UnaryRef loc    -> loc
 
 -----------------------------------------------------------
 -------------------- PRINT ENVIRONMENT --------------------

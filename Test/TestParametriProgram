@@ -1,8 +1,0 @@
-program TestParametriProgram(input: Integer, output: Real);
-
-begin
-    input;
-    output;
-    input;
-    z;         // ERROR (UnknownIdentifier)
-end. 

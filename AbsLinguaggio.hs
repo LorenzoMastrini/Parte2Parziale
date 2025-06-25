@@ -57,7 +57,7 @@ data Statement ty varInfo funInfo
   | DoWhile (Statement ty varInfo funInfo) (RExpr ty varInfo funInfo) Loc
   | ForTo (LExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo)
   | ForDownTo (LExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo)
-  | If (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo) (OptElse ty varInfo funInfo)
+  | If (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo) (OptElse ty varInfo funInfo) Loc
   | Case (RExpr ty varInfo funInfo) [CaseItem ty varInfo funInfo]
   | ReturnStmt (RExpr ty varInfo funInfo) ty Loc
   | BreakStmt Loc
@@ -176,6 +176,7 @@ type SimpleProcedureAndFunctionDeclaration = ProcedureAndFunctionDeclaration () 
 type SimpleProcedureAndFunctionHeading     = ProcedureAndFunctionHeading () () ()
 type SimpleCompoundStatement               = CompoundStatement () () ()
 type SimpleStatement                       = Statement () () ()
+type SimpleOptElse                         = OptElse () () ()
 type SimpleRExpr                           = RExpr () () ()
 type SimpleLExpr                           = LExpr () () ()
 type SimpleIdent                           = Ident () () ()
@@ -192,14 +193,14 @@ type EnrichedProcedureAndFunctionDeclaration  = ProcedureAndFunctionDeclaration 
 type EnrichedProcedureAndFunctionHeading      = ProcedureAndFunctionHeading (Maybe SimpleType) VarInfo FunInfo
 type EnrichedCompoundStatement                = CompoundStatement (Maybe SimpleType) VarInfo FunInfo
 type EnrichedStatement                        = Statement (Maybe SimpleType) VarInfo FunInfo
+type EnrichedOptElse                          = OptElse (Maybe SimpleType) VarInfo FunInfo
+type EnrichedCaseItem                         = CaseItem (Maybe SimpleType) VarInfo FunInfo
 type EnrichedRExpr                            = RExpr (Maybe SimpleType) VarInfo FunInfo
 type EnrichedLExpr                            = LExpr (Maybe SimpleType) VarInfo FunInfo
 type EnrichedIdent                            = Ident (Maybe SimpleType) VarInfo FunInfo
 type EnrichedType                             = Type (Maybe SimpleType) VarInfo FunInfo
 type EnrichedIndexType                        = IndexType (Maybe SimpleType) VarInfo FunInfo
 type EnrichedConstant                         = Constant (Maybe SimpleType) VarInfo FunInfo
-type EnrichedOptElse                          = OptElse (Maybe SimpleType) VarInfo FunInfo
-type EnrichedCaseItem                         = CaseItem (Maybe SimpleType) VarInfo FunInfo
 
 -- Definition of the position of the tokens
 data Loc = Loc {line, column :: Int}
