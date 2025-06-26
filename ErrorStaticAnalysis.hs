@@ -60,7 +60,7 @@ errorType x =
             else errorMsg "The identifier \"" ++ name ++ "\" has already been used for a procedure/function." ++ " [Declaration Error]."
 
         FunNotDefined (Ident name loc _ _ _) -> 
-            errorMsg "The function \"" ++ name ++ "\" does not exists." ++ " [Declaration Error]."
+            errorMsg "The function \"" ++ name ++ "\" doesn't exist." ++ " [Declaration Error]."
         
         NotAFunction (Ident name loc _ _ _) -> 
             errorMsg "\"" ++ name ++ "\" is a variable, not a function." ++ " [Declaration Error]."
