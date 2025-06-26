@@ -185,8 +185,7 @@ checkProcFunBodies env (d:ds) =
 checkProcFunDecl :: Env -> SimpleProcedureAndFunctionDeclaration -> (Env, EnrichedProcedureAndFunctionDeclaration)
 checkProcFunDecl env (ProcFunDecl heading block) =
     let
-        -- Create a scope for the function
-        localEnv = enterScope env
+        localEnv = enterScope env -- Create a scope for the function
         (localEnv1, headingEnriched) = checkProcFunHead localEnv heading
         (finalLocalEnv, blockEnriched) = checkBlock localEnv1 block (getFunHeadType headingEnriched)
         envHasReturn = hasReturnStmt finalLocalEnv headingEnriched blockEnriched
@@ -199,20 +198,17 @@ checkProcFunHead :: Env -> SimpleProcedureAndFunctionHeading -> (Env, EnrichedPr
 checkProcFunHead localEnv head = case head of
     (ProcHead ident params) ->
         let
-            -- Arricchisci solo l'identificatore per l'AST
+            --  solo l'ientificatore per l'AST
             identEnriched = enrichIdent ident (Just (BasicType Void)) NoVarInfo (FunInfo (BasicType Void) params)
-            -- Aggiungi la signature solo al localEnv per la ricorsione interna
-            (localEnvWithFunc, _) = checkProcFunIdent localEnv ident (BasicType Void) NoVarInfo (FunInfo (BasicType Void) params) params
+            (localEnvWithFunc, _) = checkProcFunIdent localEnv ident (BasicType Void) NoVarInfo (FunInfo (BasicType Void) params) params -- Add signature only to localEnv for recursion
             (localEnv1, paramsEnriched) = checkFormalParametersList localEnvWithFunc params
             updatedLocalEnv = localEnv1 { parent = parent localEnv }
         in (updatedLocalEnv, ProcHead identEnriched paramsEnriched)
     (FunHead ident params retTy loc) ->
         let
             retTyEnriched = enrichType retTy
-            -- Arricchisci solo l'identificatore per l'AST
             identEnriched = enrichIdent ident (Just retTy) NoVarInfo (FunInfo retTy params)
-            -- Aggiungi la signature solo al localEnv per la ricorsione interna
-            (localEnvWithFunc, _) = checkProcFunIdent localEnv ident retTy NoVarInfo (FunInfo retTy params) params
+            (localEnvWithFunc, _) = checkProcFunIdent localEnv ident retTy NoVarInfo (FunInfo retTy params) params -- Add signature only to localEnv for recursion
             (localEnv1, paramsEnriched) = checkFormalParametersList localEnvWithFunc params
             updatedLocalEnv = localEnv1 { parent = parent localEnv }
         in (updatedLocalEnv, FunHead identEnriched paramsEnriched retTyEnriched loc)
@@ -686,53 +682,6 @@ mergeEnvs env1 env2 = Env
 -------------------- ENRICHED AST FUNCTIONS --------------------
 ----------------------------------------------------------------
 
-enrichFormalParametersList :: [SimpleFormalParameters] -> [EnrichedFormalParameters]
-enrichFormalParametersList = map enrichFormalParameters
-
-enrichFormalParameters :: SimpleFormalParameters -> EnrichedFormalParameters
-enrichFormalParameters (FormParam mod idents ty) =
-    let
-        varInfo = VarInfo Nothing False
-    in FormParam mod (map (\i -> enrichIdent i (Just ty) varInfo NoFunInfo) idents) (enrichType ty)
-
-enrichBlock :: SimpleBlock -> EnrichedBlock
-enrichBlock (Block consts vars procs compStmt) =
-    Block (map enrichConstDef consts)
-    (map enrichVarDecl vars)
-    (map enrichProcFunDecl procs)
-    (enrichCompoundStatement compStmt)
-
-enrichConstDef :: SimpleConstantDefinition -> EnrichedConstantDefinition
-enrichConstDef (ConstDef ident c) = ConstDef (enrichIdentUnknown ident) (enrichConst c)
-
-enrichVarDecl :: SimpleVariableDeclaration -> EnrichedVariableDeclaration
-enrichVarDecl (VarDecl ids ty) =
-    let
-        varInfo = VarInfo Nothing False
-    in VarDecl (map (\i -> enrichIdent i (Just ty) varInfo NoFunInfo) ids) (enrichType ty)
-
-enrichProcFunDecl :: SimpleProcedureAndFunctionDeclaration -> EnrichedProcedureAndFunctionDeclaration
-enrichProcFunDecl (ProcFunDecl heading block) = ProcFunDecl (enrichProcFunHeading heading) (enrichBlock block)
-
-enrichProcFunHeading :: SimpleProcedureAndFunctionHeading -> EnrichedProcedureAndFunctionHeading
-enrichProcFunHeading (ProcHead ident params) =
-    let
-        ty = BasicType Void
-        paramsEnriched = enrichFormalParametersList params
-        funInfo = FunInfo ty params
-    in ProcHead (enrichIdent ident (Just (BasicType Void)) NoVarInfo funInfo) (enrichFormalParametersList params)
-enrichProcFunHeading (FunHead ident params retTy loc) =
-    let
-        tyEnriched = enrichType retTy
-        paramsEnriched = enrichFormalParametersList params
-    in FunHead (enrichIdent ident (Just retTy) NoVarInfo (FunInfo retTy params)) paramsEnriched tyEnriched loc
-
-enrichCompoundStatement :: SimpleCompoundStatement -> EnrichedCompoundStatement
-enrichCompoundStatement (CompStmt stmts) = CompStmt (map enrichStatement stmts)
-
-enrichStatement :: SimpleStatement -> EnrichedStatement
-enrichStatement = undefined
-
 enrichIndex :: SimpleIndexType -> EnrichedIndexType
 enrichIndex (IndexRange c1 c2) = IndexRange (enrichConst c1) (enrichConst c2)
 
@@ -764,10 +713,6 @@ enrichLitExpr lit = case lit of
     Literal_true     -> Lit lit (Just (BasicType Boolean))
     Literal_false    -> Lit lit (Just (BasicType Boolean))
 
--- Extract the type information from an enriched identifier
-getIdentType :: EnrichedIdent -> Maybe SimpleType
-getIdentType (Ident _ _ ty _ _) = ty
-
 setIdentType :: EnrichedIdent -> Maybe SimpleType -> EnrichedIdent
 setIdentType (Ident name loc _ v f) ty = Ident name loc ty v f
 
@@ -785,8 +730,12 @@ getIdentName (Ident name _ _ _ _) = name
 getIdentLoc :: SimpleIdent -> Loc
 getIdentLoc (Ident _ loc _ _ _) = loc
 
+-- Extract the type information from an enriched identifier
+getIdentType :: EnrichedIdent -> Maybe SimpleType
+getIdentType (Ident _ _ ty _ _) = ty
+
 -- Infer the type of a constant
-inferConstantType :: Constant () () () -> SimpleType
+inferConstantType :: SimpleConstant -> SimpleType
 inferConstantType (ConstInt _ _)    = BasicType Integer
 inferConstantType (ConstDouble _ _) = BasicType Real
 inferConstantType (ConstStr _)      = BasicType String
@@ -944,6 +893,8 @@ hasReturnEveryPath stmts = anyPathReturns stmts
 -- True if at least one element of the list has non-Integer type
 hasNonInteger :: [EnrichedRExpr] -> Bool
 hasNonInteger = any (\e -> getRExprType e /= Just (BasicType Integer))
+
+
 
 -----------------------------------------------------------
 -------------------- PRINT ENVIRONMENT --------------------
