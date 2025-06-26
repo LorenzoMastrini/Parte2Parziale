@@ -27,6 +27,11 @@ var
         0;
     end;
 
+    procedure writeInt(val: Integer);   // ERROR (RedeclaredProcFun)
+    begin
+        0;
+    end;
+
 begin
     Sum(3, 4);
     PrintInt(x);

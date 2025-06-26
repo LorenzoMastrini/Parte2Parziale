@@ -180,7 +180,7 @@ checkVarDeclSequence env (id:ids) ty =
                     (env1, hasNegativeIndex) = checkNegativeIndex env indexTypes loc -- Check for negative indices
                     (env2, baseIdEnr) = checkIdent env1 id ty (VarInfo Nothing False) NoFunInfo
                     finalIdEnr = if hasNegativeIndex
-                        then setIdentTypeInfo baseIdEnr Nothing -- If (at least) one index is negative, set identifier's type as Nothing
+                        then setIdentType baseIdEnr Nothing -- If (at least) one index is negative, set identifier's type as Nothing
                         else baseIdEnr
                 in (env2, finalIdEnr)
             _ -> checkIdent env id ty (VarInfo Nothing False) NoFunInfo -- Not an array, check just the identifier
@@ -314,7 +314,7 @@ checkRExpr env expr = case expr of
             let
                 (env1, argsEnriched, hasTypeError) = checkArgsNumWithTypeError env args (paramsToList params) (length args) (length (paramsToList params)) loc
                 identEnriched = if hasTypeError
-                    then setIdentTypeInfo (enrichIdent ident (Just retTy) NoVarInfo (FunInfo retTy params)) Nothing
+                    then setIdentType (enrichIdent ident (Just retTy) NoVarInfo (FunInfo retTy params)) Nothing
                     else enrichIdent ident (Just retTy) NoVarInfo (FunInfo retTy params)
             in (env1, FCall identEnriched argsEnriched loc)
     Ref op@(UnaryRef loc) rexpr _ ->
@@ -364,21 +364,24 @@ checkLExpr env lexpr = case lexpr of
     LId ident _ ->
         let
             (env1, identEnriched) = identExists env ident
-            ty = getIdentTypeInfo identEnriched
+            ty = getIdentType identEnriched
         in (env1, LId identEnriched ty)
     LArr lexpr' indices _ loc ->
         let
             (env1, lexprEnriched) = checkLExpr env lexpr'
-            (env2, indicesEnriched) = checkIndices env1 indices
+            (env2, indicesEnriched) = checkIndices env1 indices loc
+            nonIntIndices = hasNonInteger indicesEnriched
             isArrayResult = isArray lexprEnriched
             childHasUnknown = isNothing (getLExprType lexprEnriched) || any (isNothing . getRExprType) indicesEnriched
         in if isArrayResult && not childHasUnknown
-            then
-                let
-                    Just (Array i ty) = getLExprType lexprEnriched
-                    (env3, hasError) = checkRange env2 lexprEnriched indicesEnriched loc
-                    finalType = if hasError then Nothing else Just ty
-                in (env3, LArr lexprEnriched indicesEnriched finalType loc)
+            then if nonIntIndices
+                    then (env2, LArr lexprEnriched indicesEnriched Nothing loc)
+                    else
+                        let
+                            Just (Array i ty) = getLExprType lexprEnriched
+                            (env3, hasError) = checkRange env2 lexprEnriched indicesEnriched loc
+                            finalType = if hasError then Nothing else Just ty
+                        in (env3, LArr lexprEnriched indicesEnriched finalType loc)
             else (addError env2 (NotAnArray, loc), LArr lexprEnriched indicesEnriched Nothing loc)
     LDeref lexpr' _ loc ->
         let
@@ -390,13 +393,18 @@ checkLExpr env lexpr = case lexpr of
                 in (env1, LDeref lexprEnriched (Just t) loc)
             else (addError env1 (NotAPointer, loc), LDeref lexprEnriched Nothing loc)
 
-checkIndices :: Env -> [SimpleRExpr] -> (Env, [EnrichedRExpr])
-checkIndices env [] = (env, [])
-checkIndices env (index:indices) =
+checkIndices :: Env -> [SimpleRExpr] -> Loc -> (Env, [EnrichedRExpr])
+checkIndices env [] loc = (env, [])
+checkIndices env (index:indices) loc =
     let
         (env1, indexEnriched) = checkRExpr env index
-        (env2, indicesEnriched) = checkIndices env1 indices
-    in (env2, indexEnriched:indicesEnriched)
+        (env2, indicesEnriched) = checkIndices env1 indices loc
+        indexType = getRExprType indexEnriched
+    in if indexType == Just (BasicType Integer)
+        then (env2, indexEnriched : indicesEnriched)
+        else
+            let env2 = addError env1 (NotIntegerArrIndex indexType, loc)
+            in (env2, indexEnriched : indicesEnriched)
 
 checkRange :: Env -> EnrichedLExpr -> [EnrichedRExpr] -> Loc -> (Env, Bool)
 checkRange env lexpr indices loc =
@@ -643,6 +651,23 @@ argCompatible env (Just argType) paramType loc = if argType /= paramType
     else (env, True)
 argCompatible env Nothing _ loc = (env, False)
 
+-------------------- Arrays --------------------
+-- Check if any index in an array declaration is negative
+checkNegativeIndex :: Env -> [SimpleIndexType] -> Loc -> (Env, Bool)
+checkNegativeIndex env [] _ = (env, False)
+checkNegativeIndex env (IndexRange c1 c2 : xs) loc =
+    let
+        val1 = getConstVal env c1
+        val2 = getConstVal env c2
+        isCurrentNegative = val1 < 0 || val2 < 0
+        env1 = if isCurrentNegative
+                        then addError env (NegativeArrIndex, loc) -- Error if there's a negative index
+                        else env
+        (finalEnv, hasErrorInRest) = checkNegativeIndex env1 xs loc -- Recursive call, check the reset of the list
+    in
+        (finalEnv, isCurrentNegative || hasErrorInRest)
+
+
 
 ----------------------------------------------------------------
 -------------------- ENVIRONMENT MANAGEMENT --------------------
@@ -651,23 +676,14 @@ argCompatible env Nothing _ loc = (env, False)
 -- Iterate the list of formal parameters
 addFormalParams :: Env -> [SimpleFormalParameters] -> Env
 addFormalParams env [] = env
-addFormalParams env (param:params) = addFormalParams env' params
-  where env' = addFormalParam env param
+addFormalParams env (param:params) = addFormalParams env1 params
+  where env1 = addFormalParam env param
 
 -- Add the formal parameter to the environment
 addFormalParam :: Env -> SimpleFormalParameters -> Env
 addFormalParam env (FormParam _ [] _) = env
-addFormalParam env (FormParam mod (id:ids) ty) = addFormalParam env' (FormParam mod ids ty)
-  where env' = addSymbol env id (ConstVarEntry ty False Nothing (getIdentLoc id))
-
-addSymbol :: Env -> SimpleIdent -> EnvEntry -> Env
-addSymbol env name record = env { symbols = Map.insert name record (symbols env) }
-
-addProcFun :: Env -> SimpleProcedureAndFunctionHeading -> Env
-addProcFun env (ProcHead ident params) =
-    addSymbol env ident (ProcFunEntry params (BasicType Void) (getIdentLoc ident))
-addProcFun env (FunHead ident params retTy _) =
-    addSymbol env ident (ProcFunEntry params retTy (getIdentLoc ident))
+addFormalParam env (FormParam mod (id:ids) ty) = addFormalParam env1 (FormParam mod ids ty)
+  where env1 = addEntry env id (ConstVarEntry ty False Nothing (getIdentLoc id))
 
 -- Add an entry (variable, constant, function or procedure) to the environment
 addEntry :: Env -> SimpleIdent -> EnvEntry -> Env
@@ -691,10 +707,6 @@ mergeEnvs env1 env2 = Env
 ----------------------------------------------------------------
 -------------------- ENRICHED AST FUNCTIONS --------------------
 ----------------------------------------------------------------
-
-enrichProgram :: SimpleProgram -> EnrichedProgram
-enrichProgram (Prog ident params block loc) =
-  Prog (enrichIdentUnknown ident) (enrichFormalParametersList params) (enrichBlock block) loc
 
 enrichFormalParametersList :: [SimpleFormalParameters] -> [EnrichedFormalParameters]
 enrichFormalParametersList = map enrichFormalParameters
@@ -746,7 +758,7 @@ enrichStatement = undefined
 enrichIndex :: SimpleIndexType -> EnrichedIndexType
 enrichIndex (IndexRange c1 c2) = IndexRange (enrichConst c1) (enrichConst c2)
 
-enrichConst :: Constant () () () -> EnrichedConstant
+enrichConst :: SimpleConstant -> EnrichedConstant
 enrichConst (ConstId s i)      = ConstId s (enrichIdentUnknown i)
 enrichConst (ConstInt s n)     = ConstInt s n
 enrichConst (ConstDouble s d)  = ConstDouble s d
@@ -774,66 +786,14 @@ enrichLitExpr lit = case lit of
     Literal_true     -> Lit lit (Just (BasicType Boolean))
     Literal_false    -> Lit lit (Just (BasicType Boolean))
 
--- Extract type information from an RExpr
-getRExprType :: EnrichedRExpr -> Maybe SimpleType
-getRExprType (Binary _ _ _ ty)  = ty
-getRExprType (Unary _ _ ty)     = ty
-getRExprType (Lit _ ty)         = ty
-getRExprType (FCall ident _ _)  = getIdentTypeInfo ident
-getRExprType (Ref _ _ ty)       = ty
-getRExprType (LExpr _ ty)       = ty
-
--- Extract type information from a LExpr
-getLExprType :: EnrichedLExpr -> Maybe SimpleType
-getLExprType (LId _ ty)      = ty
-getLExprType (LArr _ _ ty _) = ty
-getLExprType (LDeref _ ty _) = ty
-
--- Convert an enriched constant to a simple one
-toSimpleConstant :: EnrichedConstant -> Constant () () ()
-toSimpleConstant (ConstId s i)      = ConstId s (toSimpleIdent i)
-toSimpleConstant (ConstInt s n)     = ConstInt s n
-toSimpleConstant (ConstDouble s d)  = ConstDouble s d
-toSimpleConstant (ConstStr str)     = ConstStr str
-
--- Convert an enriched identifier to a simple one
-toSimpleIdent :: EnrichedIdent -> SimpleIdent
-toSimpleIdent (Ident name loc _ _ _) = Ident name loc () () ()
-
 -- Extract the type information from an enriched identifier
-getIdentTypeInfo :: EnrichedIdent -> Maybe SimpleType
-getIdentTypeInfo (Ident _ _ typeInfo _ _) = typeInfo
+getIdentType :: EnrichedIdent -> Maybe SimpleType
+getIdentType (Ident _ _ ty _ _) = ty
 
-setRExprTypeInfo :: EnrichedRExpr -> Maybe SimpleType -> EnrichedRExpr
-setRExprTypeInfo (Binary e1 op e2 _) ty = Binary e1 op e2 ty
-setRExprTypeInfo (Unary op e _) ty = Unary op e ty
-setRExprTypeInfo (Lit lit _) ty = Lit lit ty
-setRExprTypeInfo (FCall ident args loc) ty = FCall (setIdentTypeInfo ident ty) args loc
-setRExprTypeInfo (Ref op rexpr _) ty = Ref op rexpr ty
-setRExprTypeInfo (LExpr lexpr _) ty = LExpr (setLExprTypeInfo lexpr ty) ty
+setIdentType :: EnrichedIdent -> Maybe SimpleType -> EnrichedIdent
+setIdentType (Ident name loc _ v f) ty = Ident name loc ty v f
 
-setIdentTypeInfo :: EnrichedIdent -> Maybe SimpleType -> EnrichedIdent
-setIdentTypeInfo (Ident name loc _ v f) ty = Ident name loc ty v f
 
-setLExprTypeInfo :: EnrichedLExpr -> Maybe SimpleType -> EnrichedLExpr
-setLExprTypeInfo (LId ident _) ty = LId (setIdentTypeInfo ident ty) ty
-setLExprTypeInfo (LArr lexpr indices _ loc) ty = LArr (setLExprTypeInfo lexpr ty) indices ty loc
-setLExprTypeInfo (LDeref lexpr _ loc) ty = LDeref (setLExprTypeInfo lexpr ty) ty loc
-
--- Check if any index in an array declaration is negative
-checkNegativeIndex :: Env -> [SimpleIndexType] -> Loc -> (Env, Bool)
-checkNegativeIndex env [] _ = (env, False)
-checkNegativeIndex env (IndexRange c1 c2 : xs) loc =
-    let
-        val1 = getConstVal env c1
-        val2 = getConstVal env c2
-        isCurrentNegative = val1 < 0 || val2 < 0
-        env1 = if isCurrentNegative
-                        then addError env (NegativeArrIndex, loc) -- Error if there's a negative index
-                        else env
-        (finalEnv, hasErrorInRest) = checkNegativeIndex env1 xs loc -- Recursive call, check the reset of the list
-    in
-        (finalEnv, isCurrentNegative || hasErrorInRest)
 
 -----------------------------------------------------------
 -------------------- SUPPORT FUNCTIONS --------------------
@@ -855,6 +815,21 @@ inferConstantType (ConstStr _)      = BasicType String
 inferConstantType (ConstChar _)     = BasicType Character
 inferConstantType (ConstBool _)     = BasicType Boolean
 inferConstantType _                 = BasicType Void -- Not a constant
+
+-- Extract type information from an RExpr
+getRExprType :: EnrichedRExpr -> Maybe SimpleType
+getRExprType (Binary _ _ _ ty)  = ty
+getRExprType (Unary _ _ ty)     = ty
+getRExprType (Lit _ ty)         = ty
+getRExprType (FCall ident _ _)  = getIdentType ident
+getRExprType (Ref _ _ ty)       = ty
+getRExprType (LExpr _ ty)       = ty
+
+-- Extract type information from a LExpr
+getLExprType :: EnrichedLExpr -> Maybe SimpleType
+getLExprType (LId _ ty)      = ty
+getLExprType (LArr _ _ ty _) = ty
+getLExprType (LDeref _ ty _) = ty
 
 -- Search if the name is already in the environment and return it if present
 lookupByName :: Env -> String -> Maybe (EnvEntry, Bool)
@@ -963,40 +938,6 @@ getFunType (Array _ ty)     = getFunType ty
 getFunType (Pointer ty)     = getFunType ty
 getFunType (BasicType t)    = Just (BasicType t)
 
--- Helper to extract Loc from a SimpleRExpr (for error reporting in If)
-getCondLoc :: SimpleRExpr -> Loc
-getCondLoc expr = case expr of
-    Binary _ op _ _ -> getBinaryLoc op
-    Unary op _ _    -> getUnaryLoc op
-    FCall _ _ loc   -> loc
-    _               -> Loc 0 0
-
--- Helper to extract Loc from a Binary operator
-getBinaryLoc :: Binary -> Loc
-getBinaryLoc op = case op of
-    BinaryPlus loc      -> loc
-    BinaryMinus loc     -> loc
-    BinaryMul loc       -> loc
-    BinaryDiv loc       -> loc
-    BinaryIntDiv loc    -> loc
-    BinaryMod loc       -> loc
-    BinaryOr loc        -> loc
-    BinaryAnd loc       -> loc
-    BinaryEq loc        -> loc
-    BinaryNeq loc       -> loc
-    BinaryLt loc        -> loc
-    BinaryLte loc       -> loc
-    BinaryGt loc        -> loc
-    BinaryGte loc       -> loc
-
--- Helper to extract Loc from a Unary operator
-getUnaryLoc :: Unary -> Loc
-getUnaryLoc op = case op of
-    UnaryPlus loc   -> loc
-    UnaryMinus loc  -> loc
-    UnaryNot loc    -> loc
-    UnaryRef loc    -> loc
-
 hasReturnStmt :: Env -> EnrichedProcedureAndFunctionHeading -> EnrichedBlock -> Env
 hasReturnStmt env head (Block _ _ _ (CompStmt stmts)) = case head of
     (ProcHead {}) -> env -- return can't be inside a procedure
@@ -1022,7 +963,9 @@ hasReturnEveryPath stmts = anyPathReturns stmts
         Case _ caseItems -> not (null caseItems) && all (\(CaseItem _ stmt) -> hasReturnEveryPath [stmt]) caseItems || anyPathReturns ss
         _ -> anyPathReturns ss -- return not guaranteed
 
-
+-- True if at least one element of the list has non-Integer type
+hasNonInteger :: [EnrichedRExpr] -> Bool
+hasNonInteger = any (\e -> getRExprType e /= Just (BasicType Integer))
 
 -----------------------------------------------------------
 -------------------- PRINT ENVIRONMENT --------------------
