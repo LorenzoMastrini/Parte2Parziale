@@ -1,0 +1,73 @@
+program TestDeclarations(p: String);
+
+// --- Constants ---
+const
+    c1 = 10;
+    c2 = 2.5;
+    c3 = 'x';
+    c4 = "hello";
+    //c5 = c1 + 5;    // SINTAX ERROR (Non-constant initialization)
+    c1 = 3.14;      // ERROR (RedeclaredConst)
+    c6 = true;
+    c7 = c8;        // ERROR (UnknownIdentifier)
+
+// --- Variables ---
+var
+    v1: Integer;
+    v2: Real;
+    v3: String;
+    v4: array[1..3] of Integer;
+    v5: ^Integer;
+    v1: Real;                    // ERROR (RedeclaredVar)
+    v6: array[1..-2] of Integer; // ERROR (NegativeArrIndex)
+    v7: array[1..3] of array[1..2] of Real;
+    v8: ^array[1..2] of Integer;
+    v9: Boolean;
+    v10: array[1..3] of ^Integer;
+
+// --- Procedures and Functions ---
+    procedure P1();
+    begin
+        0;
+    end;
+
+    procedure P2(a: Integer, b: Real);
+    begin
+        0;
+    end;
+
+    procedure P1(x: Integer);   // ERROR (RedeclaredProcFun)
+    begin
+        b;                      // ERROR (UnknownIdentifier)
+    end;
+
+    function F1(): Integer;
+    begin
+        P1();
+    end;
+
+    function F2(a: Integer): Real;
+    begin
+        a * 2.0;
+    end;
+
+    //function F3(a: Integer) ;        // SINTAX ERROR (Missing return type)
+    //begin
+    //    a;
+    //end;
+
+    function F4(a: Integer): Integer;
+    begin
+        "string";              // ERRORE: tipo di ritorno errato
+    end;
+
+    function F5(a: array[1..3] of Integer, a: Real): Integer; // ERRORE: ridichiarazione parametro
+    begin
+        0;
+    end;
+
+begin
+    P1();
+    P1(v1); // ERROR (FunArgsNumMismatch)
+    F2(c1);
+end. 

@@ -1,0 +1,42 @@
+program TestForTo();
+
+var
+    i: Integer;
+    r: Real;
+    b: Boolean;
+    ch: Character;
+    s: String;
+
+begin
+    // VALID CASES
+    for i := 1 to 10 do
+        i := i + 1;
+
+    for i := 0 to i do
+        b := not b;
+
+    for i := 1 to 5 do
+    begin
+        s := "loop";
+        r := r + 1.0;
+    end;
+
+    // ERROR CASES
+    for i := true to 10 do    // ERROR: initial value not integer
+        i := 1;
+
+    for i := 1 to false do    // ERROR: final value not integer
+        i := 2;
+
+    for r := 1 to 5 do        // ERROR: control variable not integer
+        r := r + 1.0;
+
+    for b := 1 to 5 do        // ERROR: control variable not integer
+        b := false;
+
+    for i := 1.5 to 10 do     // ERROR: initial value not integer
+        i := 3;
+
+    for i := 1 to 10.5 do     // ERROR: final value not integer
+        i := 4;
+end. 

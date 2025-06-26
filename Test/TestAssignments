@@ -1,0 +1,122 @@
+program TestAssignments();
+
+const
+    c1 = 42;
+    c2 = 3.14;
+    c3 = 'x';
+    c4 = "hello";
+    c5 = true;
+
+var
+    i: Integer;
+    r: Real;
+    b: Boolean;
+    ch: Character;
+    s: String;
+    arr: array[1..3] of Integer;
+    mat: array[1..2] of array[1..2] of Real;
+    parr: ^Integer;
+    pmat: ^array[1..2] of array[1..2] of Real;
+    pch: ^Character;
+    ps: ^String;
+    flag: Boolean;
+
+    function fInt(): Integer;
+    begin
+        1;
+    end;
+
+    function fReal(): Real;
+    begin
+        2.5;
+    end;
+
+    function fBool(): Boolean;
+    begin
+        false;
+    end;
+
+    function fChar(): Character;
+    begin
+        'z';
+    end;
+
+    function fStr(): String;
+    begin
+        "abc";
+    end;
+
+begin
+    // VALID CASES
+    i := 10;                // Integer := Integer
+    r := 2.5;               // Real := Real
+    b := true;              // Boolean := Boolean
+    ch := 'a';              // Character := Character
+    s := "test";            // String := String
+
+    i := c1;                // Integer := Integer constant
+    r := c2;                // Real := Real constant
+    ch := c3;               // Character := Character constant
+    s := c4;                // String := String constant
+    b := c5;                // Boolean := Boolean constant
+
+    r := i;                 // Real := Integer (promotion)
+    arr[1] := 5;            // Array element := Integer
+    arr[2] := i;            // Array element := Integer variable
+    mat[1][2] := 3.5;       // 2D Array element := Real
+    mat[2][1] := r;         // 2D Array element := Real variable
+
+    parr := ^i;             // Pointer := address of variable
+    parr^ := 99;            // Dereferenced pointer := Integer
+    pch := ^ch;             // Pointer := address of Character
+    pch^ := 'b';            // Dereferenced pointer := Character
+    ps := ^s;               // Pointer := address of String
+    ps^ := "xyz";           // Dereferenced pointer := String
+
+    arr[3] := fInt();       // Array element := function result (Integer)
+    i := fInt();            // Integer := function result
+    r := fReal();           // Real := function result
+    b := fBool();           // Boolean := function result
+    ch := fChar();          // Character := function result
+    s := fStr();            // String := function result
+    mat[2][2] := fReal();   // 2D Array element := function result (Real)
+    parr^ := fInt();        // Dereferenced pointer := function result (Integer)
+
+    pmat := ^mat;           // Pointer to array := address of array
+    pmat^[1][1] := 7.7;     // Dereferenced pointer to array element := Real
+
+
+
+    // ERROR CASES
+    i := true;              // ERROR (IncompatibleAssignment): Integer := Boolean
+    b := 1;                 // ERROR (IncompatibleAssignment): Boolean := Integer
+    r := "hello";           // ERROR (IncompatibleAssignment): Real := String
+    ch := 100;              // ERROR (IncompatibleAssignment): Character := Integer
+    s := false;             // ERROR (IncompatibleAssignment): String := Boolean
+    arr[1] := "str";        // ERROR (IncompatibleAssignment): Array element (Integer) := String
+    mat[1][1] := true;      // ERROR (IncompatibleAssignment): 2D Array element (Integer) := Boolean
+    parr^ := "str";         // ERROR (IncompatibleAssignment): Dereferenced pointer (Integer) := String
+    pch^ := 42;             // ERROR (IncompatibleAssignment): Dereferenced pointer (Character) := Integer
+    ps^ := false;           // ERROR (IncompatibleAssignment): Dereferenced pointer (String) := Boolean
+    pmat^[1][2] := true;    // ERROR (IncompatibleAssignment): Dereferenced pointer to array element (Real) := Boolean
+
+    c1 := 5;                // ERROR (AssignmentToConstant)
+    c2 := 1.0;              // ERROR (AssignmentToConstant)
+    c3 := 'y';              // ERROR (AssignmentToConstant)
+    c4 := "no";             // ERROR (AssignmentToConstant)
+    c5 := false;            // ERROR (AssignmentToConstant)
+
+    //1 := 2;               // SINTAX ERROR (Assignment to literal)
+    //(i + 1) := 3;         // SINTAX ERROR (Assignment to expression)
+    //fInt() := 4;          // SINTAX ERROR (Assignment to function call)
+    //(arr[1] + 1) := 5;    // SINTAX ERROR (Assignment to expression)
+    parr := 10;             // ERROR (IncompatibleAssignment): Pointer := Integer
+    parr^ := parr;          // ERROR (IncompatibleAssignment): Dereferenced pointer (Integer) := Pointer
+    parr^ := ^r;            // ERROR (IncompatibleAssignment): Dereferenced pointer (Integer) := address of Real
+    arr[0] := 1;            // ERROR (OutOfBound): Out-of-bounds array assignment
+    arr[4] := 2;            // ERROR (OutOfBound): Out-of-bounds array assignment
+    mat[3][1] := 1.1;       // ERROR (OutOfBound): Out-of-bounds array assignment
+    pmat^[3][1] := 2.2;     // ERROR (OutOfBound): Out-of-bounds pointer to array assignment
+    parr^ := arr;           // ERROR (IncompatibleAssignment): Dereferenced pointer (Integer) := array of Integer
+    parr^ := pch^;          // ERROR (IncompatibleAssignment): Dereferenced pointer (Integer) := dereferenced pointer (Character)
+end. 

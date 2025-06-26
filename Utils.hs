@@ -1,20 +1,14 @@
 module Utils where
 
-import Data.ByteString.Char8 (unpack, ByteString, pack) 
-import Data.Map (Map, member, insert, lookup)
-import qualified Data.Map as Map
-import Data.Char
 import AbsLinguaggio
-import Data.List
 
 --------------------------------------------------------------------
 ------------------------- DATA TYPES -------------------------------
 --------------------------------------------------------------------
 
-type Pos = (Int, Int)
-{-
-type Id = String
+--type Pos = (Int, Int)
 
+{-
 data TACAddr  = Addr String | PointAddr String
   | DerefAddr String | AddrAt String TACAddr
   | ValAddr String
@@ -44,11 +38,12 @@ data TAC
   | TACStaticData
   deriving (Show)
 
-
+-}
 --------------------------------------------------------------------
 -------------------------  HELPERS ---------------------------------
 --------------------------------------------------------------------
 
+{-
 --------------------------------------------------------------------
 --------------------------- TYPES ----------------------------------
 
@@ -164,11 +159,9 @@ comparableTypes ty1 ty2
                             otherwise -> False
                   isBTypeTy2 = case ty2 of
                             (BasicType TypeInt) -> True
-                            (BasicType TypeReal) -> True
-                            (BasicType TypeChar) -> True
-                            otherwise -> False
-
-
+                            (BasicType Tyrrors:
+(6, 5): Constant z already defined
+(5, 5): Constant y already defi
 operationReturnType :: Type -> Type -> String -> Type
 operationReturnType ty1 ty2 op
     | op == "/" = BasicType TypeReal
@@ -381,6 +374,7 @@ dispatchBoolRel ty rel eVal1 eVal2 = case ty of
 
 --------------------------------------------------------------------
 ---------------------------- NAMES ---------------------------------
+--------------------------------------------------------------------
 
 -- Extract the BIdent of a *simple* left expression.
 getBId :: LeftExpr -> BIdent
@@ -391,7 +385,6 @@ getBId lexpr = case lexpr of
   LEBra lexpr1 -> getBId lexpr1
   LEPreIncrem lexpr1 -> getBId lexpr1
   LEPreDecr lexpr1 -> getBId lexpr1
-
 
 -- Extract the name of a *simple* left expression.
 getName :: LeftExpr -> Id
@@ -415,9 +408,9 @@ getIdLabel (BIdent ((l,c), id)) = Label (id++('@':(show l))++(',':(show c)))
 getAddressName :: TACAddr -> Id
 getAddressName (Addr name) = name
 
-
 --------------------------------------------------------------------
 --------------------------- POSITIONS ------------------------------
+--------------------------------------------------------------------
 
 relPos :: Rel -> Pos
 relPos rel = case rel of
@@ -475,30 +468,24 @@ firstExprPos ev =
         ExprNot _ e -> firstExprPos e
         ExprRel e _ _  -> firstExprPos e
 
-
 --------------------------------------------------------------------
 ----------------------------- PRINTS --------------------------------
+--------------------------------------------------------------------
 
 showFunction :: String -> [Type] -> String
 showFunction out [] = (init out) ++ ")"
 showFunction out (t:types) =
     showFunction (out++(showType t )++",") types
+-}
 
-showType :: Type -> String
-showType ty = case ty of
-  BasicType TypeInt -> "int"
-  BasicType TypeBool -> "bool"
-  BasicType TypeChar -> "char"
-  BasicType TypeReal -> "real"
-  BasicType TypeString -> "string"
-  ErrorType -> "error"
-  VoidType -> "void"
-  PointerType t -> ('°':(showType t))
-  ArrayType _ t _ ->  "Array <" ++ (showType t) ++ ">"
-  ArrayDimType _ t _ _ ->  "Array <" ++ (showType t) ++ ">"
-  Array t 0 -> "Array <" ++ (showType t) ++ ">(" ++ "?" ++")"
-  Array t n -> "Array <" ++ (showType t) ++ ">(" ++ (show n) ++")"
-
+  --ErrorType -> "error"
+  --VoidType -> "void"
+  --PointerType t -> ('°':(showType t))
+  --ArrayType _ t _ ->  "Array <" ++ (showType t) ++ ">"
+  --ArrayDimType _ t _ _ ->  "Array <" ++ (showType t) ++ ">"
+  --Array t 0 -> "Array <" ++ (showType t) ++ ">(" ++ "?" ++")"
+  --Array t n -> "Array <" ++ (showType t) ++ ">(" ++ (show n) ++")"
+{-
 showAssignType :: Type -> String
 showAssignType ty = case ty of
   BasicType TypeInt -> "int"
@@ -534,6 +521,7 @@ builtIn name = Label ("built_in_"++name)
 
 --------------------------------------------------------------------
 --------------------------- GENERAL --------------------------------
+--------------------------------------------------------------------
 
 trust :: Maybe a -> a
 trust (Just x) = x
@@ -583,4 +571,3 @@ less_ = BLe ((0,0),"<")
 greateq_ = BGrEq ((0,0),">=")
 exiton_  = BExitOn ((0,0), "exiton")
 not_ = BNot ((0,0),"not")-}
-

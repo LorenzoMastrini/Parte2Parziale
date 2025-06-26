@@ -1,0 +1,44 @@
+program TestIfThenElse();
+
+var
+    i: Integer;
+    r: Real;
+    b: Boolean;
+    ch: Character;
+    s: String;
+
+begin
+    // VALID CASES
+    if b then
+        i := 1;
+
+    if i < 10 then
+        r := 2.5;
+
+    if s = "test" then
+        s := "ok"
+    else
+        s := "fail";
+
+    if (i > 0) and b then
+        b := false
+    else
+        b := true;
+
+    // Nested if-then-else
+    if i = 0 then
+        if b then
+            s := "nested"
+        else
+            s := "not nested";
+
+    // ERROR CASES
+    if 1 then              // ERROR (ConditionNotBoolean)
+        i := 2;
+
+    if "test" then         // ERROR (ConditionNotBoolean)
+        s := "bad";
+
+    if ch then             // ERROR (ConditionNotBoolean)
+        ch := 'a';
+end.
