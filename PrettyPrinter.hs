@@ -269,7 +269,7 @@ instance PrintTree EnrichedProcedureAndFunctionDeclaration where
 
 instance PrintTree EnrichedProcedureAndFunctionHeading where
   buildTree (ProcHead id params) = [colorDecl "ProcHead " ++ showId id] ++ buildTree params
-  buildTree (FunHead id params type_) = [colorDecl "FunHead " ++ showId id] ++ (buildTree params ++ paddingSingle (buildTree type_))
+  buildTree (FunHead id params type_ loc) = [colorDecl "FunHead " ++ showId id] ++ (buildTree params ++ paddingSingle (buildTree type_))
 
 instance PrintTree [EnrichedFormalParameters] where
   buildTree [] = []

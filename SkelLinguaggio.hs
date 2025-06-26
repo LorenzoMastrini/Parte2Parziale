@@ -42,7 +42,7 @@ transProcedureAndFunctionDeclaration x = case x of
 transProcedureAndFunctionHeading :: AbsLinguaggio.ProcedureAndFunctionHeading () () () -> Result
 transProcedureAndFunctionHeading x = case x of
   AbsLinguaggio.ProcHead ident formalparameterss -> failure x
-  AbsLinguaggio.FunHead ident formalparameterss type_ -> failure x
+  AbsLinguaggio.FunHead ident formalparameterss type_ loc -> failure x
 
 transFormalParameters :: AbsLinguaggio.FormalParameters () () () -> Result
 transFormalParameters x = case x of

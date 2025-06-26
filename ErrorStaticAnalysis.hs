@@ -6,10 +6,9 @@ import Data.Data (toConstr, showConstr)
 
 
 data Error ty varInfo funInfo
-    = RedeclaredVar SimpleIdent
-    | RedeclaredConst SimpleIdent
+    = RedeclaredConstVar SimpleIdent Bool
     | NotConstantValue String
-    | RedeclaredProcFun SimpleIdent
+    | RedeclaredProcFun SimpleIdent Loc
     | FunNotDefined SimpleIdent
     | NotAFunction SimpleIdent
     | FunArgsNumMismatch Int Int 
@@ -34,6 +33,7 @@ data Error ty varInfo funInfo
     | NotInLoop String
     | NotInFunction
     | ReturnInsideProcedure
+    | MissingReturn
     | ReturnTypeMismatch (Maybe SimpleType) (Maybe SimpleType)
     -- Warnings
     | WarVarNameUsedForFunc (Ident ty varInfo funInfo)
@@ -91,17 +91,16 @@ errorType :: Error ty varInfo funInfo -> String
 errorType x =
     case x of
         -------------------- [Declaration Error] --------------------
-        RedeclaredVar (Ident name loc _ _ _) -> 
-            errorMsg "The identifier '" ++ name ++ "' has already been used for a variable." ++ " [Declaration Error]."
-
-        RedeclaredConst (Ident name loc _ _ _) -> 
-            errorMsg "The identifier '" ++ name ++ "' has already been used for a constant." ++ " [Declaration Error]."
+        RedeclaredConstVar (Ident name loc _ _ _) isConst -> if isConst
+            then errorMsg "The identifier '" ++ name ++ "' has already been used for a constant." ++ " [Declaration Error]."
+            else errorMsg "The identifier '" ++ name ++ "' has already been used for a variable." ++ " [Declaration Error]."
         
         NotConstantValue idName ->
             errorMsg "The value '" ++ idName ++ "' must be a constant." ++ " [Declaration Error]."
 
-        RedeclaredProcFun (Ident name loc _ _ _) -> 
-            errorMsg "The identifier '" ++ name ++ "' has already been used for a procedure/function." ++ " [Declaration Error]."
+        RedeclaredProcFun (Ident name loc _ _ _) existingFunLoc -> if existingFunLoc == Loc 0 0
+            then errorMsg "The identifier '" ++ name ++ "' is used for a default procedure/function." ++ " [Declaration Error]."
+            else errorMsg "The identifier '" ++ name ++ "' has already been used for a procedure/function." ++ " [Declaration Error]."
 
         FunNotDefined (Ident name loc _ _ _) -> 
             errorMsg "The function '" ++ name ++ "' does not exists." ++ " [Declaration Error]."
@@ -182,6 +181,9 @@ errorType x =
 
         NotInFunction ->
             errorMsg "Cannot use \"return\" statement outside a function." ++ " [Control Flow Error]"
+        
+        MissingReturn ->
+            errorMsg "A \"return\" statement must be present in each possible execution flow of the function." ++ " [Control Flow Error]"
 
             
 {-

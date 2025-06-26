@@ -204,9 +204,11 @@ checkProcFunDecl env (ProcFunDecl heading block) =
         localEnv = enterScope env
         (localEnv1, headingEnriched) = checkProcFunHead localEnv heading
         (finalLocalEnv, blockEnriched) = checkBlock localEnv1 block (getFunHeadType headingEnriched)
-        Just outerEnv = parent finalLocalEnv -- Get the updated outer environment
-        finalOuterEnv = outerEnv { errors = errors outerEnv ++ errors finalLocalEnv } -- Propagate the errors to the outer environment
+        envHasReturn = hasReturnStmt finalLocalEnv headingEnriched blockEnriched
+        Just outerEnv = parent envHasReturn -- Get the updated outer environment
+        finalOuterEnv = outerEnv { errors = errors outerEnv ++ errors envHasReturn } -- Propagate the errors to the outer environment
     in (finalOuterEnv, ProcFunDecl headingEnriched blockEnriched)
+
 
 checkProcFunHead :: Env -> SimpleProcedureAndFunctionHeading -> (Env, EnrichedProcedureAndFunctionHeading)
 checkProcFunHead localEnv head = case head of
@@ -224,7 +226,7 @@ checkProcFunHead localEnv head = case head of
             -- Update the parent of the local environment
             updatedLocalEnv = localEnv1 { parent = Just outerEnv1 }
         in (updatedLocalEnv, ProcHead identEnriched paramsEnriched)
-    (FunHead ident params retTy) ->
+    (FunHead ident params retTy loc) ->
         let
             preEnrichedParams = enrichFormalParametersList params
             retTyEnriched = enrichType retTy
@@ -237,7 +239,7 @@ checkProcFunHead localEnv head = case head of
             (localEnv1, paramsEnriched) = checkFormalParametersList localEnvWithFunc params
             -- Update the parent of the local environment
             updatedLocalEnv = localEnv1 { parent = Just outerEnv1 }
-        in (updatedLocalEnv, FunHead identEnriched paramsEnriched retTyEnriched)
+        in (updatedLocalEnv, FunHead identEnriched paramsEnriched retTyEnriched loc)
 
 -- Given a list of identifiers, check recursively if each of them is already used inside the environment
 checkIdentsList :: Env -> [SimpleIdent] -> SimpleType -> VarInfo -> FunInfo -> (Env, [EnrichedIdent])
@@ -253,12 +255,9 @@ checkIdent env ident@(Ident name loc _ _ _) ty varInfo@(VarInfo constVal isConst
     let res = lookupByName env name
     in case res of
         Just (ConstVarEntry _ entryIsConst _ _, False) ->
-            if entryIsConst then
-                (addError env (RedeclaredConst ident, loc), enrichIdentUnknown ident)
-            else
-                (addError env (RedeclaredVar ident, loc), enrichIdentUnknown ident)
-        Just (ProcFunEntry {}, False) ->
-            (addError env (RedeclaredProcFun ident, loc), enrichIdentUnknown ident)
+            (addError env (RedeclaredConstVar ident entryIsConst, loc), enrichIdentUnknown ident)
+        Just (ProcFunEntry _ _ existingFunLoc, False) ->
+            (addError env (RedeclaredProcFun ident existingFunLoc, loc), enrichIdentUnknown ident)
         _ ->
             (addEntry env ident (ConstVarEntry ty isConst constVal loc), enrichIdent ident (Just ty) varInfo funInfo)
 
@@ -267,10 +266,10 @@ checkProcFunIdent :: Env -> SimpleIdent -> SimpleType -> VarInfo -> FunInfo -> [
 checkProcFunIdent env ident ty NoVarInfo (FunInfo retTy paramsEnriched) simpleParams =
     let res = lookupByName env (getIdentName ident)
     in case res of
-        Just (ConstVarEntry {}, _) ->
-            (addError env (RedeclaredConst ident, getIdentLoc ident), enrichIdentUnknown ident)
-        Just (ProcFunEntry {}, _) ->
-            (addError env (RedeclaredProcFun ident, getIdentLoc ident), enrichIdentUnknown ident)
+        Just (ConstVarEntry _ isConst _ _, _) ->
+            (addError env (RedeclaredConstVar ident isConst, getIdentLoc ident), enrichIdentUnknown ident)
+        Just (ProcFunEntry _ _ existingFunLoc, _) ->
+            (addError env (RedeclaredProcFun ident existingFunLoc, getIdentLoc ident), enrichIdentUnknown ident)
         Nothing ->
             if retTy == BasicType Void
                 then (addEntry env ident (ProcFunEntry simpleParams (BasicType Void) (getIdentLoc ident)), enrichIdent ident (Just ty) NoVarInfo (FunInfo retTy paramsEnriched))
@@ -278,10 +277,10 @@ checkProcFunIdent env ident ty NoVarInfo (FunInfo retTy paramsEnriched) simplePa
 checkProcFunIdent env ident ty (VarInfo _ isConst) funInfo _ =
     let res = lookupByName env (getIdentName ident)
     in case res of
-        Just (ConstVarEntry {}, _) ->
-            (addError env (RedeclaredConst ident, getIdentLoc ident), enrichIdentUnknown ident)
-        Just (ProcFunEntry {}, _) ->
-            (addError env (RedeclaredProcFun ident, getIdentLoc ident), enrichIdentUnknown ident)
+        Just (ConstVarEntry _ entryIsConst _ _, _) ->
+            (addError env (RedeclaredConstVar ident entryIsConst, getIdentLoc ident), enrichIdentUnknown ident)
+        Just (ProcFunEntry _ _ existingFunLoc, _) ->
+            (addError env (RedeclaredProcFun ident existingFunLoc, getIdentLoc ident), enrichIdentUnknown ident)
         Nothing -> (addEntry env ident (ConstVarEntry ty isConst Nothing (getIdentLoc ident)), enrichIdent ident (Just ty) (VarInfo Nothing isConst) funInfo)
 
 
@@ -372,7 +371,7 @@ checkLExpr env lexpr = case lexpr of
             (env1, lexprEnriched) = checkLExpr env lexpr'
             (env2, indicesEnriched) = checkIndices env1 indices
             isArrayResult = isArray lexprEnriched
-            childHasUnknown = isNothing (getLExprType lexprEnriched) || any isNothing (map getRExprType indicesEnriched)
+            childHasUnknown = isNothing (getLExprType lexprEnriched) || any (isNothing . getRExprType) indicesEnriched
         in if isArrayResult && not childHasUnknown
             then
                 let
@@ -667,7 +666,7 @@ addSymbol env name record = env { symbols = Map.insert name record (symbols env)
 addProcFun :: Env -> SimpleProcedureAndFunctionHeading -> Env
 addProcFun env (ProcHead ident params) =
     addSymbol env ident (ProcFunEntry params (BasicType Void) (getIdentLoc ident))
-addProcFun env (FunHead ident params retTy) =
+addProcFun env (FunHead ident params retTy _) =
     addSymbol env ident (ProcFunEntry params retTy (getIdentLoc ident))
 
 -- Add an entry (variable, constant, function or procedure) to the environment
@@ -732,11 +731,11 @@ enrichProcFunHeading (ProcHead ident params) =
         paramsEnriched = enrichFormalParametersList params
         funInfo = FunInfo ty params
     in ProcHead (enrichIdent ident (Just (BasicType Void)) NoVarInfo funInfo) (enrichFormalParametersList params)
-enrichProcFunHeading (FunHead ident params retTy) =
+enrichProcFunHeading (FunHead ident params retTy loc) =
     let
         tyEnriched = enrichType retTy
         paramsEnriched = enrichFormalParametersList params
-    in FunHead (enrichIdent ident (Just retTy) NoVarInfo (FunInfo retTy params)) paramsEnriched tyEnriched
+    in FunHead (enrichIdent ident (Just retTy) NoVarInfo (FunInfo retTy params)) paramsEnriched tyEnriched loc
 
 enrichCompoundStatement :: SimpleCompoundStatement -> EnrichedCompoundStatement
 enrichCompoundStatement (CompStmt stmts) = CompStmt (map enrichStatement stmts)
@@ -920,6 +919,7 @@ getConstVal env (ConstId sign ident) =
         _            -> value
 getConstVal _ _ = 0 -- Other constant types
 
+-- Indices of an array can only be integers
 getValFromIndices :: [EnrichedRExpr] -> [Maybe Integer]
 getValFromIndices = map evalConstExpr
 
@@ -936,9 +936,9 @@ evalConstExpr (Binary e1 op e2 _) =
         BinaryDiv _     -> if v2 /= 0 then Just (v1 `div` v2) else Nothing
         BinaryIntDiv _  -> if v2 /= 0 then Just (v1 `div` v2) else Nothing
         BinaryMod _     -> if v2 /= 0 then Just (v1 `mod` v2) else Nothing
-        _               -> Nothing                                             -- TO BE COMPLETED WITH THE OTHER OPERATORS
+        _               -> Nothing -- non-integer values
     _ -> Nothing
-evalConstExpr _ = Nothing
+evalConstExpr _ = Nothing -- other values cannot be evaluated at compile-time
 
 -- True if the LExpr has been defined as a constant
 isConstant :: EnrichedLExpr -> Bool
@@ -956,7 +956,7 @@ isBoolean rexpr = case getRExprType rexpr of
 
 getFunHeadType :: EnrichedProcedureAndFunctionHeading -> Maybe SimpleType
 getFunHeadType (ProcHead _ _)      = Just (BasicType Void)
-getFunHeadType (FunHead _ _ retTy) = getFunType retTy
+getFunHeadType (FunHead _ _ retTy _) = getFunType retTy
 
 getFunType :: EnrichedType -> Maybe SimpleType
 getFunType (Array _ ty)     = getFunType ty
@@ -996,6 +996,33 @@ getUnaryLoc op = case op of
     UnaryMinus loc  -> loc
     UnaryNot loc    -> loc
     UnaryRef loc    -> loc
+
+hasReturnStmt :: Env -> EnrichedProcedureAndFunctionHeading -> EnrichedBlock -> Env
+hasReturnStmt env head (Block _ _ _ (CompStmt stmts)) = case head of
+    (ProcHead {}) -> env -- return can't be inside a procedure
+    (FunHead ident _ retTy loc) ->
+        if hasReturnEveryPath stmts
+        then env
+        else addError env (MissingReturn, loc)
+
+-- Check if each execution path in a function terminate with a return
+hasReturnEveryPath :: [EnrichedStatement] -> Bool
+hasReturnEveryPath [] = False
+hasReturnEveryPath stmts = anyPathReturns stmts
+    where
+    anyPathReturns [] = False
+    anyPathReturns (s:ss) =
+        case s of
+        ReturnStmt {} -> True
+        Stmts (CompStmt inner) -> anyPathReturns (inner ++ ss)
+        If _ thenStmt optElse _ ->
+            case optElse of
+            NoElse -> anyPathReturns ss -- return not guaranteed
+            Else elseStmt -> hasReturnEveryPath [thenStmt] && hasReturnEveryPath [elseStmt] || anyPathReturns ss
+        Case _ caseItems -> not (null caseItems) && all (\(CaseItem _ stmt) -> hasReturnEveryPath [stmt]) caseItems || anyPathReturns ss
+        _ -> anyPathReturns ss -- return not guaranteed
+
+
 
 -----------------------------------------------------------
 -------------------- PRINT ENVIRONMENT --------------------

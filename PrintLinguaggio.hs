@@ -189,7 +189,7 @@ instance Print [AbsLinguaggio.ProcedureAndFunctionDeclaration () () ()] where
 instance Print (AbsLinguaggio.ProcedureAndFunctionHeading () () ()) where
   prt i = \case
     AbsLinguaggio.ProcHead id_ formalparameterss -> prPrec i 0 (concatD [doc (showString "procedure"), prt 0 id_, doc (showString "("), prt 0 formalparameterss, doc (showString ")"), doc (showString ";")])
-    AbsLinguaggio.FunHead id_ formalparameterss type_ -> prPrec i 0 (concatD [doc (showString "function"), prt 0 id_, doc (showString "("), prt 0 formalparameterss, doc (showString ")"), doc (showString ":"), prt 0 type_, doc (showString ";")])
+    AbsLinguaggio.FunHead id_ formalparameterss type_ loc -> prPrec i 0 (concatD [doc (showString "function"), prt 0 id_, doc (showString "("), prt 0 formalparameterss, doc (showString ")"), doc (showString ":"), prt 0 type_, doc (showString ";")])
 
 instance Print (AbsLinguaggio.FormalParameters () () ()) where
   prt i = \case

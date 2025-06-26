@@ -72,7 +72,7 @@ import LexLinguaggio
   'end'       { PT _ (TS _ 38) }
   'false'     { PT _ (TS _ 39) }
   'for'       { PT _ (TS _ 40) }
-  'function'  { PT _ (TS _ 41) }
+  'function'  { PT pos (TS _ 41) }
   'if'        { PT pos (TS _ 42) }
   'mod'       { PT pos (TS _ 43) }
   'not'       { PT pos (TS _ 44) }
@@ -159,7 +159,7 @@ ListProcedureAndFunctionDeclaration
 ProcedureAndFunctionHeading :: { AbsLinguaggio.ProcedureAndFunctionHeading () () () }
 ProcedureAndFunctionHeading
   : 'procedure' Ident '(' ListFormalParameters ')' ';' { AbsLinguaggio.ProcHead $2 $4 }
-  | 'function' Ident '(' ListFormalParameters ')' ':' Type ';' { AbsLinguaggio.FunHead $2 $4 $7 }
+  | 'function' Ident '(' ListFormalParameters ')' ':' Type ';' { AbsLinguaggio.FunHead $2 $4 $7 (posToLoc (getPos $1)) }
 
 FormalParameters :: { AbsLinguaggio.FormalParameters () () () }
 FormalParameters

@@ -32,7 +32,7 @@ data ProcedureAndFunctionDeclaration ty varInfo funInfo
 
 data ProcedureAndFunctionHeading ty varInfo funInfo
   = ProcHead (Ident ty varInfo funInfo) [FormalParameters ty varInfo funInfo]
-  | FunHead (Ident ty varInfo funInfo) [FormalParameters ty varInfo funInfo] (Type ty varInfo funInfo)
+  | FunHead (Ident ty varInfo funInfo) [FormalParameters ty varInfo funInfo] (Type ty varInfo funInfo) Loc
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data FormalParameters ty varInfo funInfo
