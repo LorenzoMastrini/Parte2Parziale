@@ -12,6 +12,7 @@ import AbsLinguaggio
 import PrettyPrinter
 import PrintLinguaggio
 import StaticAnalysis
+import TACGen
 --import TACGenerator
 import ErrM
 
@@ -34,16 +35,20 @@ run v p s = let ts = myLLexer s in case p ts of
                           putStrLn $ errorMsg s
                           exitFailure
            Ok tree  -> do putStrV v $ "\n" ++ colorGreen "[PARSING]: PASS\n" ++ show tree
-                          --putStrT v (testingTAC (generateTAC tree) s)
-                          --x <-testing tree s
-                          --putStrC v x
                           putStrV v typ
                           putStrV v err
                           --putStrNC v $ removeAnsi typ
                           --putStrNC v $ removeAnsi err
-                          putStrV v (StaticAnalysis.printEnv (fst (checkProgram tree)))
-                          putStrLn (prettyTree (snd (checkProgram tree)))
+                          let enriched = checkProgram tree
+                          putStrV v (StaticAnalysis.printEnv (fst enriched))
+                          putStrLn (prettyTree (snd enriched))
                           --putStrV v (show (snd (staticAnalysis tree))) -- print the annotated
+                          --
+                          -- putStrT v (testingTAC (generateTAC tree) s)
+                          mapM_ print (genProgram (snd enriched))
+                          --x <-testing tree s
+                          --putStrC v x
+                          --
                           if nErr == 0 then
                              do
                              putStrV v silentAnalysis
