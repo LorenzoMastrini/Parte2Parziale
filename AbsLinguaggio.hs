@@ -6,6 +6,7 @@ import Prelude (Char, Double, Integer, String, Int, Bool, Maybe)
 import qualified Prelude as C (Eq, Ord, Show, Read)
 
 
+
 --------------------------------------------------------------
 -------------------- ABSTRACT SYNTAX TREE --------------------
 --------------------------------------------------------------
@@ -32,7 +33,7 @@ data ProcedureAndFunctionDeclaration ty varInfo funInfo
 
 data ProcedureAndFunctionHeading ty varInfo funInfo
   = ProcHead (Ident ty varInfo funInfo) [FormalParameters ty varInfo funInfo]
-  | FunHead (Ident ty varInfo funInfo) [FormalParameters ty varInfo funInfo] (Type ty varInfo funInfo)
+  | FunHead (Ident ty varInfo funInfo) [FormalParameters ty varInfo funInfo] (Type ty varInfo funInfo) Loc
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data FormalParameters ty varInfo funInfo
@@ -56,7 +57,6 @@ data Statement ty varInfo funInfo
   | While (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo) Loc
   | DoWhile (Statement ty varInfo funInfo) (RExpr ty varInfo funInfo) Loc
   | ForTo (LExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo)
-  | ForDownTo (LExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo)
   | If (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo) (OptElse ty varInfo funInfo) Loc
   | Case (RExpr ty varInfo funInfo) [CaseItem ty varInfo funInfo]
   | ReturnStmt (RExpr ty varInfo funInfo) ty Loc

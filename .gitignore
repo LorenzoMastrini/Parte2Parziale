@@ -1,3 +1,6 @@
 *.bak
 *.o
 *.hi
+ParLinguaggio.hs
+LexLinguaggio.hs
+linguaggio

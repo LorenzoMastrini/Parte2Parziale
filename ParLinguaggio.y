@@ -22,7 +22,7 @@ import LexLinguaggio
 %monad { Err } { (>>=) } { return }
 %tokentype {Token}
 
--- Add precedence rules
+-- Precedence rules
 %left 'or'
 %left 'and'
 %left '=' '<>' '<' '<=' '>' '>='
@@ -67,28 +67,27 @@ import LexLinguaggio
   'continue'  { PT pos (TS _ 33) }
   'div'       { PT pos (TS _ 34) }
   'do'        { PT _ (TS _ 35) }
-  'downto'    { PT _ (TS _ 36) }
-  'else'      { PT _ (TS _ 37) }
-  'end'       { PT _ (TS _ 38) }
-  'false'     { PT _ (TS _ 39) }
-  'for'       { PT _ (TS _ 40) }
-  'function'  { PT _ (TS _ 41) }
-  'if'        { PT pos (TS _ 42) }
-  'mod'       { PT pos (TS _ 43) }
-  'not'       { PT pos (TS _ 44) }
-  'of'        { PT _ (TS _ 45) }
-  'or'        { PT pos (TS _ 46) }
-  'procedure' { PT _ (TS _ 47) }
-  'program'   { PT pos (TS _ 48) }
-  'repeat'    { PT _ (TS _ 49) }
-  'return'    { PT pos (TS _ 50) }
-  'then'      { PT _ (TS _ 51) }
-  'to'        { PT _ (TS _ 52) }
-  'true'      { PT _ (TS _ 53) }
-  'until'     { PT pos (TS _ 54) }
-  'valres'    { PT _ (TS _ 55) }
-  'var'       { PT _ (TS _ 56) }
-  'while'     { PT pos (TS _ 57) }
+  'else'      { PT _ (TS _ 36) }
+  'end'       { PT _ (TS _ 37) }
+  'false'     { PT _ (TS _ 38) }
+  'for'       { PT _ (TS _ 39) }
+  'function'  { PT pos (TS _ 40) }
+  'if'        { PT pos (TS _ 41) }
+  'mod'       { PT pos (TS _ 42) }
+  'not'       { PT pos (TS _ 43) }
+  'of'        { PT _ (TS _ 44) }
+  'or'        { PT pos (TS _ 45) }
+  'procedure' { PT _ (TS _ 46) }
+  'program'   { PT pos (TS _ 47) }
+  'repeat'    { PT _ (TS _ 48) }
+  'return'    { PT pos (TS _ 49) }
+  'then'      { PT _ (TS _ 50) }
+  'to'        { PT _ (TS _ 51) }
+  'true'      { PT _ (TS _ 52) }
+  'until'     { PT pos (TS _ 53) }
+  'valres'    { PT _ (TS _ 54) }
+  'var'       { PT _ (TS _ 55) }
+  'while'     { PT pos (TS _ 56) }
   L_Ident     { PT pos (TV $$) }
   L_charac    { PT _ (TC $$)   }
   L_doubl     { PT _ (TD $$)   }
@@ -159,7 +158,7 @@ ListProcedureAndFunctionDeclaration
 ProcedureAndFunctionHeading :: { AbsLinguaggio.ProcedureAndFunctionHeading () () () }
 ProcedureAndFunctionHeading
   : 'procedure' Ident '(' ListFormalParameters ')' ';' { AbsLinguaggio.ProcHead $2 $4 }
-  | 'function' Ident '(' ListFormalParameters ')' ':' Type ';' { AbsLinguaggio.FunHead $2 $4 $7 }
+  | 'function' Ident '(' ListFormalParameters ')' ':' Type ';' { AbsLinguaggio.FunHead $2 $4 $7 (posToLoc (getPos $1)) }
 
 FormalParameters :: { AbsLinguaggio.FormalParameters () () () }
 FormalParameters
@@ -233,7 +232,6 @@ Statement
   | 'while' RExpr 'do' Statement { AbsLinguaggio.While $2 $4 (posToLoc (getPos $1)) }
   | 'repeat' Statement 'until' RExpr { AbsLinguaggio.DoWhile $2 $4 (posToLoc (getPos $3)) }
   | 'for' LExpr ':=' RExpr 'to' RExpr 'do' Statement { AbsLinguaggio.ForTo $2 $4 $6 $8 }
-  | 'for' LExpr ':=' RExpr 'downto' RExpr 'do' Statement { AbsLinguaggio.ForDownTo $2 $4 $6 $8 }
   | 'if' RExpr 'then' Statement OptElse { AbsLinguaggio.If $2 $4 $5 (posToLoc (getPos $1)) }
   | 'case' RExpr 'of' ListCaseItem 'end' { AbsLinguaggio.Case $2 $4 }
   | 'return' RExpr { AbsLinguaggio.ReturnStmt $2 () (posToLoc (getPos $1)) }
