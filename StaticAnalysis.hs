@@ -8,54 +8,11 @@ import Data.List (intercalate, nub)
 import Data.Maybe (isJust, isNothing)
 
 
-
------------------------------------------------------
--------------------- DATA & TYPE --------------------
------------------------------------------------------
-
-{-
---type Names = Map Id EnvRecord
-
-data EnvRecord =
-    VarInfo {
-        typ :: Type,                -- Variable Type.
-        cTime :: CTime,             -- True if is const at CompileTime
-        pos :: Pos,                 -- SourceLocation <line, column>
-        init :: Maybe Int,          -- If the value of a constant is known at CompileTime
-        const :: Bool
-        } |
-    FuncInfo {
-        retType :: Type,              -- Function return Type
-        params :: [FormalParameters], -- List of parameters
-        pos :: Pos                    -- SourceLocation <line,column>
-    } deriving (Eq, Show)
-
-data Env =  Env {
-  names :: Names,                   -- Map with all the name declared
-  parent :: Maybe Env,              -- Parent block
-  errors :: [(String, Pos)],        -- String of errors
-  loop   :: Bool,                   -- True if the block is a loopBlock
-  funcCheck :: (Maybe Names,        -- Names in the functions declarations
-                Maybe Ident,       -- Name of the return variable
-                Bool,               -- True if all the scope at the level n-1 have an initialization of the variable
-                Bool,               -- True if one of the scope at the level n or n-1 initialize the variable
-                Bool,               -- False if there is a continue/return/exit or exiton
-                Bool),              -- True if there is a Default case.
-  loopFor :: Bool                   -- True if a for stmt is found.           
-} deriving (Eq, Show)
-
-data ExprRes = ExprRes{             --ExprRes incapsulate the result of the comutation of an Expression
-    eTyp :: Type,                   --Result Type
-    eCTime :: CTime,                --True if the result is known at compile time
-    eVal :: Maybe Int,              --The integer value that the Static Analysis module can calculate at compile time
-    eConst ::  Bool                 --If the right expression is Constant
-} deriving (Eq, Show)
--}
-
-data Env = Env
-  { symbols :: Map.Map SimpleIdent EnvEntry -- Symbols in the environment
-  , parent  :: Maybe Env                    -- Parent environment for nested blocks of code
-  , errors  :: [(String, Loc)]              -- List of errors (error message, location)
+-- Environment
+data Env = Env {
+    symbols :: Map.Map SimpleIdent EnvEntry,    -- Symbols in the environment
+    parent  :: Maybe Env,                       -- Parent environment for nested blocks of code
+    errors  :: [(String, Loc)]                  -- List of errors (error message, location)
   } deriving (Eq, Show)
 
 data EnvEntry
@@ -81,7 +38,13 @@ defaultFuncList =  [ (Ident "writeInt"    (Loc 0 0) () () (), ProcFunEntry [Form
                    , (Ident "readString"  (Loc 0 0) () () (), ProcFunEntry [FormParam ByRef [Ident "valString" (Loc 0 0) () () ()] (BasicType String)]  (BasicType String)    (Loc 0 0))]
 
 defaultEnv :: Env
-defaultEnv = Env { symbols = Map.fromList defaultFuncList, parent = Nothing, errors = [] }
+defaultEnv = Env {
+    symbols = Map.fromList defaultFuncList,
+    parent = Nothing,
+    errors = []
+    }
+
+
 
 ---------------------------------------------------------
 -------------------- STATIC ANALYSIS --------------------
@@ -119,8 +82,7 @@ checkBlock env (Block constDefList varDeclList procFunDeclList compStmt) typeIfI
             Just _ -> env  -- Already in a function, use the same environment
             Nothing -> env  -- Program uses the default environment
         
-        -- TODO: First pass (for mutual recursion): collect all function declarations
-        --envWithFuncs = collectFunctionDeclarations localEnv procFunDeclList
+        -- Two-pass: raccoglie tutte le intestazioni di funzioni/procedure nell'ambiente
         -- Second pass: analyze constants, variables, and function bodies
         (env1, constDefListEnriched) = checkConstDefList localEnv constDefList
         (env2, varDeclListEnriched) = checkVarDeclList env1 varDeclList
@@ -191,17 +153,39 @@ checkVarDeclSequence env (id:ids) ty =
 
 -- Iterate the list of procedures and functions declarations
 checkProcFunDeclList :: Env -> [SimpleProcedureAndFunctionDeclaration] -> (Env, [EnrichedProcedureAndFunctionDeclaration])
-checkProcFunDeclList env [] = (env, [])
-checkProcFunDeclList env (d:ds) =
-    let (env1, dEnr) = checkProcFunDecl env d
-        (env2, dsEnr) = checkProcFunDeclList env1 ds
-    in (env2, dEnr:dsEnr)
+checkProcFunDeclList env decls =
+  let envWithFuncs = collectFunctionDeclarations env decls -- To handle mutual ricursion
+  in checkProcFunBodies envWithFuncs decls
+
+-- Two-pass: raccoglie tutte le intestazioni di funzioni/procedure nell'ambiente
+collectFunctionDeclarations :: Env -> [SimpleProcedureAndFunctionDeclaration] -> Env
+collectFunctionDeclarations env [] = env
+collectFunctionDeclarations env (ProcFunDecl heading _ : rest) =
+  let env1 = addProcFunSignature env heading
+  in collectFunctionDeclarations env1 rest
+
+-- Aggiunge solo la signature della funzione/procedura all'environment
+addProcFunSignature :: Env -> SimpleProcedureAndFunctionHeading -> Env
+addProcFunSignature env (ProcHead ident params) =
+  if any (\(Ident name _ _ _ _, _) -> name == getIdentName ident) (Map.toList (symbols env))
+    then addError env (RedeclaredProcFun ident (getIdentLoc ident), getIdentLoc ident)
+    else addEntry env ident (ProcFunEntry params (BasicType Void) (getIdentLoc ident))
+addProcFunSignature env (FunHead ident params retTy loc) =
+  if any (\(Ident name _ _ _ _, _) -> name == getIdentName ident) (Map.toList (symbols env))
+    then addError env (RedeclaredProcFun ident (getIdentLoc ident), getIdentLoc ident)
+    else addEntry env ident (ProcFunEntry params retTy (getIdentLoc ident))
+
+checkProcFunBodies :: Env -> [SimpleProcedureAndFunctionDeclaration] -> (Env, [EnrichedProcedureAndFunctionDeclaration])
+checkProcFunBodies env [] = (env, [])
+checkProcFunBodies env (d:ds) =
+  let (env1, dEnr) = checkProcFunDecl env d
+      (env2, dsEnr) = checkProcFunBodies env1 ds
+  in (env2, dEnr:dsEnr)
 
 checkProcFunDecl :: Env -> SimpleProcedureAndFunctionDeclaration -> (Env, EnrichedProcedureAndFunctionDeclaration)
 checkProcFunDecl env (ProcFunDecl heading block) =
     let
-        -- Create a scope for the function
-        localEnv = enterScope env
+        localEnv = enterScope env -- Create a scope for the function
         (localEnv1, headingEnriched) = checkProcFunHead localEnv heading
         (finalLocalEnv, blockEnriched) = checkBlock localEnv1 block (getFunHeadType headingEnriched)
         envHasReturn = hasReturnStmt finalLocalEnv headingEnriched blockEnriched
@@ -214,31 +198,19 @@ checkProcFunHead :: Env -> SimpleProcedureAndFunctionHeading -> (Env, EnrichedPr
 checkProcFunHead localEnv head = case head of
     (ProcHead ident params) ->
         let
-            -- Necessary to populate FunInfo (but parameters will be enriched again)
-            preEnrichedParams = enrichFormalParametersList params
-            -- Add identifier to the parent environment (not the local one)
-            Just outerEnv = parent localEnv
-            (outerEnv1, identEnriched) = checkProcFunIdent outerEnv ident (BasicType Void) NoVarInfo (FunInfo (BasicType Void) params) params
-            -- Also add the function identifier to the local environment for recursion
-            (localEnvWithFunc, _) = checkProcFunIdent localEnv ident (BasicType Void) NoVarInfo (FunInfo (BasicType Void) params) params
-            -- Add parameters only to the local environment
+            --  solo l'ientificatore per l'AST
+            identEnriched = enrichIdent ident (Just (BasicType Void)) NoVarInfo (FunInfo (BasicType Void) params)
+            (localEnvWithFunc, _) = checkProcFunIdent localEnv ident (BasicType Void) NoVarInfo (FunInfo (BasicType Void) params) params -- Add signature only to localEnv for recursion
             (localEnv1, paramsEnriched) = checkFormalParametersList localEnvWithFunc params
-            -- Update the parent of the local environment
-            updatedLocalEnv = localEnv1 { parent = Just outerEnv1 }
+            updatedLocalEnv = localEnv1 { parent = parent localEnv }
         in (updatedLocalEnv, ProcHead identEnriched paramsEnriched)
     (FunHead ident params retTy loc) ->
         let
-            preEnrichedParams = enrichFormalParametersList params
             retTyEnriched = enrichType retTy
-            -- Add identifier to the parent environment (not the local one)
-            Just outerEnv = parent localEnv
-            (outerEnv1, identEnriched) = checkProcFunIdent outerEnv ident retTy NoVarInfo (FunInfo retTy params) params
-            -- Also add the function identifier to the local environment for recursion
-            (localEnvWithFunc, _) = checkProcFunIdent localEnv ident retTy NoVarInfo (FunInfo retTy params) params
-            -- Add parameters to the local environment
+            identEnriched = enrichIdent ident (Just retTy) NoVarInfo (FunInfo retTy params)
+            (localEnvWithFunc, _) = checkProcFunIdent localEnv ident retTy NoVarInfo (FunInfo retTy params) params -- Add signature only to localEnv for recursion
             (localEnv1, paramsEnriched) = checkFormalParametersList localEnvWithFunc params
-            -- Update the parent of the local environment
-            updatedLocalEnv = localEnv1 { parent = Just outerEnv1 }
+            updatedLocalEnv = localEnv1 { parent = parent localEnv }
         in (updatedLocalEnv, FunHead identEnriched paramsEnriched retTyEnriched loc)
 
 -- Given a list of identifiers, check recursively if each of them is already used inside the environment
@@ -264,24 +236,25 @@ checkIdent env ident@(Ident name loc _ _ _) ty varInfo@(VarInfo constVal isConst
 -- Update the environment with the declaration of a procedure/function and return its enriched identifier
 checkProcFunIdent :: Env -> SimpleIdent -> SimpleType -> VarInfo -> FunInfo -> [SimpleFormalParameters] -> (Env, EnrichedIdent)
 checkProcFunIdent env ident ty NoVarInfo (FunInfo retTy paramsEnriched) simpleParams =
-    let res = lookupByName env (getIdentName ident)
+    let res = Map.lookup ident (symbols env) -- controlla solo lo scope locale per funzioni/procedure
     in case res of
-        Just (ConstVarEntry _ isConst _ _, _) ->
+        Just (ConstVarEntry _ isConst _ _) ->
             (addError env (RedeclaredConstVar ident isConst, getIdentLoc ident), enrichIdentUnknown ident)
-        Just (ProcFunEntry _ _ existingFunLoc, _) ->
+        Just (ProcFunEntry _ _ existingFunLoc) ->
             (addError env (RedeclaredProcFun ident existingFunLoc, getIdentLoc ident), enrichIdentUnknown ident)
         Nothing ->
             if retTy == BasicType Void
                 then (addEntry env ident (ProcFunEntry simpleParams (BasicType Void) (getIdentLoc ident)), enrichIdent ident (Just ty) NoVarInfo (FunInfo retTy paramsEnriched))
                 else (addEntry env ident (ProcFunEntry simpleParams ty (getIdentLoc ident)), enrichIdent ident (Just ty) NoVarInfo (FunInfo retTy paramsEnriched))
 checkProcFunIdent env ident ty (VarInfo _ isConst) funInfo _ =
-    let res = lookupByName env (getIdentName ident)
+    let res = lookupByName env (getIdentName ident) -- per variabili/altro lascia invariato
     in case res of
         Just (ConstVarEntry _ entryIsConst _ _, _) ->
             (addError env (RedeclaredConstVar ident entryIsConst, getIdentLoc ident), enrichIdentUnknown ident)
         Just (ProcFunEntry _ _ existingFunLoc, _) ->
             (addError env (RedeclaredProcFun ident existingFunLoc, getIdentLoc ident), enrichIdentUnknown ident)
         Nothing -> (addEntry env ident (ConstVarEntry ty isConst Nothing (getIdentLoc ident)), enrichIdent ident (Just ty) (VarInfo Nothing isConst) funInfo)
+
 
 
 -----------------------------------------------------
@@ -312,8 +285,8 @@ checkRExpr env expr = case expr of
             (addError env (NotAFunction ident, loc), FCall (enrichIdentUnknown ident) [] loc) -- Not a function
         Just (ProcFunEntry params retTy _, _) ->
             let
-                (env1, argsEnriched, hasTypeError) = checkArgsNumWithTypeError env args (paramsToList params) (length args) (length (paramsToList params)) loc
-                identEnriched = if hasTypeError
+                (env1, argsEnriched, hasErrors) = checkArgs env args (paramsToList params) (length args) (length (paramsToList params)) loc
+                identEnriched = if hasErrors
                     then setIdentType (enrichIdent ident (Just retTy) NoVarInfo (FunInfo retTy params)) Nothing
                     else enrichIdent ident (Just retTy) NoVarInfo (FunInfo retTy params)
             in (env1, FCall identEnriched argsEnriched loc)
@@ -336,28 +309,40 @@ checkRExpr env expr = case expr of
         in (env1, LExpr lexprEnriched ty)
     _ -> error $ "DEBUG: checkStatement pattern non gestito: " ++ show expr
 
-checkArgsNumWithTypeError :: Env -> [SimpleRExpr] -> [SimpleFormalParameters] -> Int -> Int -> Loc -> (Env, [EnrichedRExpr], Bool)
-checkArgsNumWithTypeError env [] [] origArgs origParams _ = (env, [], False)
-checkArgsNumWithTypeError env [] params origArgs origParams loc =
+checkArgs :: Env -> [SimpleRExpr] -> [SimpleFormalParameters] -> Int -> Int -> Loc -> (Env, [EnrichedRExpr], Bool) -- The boolean return True if there are errors
+checkArgs env [] [] origArgs origParams _ = (env, [], False) -- No parameters (no errors)
+-- Check mismatch between arguments and formal parameters
+checkArgs env [] params origArgs origParams loc = 
     let env1 = addError env (FunArgsNumMismatch origArgs origParams, loc)
     in (env1, [], True)
-checkArgsNumWithTypeError env args [] origArgs origParams loc =
+-- Check mismatch between arguments and formal parameters
+checkArgs env args [] origArgs origParams loc =
     let env1 = addError env (FunArgsNumMismatch origArgs origParams, loc)
     in (env1, [], True)
-checkArgsNumWithTypeError env (a:as) (p:ps) origArgs origParams loc =
+-- Same number of arguments and parameters, continue with other checks
+checkArgs env (a:as) (p:ps) origArgs origParams loc =
     let
         (env1, argEnriched) = checkRExpr env a
-        (env2, compatible) = checkArgType env1 argEnriched p loc
-        (env3, argsEnriched, hasTypeErrorRest) = checkArgsNumWithTypeError env2 as ps origArgs origParams loc
+        (env2, compatible) = checkArgType env1 argEnriched p loc -- Check type compatibility
+        (env3, argsEnriched, hasTypeErrorRest) = checkArgs env2 as ps origArgs origParams loc -- Recursive call on the rest of the two lists
         hasTypeError = not compatible || hasTypeErrorRest
     in (env3, argEnriched : argsEnriched, hasTypeError)
 
 checkArgType :: Env -> EnrichedRExpr -> SimpleFormalParameters -> Loc -> (Env, Bool)
-checkArgType env argEnriched (FormParam _ _ paramType) loc =
-    let
-        argType = getRExprType argEnriched
-        (env1, compatible) = argCompatible env argType paramType loc
-    in (env1, compatible)
+checkArgType env argEnriched (FormParam mod _ paramType) loc = case mod of
+    ByVal -> let
+                argType = getRExprType argEnriched
+                (env1, compatible) = argCompatible env argType paramType loc -- Regular compatibility type checks
+            in (env1, compatible)
+    _ -> -- ByRef and ByValRes modalities
+        if isLExpr argEnriched then
+            let
+                argType = getRExprType argEnriched 
+            in if argType == Just paramType -- In ByRef and ByValRes modality the types must be exactly the same
+                then (env, True)
+                else (addError env (IncompatibleModParamType mod argType paramType, loc), False)
+        else (addError env (NotLExprInMod mod, loc), False) -- Not L-expresion in ByRef or ByValRes modalities
+    
 
 checkLExpr :: Env -> SimpleLExpr -> (Env, EnrichedLExpr)
 checkLExpr env lexpr = case lexpr of
@@ -495,38 +480,21 @@ checkStatement env stmt isLoop typeIfInsideFun = case stmt of
         let (env1, rexprEnriched) = checkRExpr env rexpr in
         case typeIfInsideFun of
             Nothing ->
-                (addError env1 (NotInFunction, loc), ReturnStmt rexprEnriched Nothing loc)
+                (addError env1 (NotInFunction, loc), ReturnStmt rexprEnriched Nothing loc) -- Return is not inside a function
             Just (BasicType Void) ->
-                (addError env1 (ReturnInsideProcedure, loc), ReturnStmt rexprEnriched Nothing loc)
+                (addError env1 (ReturnInsideProcedure, loc), ReturnStmt rexprEnriched Nothing loc) -- Return is inside a procedure
             Just _ ->
-                if getRExprType rexprEnriched == typeIfInsideFun
-                    then (env1, ReturnStmt rexprEnriched typeIfInsideFun loc)
-                    else (addError env1 (ReturnTypeMismatch (getRExprType rexprEnriched) typeIfInsideFun, loc), ReturnStmt rexprEnriched typeIfInsideFun loc)
+                case getRExprType rexprEnriched of
+                    Nothing -> (env1, ReturnStmt rexprEnriched typeIfInsideFun loc)
+                    Just t  -> if Just t == typeIfInsideFun
+                                  then (env1, ReturnStmt rexprEnriched typeIfInsideFun loc)
+                                  else (addError env1 (ReturnTypeMismatch (Just t) typeIfInsideFun, loc), ReturnStmt rexprEnriched typeIfInsideFun loc)
     BreakStmt loc -> if isLoop
         then (env, BreakStmt loc)
         else (addError env (NotInLoop "break", loc), BreakStmt loc)
     ContinueStmt loc -> if isLoop
         then (env, ContinueStmt loc)
         else (addError env (NotInLoop "continue", loc), ContinueStmt loc)
-
--- Check the type compatibility in an assignment
-compatibleAssignment :: Env -> Maybe SimpleType -> Maybe SimpleType -> Loc -> (Env, Maybe SimpleType)
-compatibleAssignment env (Just targetType) (Just sourceType) loc = case (targetType, sourceType) of
-    (t1, t2) | t1 == t2 -> (env, Just targetType) -- Same type: compatible
-    -- Numeric cast
-    (BasicType Real, BasicType Integer) -> (env, Just targetType) -- int -> real
-    (BasicType Integer, BasicType Real) -> (env, Just targetType) -- real -> int (loss of precision)
-    -- Cast between characters and strings
-    (BasicType String, BasicType Character) -> (env, Just targetType) -- char -> string
-    -- Cast between arrays and pointers
-    (Array _ elemType, Pointer ptrType) -> if elemType == ptrType
-        then (env, Just targetType)
-        else (addError env (IncompatibleArrPtrType, loc), Nothing)
-    (Pointer ptrType, Array _ elemType) -> if ptrType == elemType
-        then (env, Just targetType)
-        else (addError env (IncompatiblePtrArrType, loc), Nothing)
-    _ -> (addError env (IncompatibleAssignment targetType sourceType, loc), Nothing) -- If it's not any of the above, the LExpr is actually a constant
-compatibleAssignment env _ _ loc = (env, Nothing)
 
 checkOptElse :: Env -> SimpleOptElse -> Bool -> Maybe SimpleType -> (Env, EnrichedOptElse)
 checkOptElse env optElse isLoop typeIfInsideFun = case optElse of
@@ -646,10 +614,22 @@ checkNumericType env op t loc = case t of
 
 -------------------- FCall --------------------
 argCompatible :: Env -> Maybe SimpleType -> SimpleType -> Loc -> (Env, Bool)
-argCompatible env (Just argType) paramType loc = if argType /= paramType
-    then (addError env (FunArgTypeMismatch argType paramType, loc), False)
-    else (env, True)
-argCompatible env Nothing _ loc = (env, False)
+argCompatible env (Just argType) paramType loc = case (argType, paramType) of
+    (t1, t2) | t1 == t2 -> (env, True) -- Same type: compatible
+    -- Numeric cast
+    (BasicType Real, BasicType Integer) -> (env, True) -- int -> real
+    (BasicType Integer, BasicType Real) -> (env, True) -- real -> int (loss of precision)
+    -- Cast between characters and strings
+    (BasicType Character, BasicType String) -> (env, True) -- char -> string
+    -- Cast between arrays and pointers
+    (Array _ elemType, Pointer ptrType) -> if elemType == ptrType
+        then (env, True)
+        else (addError env (IncompatibleArrPtrType, loc), False)
+    (Pointer ptrType, Array _ elemType) -> if ptrType == elemType
+        then (env, True)
+        else (addError env (IncompatiblePtrArrType, loc), False)
+    _ -> (addError env (FunArgTypeMismatch argType paramType, loc), False) -- If it's not any of the above, the LExpr is actually a constant
+argCompatible env _ _ loc = (env, False)
 
 -------------------- Arrays --------------------
 -- Check if any index in an array declaration is negative
@@ -666,6 +646,26 @@ checkNegativeIndex env (IndexRange c1 c2 : xs) loc =
         (finalEnv, hasErrorInRest) = checkNegativeIndex env1 xs loc -- Recursive call, check the reset of the list
     in
         (finalEnv, isCurrentNegative || hasErrorInRest)
+
+-------------------- Assignments --------------------
+-- Check the type compatibility in an assignment
+compatibleAssignment :: Env -> Maybe SimpleType -> Maybe SimpleType -> Loc -> (Env, Maybe SimpleType)
+compatibleAssignment env (Just targetType) (Just sourceType) loc = case (targetType, sourceType) of
+    (t1, t2) | t1 == t2 -> (env, Just targetType) -- Same type: compatible
+    -- Numeric cast
+    (BasicType Real, BasicType Integer) -> (env, Just targetType) -- int -> real
+    (BasicType Integer, BasicType Real) -> (env, Just targetType) -- real -> int (loss of precision)
+    -- Cast between characters and strings
+    (BasicType String, BasicType Character) -> (env, Just targetType) -- char -> string
+    -- Cast between arrays and pointers
+    (Array _ elemType, Pointer ptrType) -> if elemType == ptrType
+        then (env, Just targetType)
+        else (addError env (IncompatibleArrPtrType, loc), Nothing)
+    (Pointer ptrType, Array _ elemType) -> if ptrType == elemType
+        then (env, Just targetType)
+        else (addError env (IncompatiblePtrArrType, loc), Nothing)
+    _ -> (addError env (IncompatibleAssignment targetType sourceType, loc), Nothing) -- If it's not any of the above, the LExpr is actually a constant
+compatibleAssignment env _ _ loc = (env, Nothing)
 
 
 
@@ -708,53 +708,6 @@ mergeEnvs env1 env2 = Env
 -------------------- ENRICHED AST FUNCTIONS --------------------
 ----------------------------------------------------------------
 
-enrichFormalParametersList :: [SimpleFormalParameters] -> [EnrichedFormalParameters]
-enrichFormalParametersList = map enrichFormalParameters
-
-enrichFormalParameters :: SimpleFormalParameters -> EnrichedFormalParameters
-enrichFormalParameters (FormParam mod idents ty) =
-    let
-        varInfo = VarInfo Nothing False
-    in FormParam mod (map (\i -> enrichIdent i (Just ty) varInfo NoFunInfo) idents) (enrichType ty)
-
-enrichBlock :: SimpleBlock -> EnrichedBlock
-enrichBlock (Block consts vars procs compStmt) =
-    Block (map enrichConstDef consts)
-    (map enrichVarDecl vars)
-    (map enrichProcFunDecl procs)
-    (enrichCompoundStatement compStmt)
-
-enrichConstDef :: SimpleConstantDefinition -> EnrichedConstantDefinition
-enrichConstDef (ConstDef ident c) = ConstDef (enrichIdentUnknown ident) (enrichConst c)
-
-enrichVarDecl :: SimpleVariableDeclaration -> EnrichedVariableDeclaration
-enrichVarDecl (VarDecl ids ty) =
-    let
-        varInfo = VarInfo Nothing False
-    in VarDecl (map (\i -> enrichIdent i (Just ty) varInfo NoFunInfo) ids) (enrichType ty)
-
-enrichProcFunDecl :: SimpleProcedureAndFunctionDeclaration -> EnrichedProcedureAndFunctionDeclaration
-enrichProcFunDecl (ProcFunDecl heading block) = ProcFunDecl (enrichProcFunHeading heading) (enrichBlock block)
-
-enrichProcFunHeading :: SimpleProcedureAndFunctionHeading -> EnrichedProcedureAndFunctionHeading
-enrichProcFunHeading (ProcHead ident params) =
-    let
-        ty = BasicType Void
-        paramsEnriched = enrichFormalParametersList params
-        funInfo = FunInfo ty params
-    in ProcHead (enrichIdent ident (Just (BasicType Void)) NoVarInfo funInfo) (enrichFormalParametersList params)
-enrichProcFunHeading (FunHead ident params retTy loc) =
-    let
-        tyEnriched = enrichType retTy
-        paramsEnriched = enrichFormalParametersList params
-    in FunHead (enrichIdent ident (Just retTy) NoVarInfo (FunInfo retTy params)) paramsEnriched tyEnriched loc
-
-enrichCompoundStatement :: SimpleCompoundStatement -> EnrichedCompoundStatement
-enrichCompoundStatement (CompStmt stmts) = CompStmt (map enrichStatement stmts)
-
-enrichStatement :: SimpleStatement -> EnrichedStatement
-enrichStatement = undefined
-
 enrichIndex :: SimpleIndexType -> EnrichedIndexType
 enrichIndex (IndexRange c1 c2) = IndexRange (enrichConst c1) (enrichConst c2)
 
@@ -786,10 +739,6 @@ enrichLitExpr lit = case lit of
     Literal_true     -> Lit lit (Just (BasicType Boolean))
     Literal_false    -> Lit lit (Just (BasicType Boolean))
 
--- Extract the type information from an enriched identifier
-getIdentType :: EnrichedIdent -> Maybe SimpleType
-getIdentType (Ident _ _ ty _ _) = ty
-
 setIdentType :: EnrichedIdent -> Maybe SimpleType -> EnrichedIdent
 setIdentType (Ident name loc _ v f) ty = Ident name loc ty v f
 
@@ -807,8 +756,12 @@ getIdentName (Ident name _ _ _ _) = name
 getIdentLoc :: SimpleIdent -> Loc
 getIdentLoc (Ident _ loc _ _ _) = loc
 
+-- Extract the type information from an enriched identifier
+getIdentType :: EnrichedIdent -> Maybe SimpleType
+getIdentType (Ident _ _ ty _ _) = ty
+
 -- Infer the type of a constant
-inferConstantType :: Constant () () () -> SimpleType
+inferConstantType :: SimpleConstant -> SimpleType
 inferConstantType (ConstInt _ _)    = BasicType Integer
 inferConstantType (ConstDouble _ _) = BasicType Real
 inferConstantType (ConstStr _)      = BasicType String
@@ -967,6 +920,8 @@ hasReturnEveryPath stmts = anyPathReturns stmts
 hasNonInteger :: [EnrichedRExpr] -> Bool
 hasNonInteger = any (\e -> getRExprType e /= Just (BasicType Integer))
 
+
+
 -----------------------------------------------------------
 -------------------- PRINT ENVIRONMENT --------------------
 -----------------------------------------------------------
@@ -1018,36 +973,3 @@ showErrors :: [(String, Loc)] -> String
 showErrors [] = "No errors"
 showErrors errs = intercalate "\n" (map showError (nub errs)) -- (nub errs) removes duplicated errors caused by the mutual recursion mechanism
     where showError (msg, loc) = showLoc loc ++ ": " ++ msg
-
--- TODO: MUTUAL RECURSION (TWO-PASS ANALYSIS)
-{-
--- First pass: collect all function declarations (headers only)
-collectFunctionDeclarations :: Env -> [SimpleProcedureAndFunctionDeclaration] -> Env
-collectFunctionDeclarations env [] = env
-collectFunctionDeclarations env (decl:decls) =
-    let
-        env' = collectFunctionDeclaration env decl
-    in collectFunctionDeclarations env' decls
-
-collectFunctionDeclaration :: Env -> SimpleProcedureAndFunctionDeclaration -> Env
-collectFunctionDeclaration env (ProcFunDecl heading _) =
-    let
-        -- Add function to environment without analyzing the body
-        (env', _) = checkProcFunHeadOnly env heading
-    in env'
-
--- Check only the function header and add it to environment (for forward declarations)
-checkProcFunHeadOnly :: Env -> SimpleProcedureAndFunctionHeading -> (Env, ProcedureAndFunctionHeading TypeInfo VarInfo FunInfo)
-checkProcFunHeadOnly env head = case head of
-    (ProcHead ident params) ->
-        let
-            preEnrichedParams = enrichFormalParametersList params
-            (env', identEnriched) = checkProcFunIdent env ident (BasicType Void) NoVarInfo (FunInfo (enrichType (BasicType Void)) preEnrichedParams) params
-        in (env', ProcHead identEnriched (enrichFormalParametersList params))
-    (FunHead ident params retTy) ->
-        let
-            preEnrichedParams = enrichFormalParametersList params
-            retTyEnriched = enrichType retTy
-            (env', identEnriched) = checkProcFunIdent env ident retTy NoVarInfo (FunInfo retTyEnriched preEnrichedParams) params
-        in (env', FunHead identEnriched (enrichFormalParametersList params) retTyEnriched)
--}

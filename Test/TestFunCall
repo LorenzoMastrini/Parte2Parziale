@@ -6,6 +6,10 @@ var
     c: Boolean;
     d: Character;
     e: String;
+    v: Integer;
+    w: Integer;
+    z: Integer;
+
 
     function sum(x: Integer, y: Integer): Integer;
         begin
@@ -22,22 +26,55 @@ var
             not b;
         end;
 
+    // PARAMETER PASSING MODALITIES TESTS
+    // --- BY VALUE ---
+    function byValue(x: Integer): Integer;
+        begin
+            x := x + 1; // Should NOT affect the caller
+            return x;
+        end;
+    
+    // --- BY REFERENCE ---
+    function byReference(var x: Integer): Integer;
+        begin
+            x := x + 1; // Should affect the caller
+            return x;
+        end;
+    
+    // --- BY VALUE-RESULT ---
+    procedure byValueResult(valres x: Integer);
+        begin
+            x := x + 1; // Should affect the caller only after function ends
+        end;
+
+    procedure byValueResult(x: Integer, var x: Integer, valres x: Integer);
+        begin
+            x := x + 1; // Should affect the caller only after function ends
+        end;
+
+    procedure compat(x: String);
+        begin
+            x;
+        end;
+
+
 begin
     // VALID CASES
     // Function call
+    compat('a');
     sum(1, 2);                              // Integer, Integer -> Integer
     sum(a, 5);                              // Integer, Integer -> Integer
     concatenate("Hello", " world");         // String, String -> String
     concatenate(e, "!");                    // String, String -> String
     invert(true);                           // Boolean -> Boolean
     invert(c);                              // Boolean -> Boolean
+    sum(1.5, 2);                            // Real (implicit cast), Integer -> Integer
     sum(sum(1,2), 3);                       // Nested Function: (Integer, Integer -> Integer), Integer -> Integer
     concatenate(concatenate("a","b"), "c"); // Nested Function: (String, String -> String), String -> String
 
     // ERROR CASES - Should generate "Incompatible types" errors [TypeError]
     d();                    // ERROR (NotAFunction)
     h();                    // ERROR (FunNotDefined)
-    sum(1.5, 2);            // Real, Integer = ERROR (FunArgTypeMismatch)
     sum("a", 2);            // String, Integer = ERROR (FunArgTypeMismatch)
     sum(true, false);       // Boolean, Boolean = ERROR (FunArgTypeMismatch)
     concatenate(1, 2);      // Integer, Integer = ERROR (FunArgTypeMismatch)
@@ -47,4 +84,27 @@ begin
     sum(1);                 // ERROR (FunArgsNumMismatch)
     concatenate("a");       // Numero di argomenti errato = ERROR (FunArgsNumMismatch)
     invert();               // Numero di argomenti errato = ERROR (FunArgsNumMismatch)
+
+
+    // PARAMETER PASSING MODALITIES TESTS
+    v := 10;
+    w := 20;
+    z := 30;
+
+    byValue(v);             // By Value: v = 10
+    
+    byReference(w);         // By Reference: w = 21
+    
+    byValueResult(z);       // By Value-Result: z = 31
+
+    // ERROR CASES FOR PARAMETER PASSING MODALITIES
+    byReference(5);       // ERROR (NotLExprInMod)
+    byValueResult(8);      // ERROR (NotLExprInMod)
+
+    // --- Passing an expression to a by-reference or valres parameter ---
+    byReference(v / 7);       // ERROR: Cannot pass expression to var parameter
+    byValueResult(^w);     // ERROR: Cannot pass expression to valres parameter
+
+    byReference(e);           // ERROR (IncompatibleModParamType)
+    byValueResult(c);         // ERROR (IncompatibleModParamType)
 end.

@@ -66,7 +66,6 @@ Assign.     Statement ::= LExpr ":=" RExpr ;
 While.      Statement ::= "while" RExpr "do" Statement ;
 DoWhile.    Statement ::= "repeat" Statement "until" RExpr ;
 ForTo.      Statement ::= "for" LExpr ":=" RExpr "to" RExpr "do" Statement ;
-ForDownTo.  Statement ::= "for" LExpr ":=" RExpr "downto" RExpr "do" Statement ;
 If.         Statement ::= "if" RExpr "then" Statement OptElse ;
 NoElse.     OptElse ::= ;
 Else.       OptElse ::= "else" Statement ;

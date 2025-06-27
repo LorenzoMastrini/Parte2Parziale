@@ -23,6 +23,8 @@ data Error ty varInfo funInfo
     | IncompatibleAssignment SimpleType SimpleType
     | NotBooleanOperation String SimpleType SimpleType
     | FunArgTypeMismatch SimpleType SimpleType
+    | IncompatibleModParamType OptModality (Maybe SimpleType) SimpleType
+    | NotLExprInMod OptModality
     | NotLExpr Unary
     | NotAPointer
     | NotAnArray
@@ -37,8 +39,6 @@ data Error ty varInfo funInfo
     | ReturnTypeMismatch (Maybe SimpleType) (Maybe SimpleType)
     | NotIntegerArrIndex (Maybe SimpleType)
 {-
-    | DereferenceExcess (Ident ty varInfo funInfo)
-    | PointerArithmetic Loc
     | DifferentLenght Loc
     | DivideByZero Loc
 -}
@@ -60,7 +60,7 @@ errorType x =
             else errorMsg "The identifier \"" ++ name ++ "\" has already been used for a procedure/function." ++ " [Declaration Error]."
 
         FunNotDefined (Ident name loc _ _ _) -> 
-            errorMsg "The function \"" ++ name ++ "\" does not exists." ++ " [Declaration Error]."
+            errorMsg "The function \"" ++ name ++ "\" doesn't exist." ++ " [Declaration Error]."
         
         NotAFunction (Ident name loc _ _ _) -> 
             errorMsg "\"" ++ name ++ "\" is a variable, not a function." ++ " [Declaration Error]."
@@ -105,6 +105,10 @@ errorType x =
         FunArgTypeMismatch argType paramType ->
             errorMsg "Argument type mismatch in function call: expected \"" ++ showTy paramType ++ "\" type, got \"" ++ showTy argType ++ "\" instead." ++ " [Type Error]"
         
+        IncompatibleModParamType mod argType paramType -> case mod of
+            ByRef       -> errorMsg "The argument type for the \"By reference\" modality must exactly match the type of the formal parameter: expected \"" ++ showTy paramType ++ "\", got \"" ++ showMType argType ++ "\"." ++ " [Type Error]"
+            ByValRes    -> errorMsg "The argument type for the \"By value-result\" modality must exactly match the type of the formal parameter: expected \"" ++ showTy paramType ++ "\", got \"" ++ showMType argType ++ "\"." ++ " [Type Error]"
+
         NotBooleanCondition stmt conditionType ->
             errorMsg "The condition of the " ++ show stmt ++ " statement must be of type \"Boolean\", got \"" ++ showMType conditionType ++ "\" instead." ++ " [Type Error]"
 
@@ -144,6 +148,12 @@ errorType x =
         
         MissingReturn ->
             errorMsg "A \"return\" statement must be present in each possible execution flow of the function." ++ " [Control Flow Error]"
+
+
+
+        NotLExprInMod mod -> case mod of
+            ByRef       -> errorMsg "The argument for the \"By reference\" modality must be an L-expression." ++ " [Type Error]"
+            ByValRes    -> errorMsg "The argument for the \"By value-result\" modality must be an L-expression." ++ " [Type Error]"
 
         -- DEBUG
         _ -> "[UNHANDLED ERROR]"
