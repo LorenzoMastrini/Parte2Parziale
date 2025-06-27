@@ -11,6 +11,7 @@ import SkelLinguaggio
 import AbsLinguaggio
 import PrettyPrinter
 import PrintLinguaggio
+import PrettyPrinterTAC hiding (colorRed, colorGreen, colorYellow) 
 import StaticAnalysis
 import TACGen
 --import TACGenerator
@@ -45,7 +46,8 @@ run v p s = let ts = myLLexer s in case p ts of
                           --putStrV v (show (snd (staticAnalysis tree))) -- print the annotated
                           --
                           -- putStrT v (testingTAC (generateTAC tree) s)
-                          mapM_ print (genProgram (snd enriched))
+                          -- mapM_ print (genProgram (snd enriched))
+                          putStrLn (prettyTAC (genProgram (snd enriched)))
                           --x <-testing tree s
                           --putStrC v x
                           --
