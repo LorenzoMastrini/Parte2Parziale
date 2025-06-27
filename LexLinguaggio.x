@@ -200,21 +200,21 @@ resWords =
           (b "^" 26
              (b "[" 24 (b "String" 23 N N) (b "]" 25 N N))
              (b "array" 28 (b "and" 27 N N) N))))
-    (b "not" 44
-       (b "else" 37
+    (b "not" 43
+       (b "else" 36
           (b "continue" 33
              (b "case" 31 (b "break" 30 N N) (b "const" 32 N N))
-             (b "do" 35 (b "div" 34 N N) (b "downto" 36 N N)))
-          (b "function" 41
-             (b "false" 39 (b "end" 38 N N) (b "for" 40 N N))
-             (b "mod" 43 (b "if" 42 N N) N)))
-       (b "then" 51
-          (b "program" 48
-             (b "or" 46 (b "of" 45 N N) (b "procedure" 47 N N))
-             (b "return" 50 (b "repeat" 49 N N) N))
-          (b "valres" 55
-             (b "true" 53 (b "to" 52 N N) (b "until" 54 N N))
-             (b "while" 57 (b "var" 56 N N) N))))
+             (b "do" 35 (b "div" 34 N N) N))
+          (b "function" 40
+             (b "false" 38 (b "end" 37 N N) (b "for" 39 N N))
+             (b "mod" 42 (b "if" 41 N N) N)))
+       (b "then" 50
+          (b "program" 47
+             (b "or" 45 (b "of" 44 N N) (b "procedure" 46 N N))
+             (b "return" 49 (b "repeat" 48 N N) N))
+          (b "valres" 54
+             (b "true" 52 (b "to" 51 N N) (b "until" 53 N N))
+             (b "while" 56 (b "var" 55 N N) N))))
   where
   b s n = B bs (TS bs n)
     where

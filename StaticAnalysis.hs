@@ -256,6 +256,7 @@ checkProcFunIdent env ident ty (VarInfo _ isConst) funInfo _ =
         Nothing -> (addEntry env ident (ConstVarEntry ty isConst Nothing (getIdentLoc ident)), enrichIdent ident (Just ty) (VarInfo Nothing isConst) funInfo)
 
 
+
 -----------------------------------------------------
 -------------------- EXPRESSIONS --------------------
 -----------------------------------------------------
@@ -495,25 +496,6 @@ checkStatement env stmt isLoop typeIfInsideFun = case stmt of
         then (env, ContinueStmt loc)
         else (addError env (NotInLoop "continue", loc), ContinueStmt loc)
 
--- Check the type compatibility in an assignment
-compatibleAssignment :: Env -> Maybe SimpleType -> Maybe SimpleType -> Loc -> (Env, Maybe SimpleType)
-compatibleAssignment env (Just targetType) (Just sourceType) loc = case (targetType, sourceType) of
-    (t1, t2) | t1 == t2 -> (env, Just targetType) -- Same type: compatible
-    -- Numeric cast
-    (BasicType Real, BasicType Integer) -> (env, Just targetType) -- int -> real
-    (BasicType Integer, BasicType Real) -> (env, Just targetType) -- real -> int (loss of precision)
-    -- Cast between characters and strings
-    (BasicType String, BasicType Character) -> (env, Just targetType) -- char -> string
-    -- Cast between arrays and pointers
-    (Array _ elemType, Pointer ptrType) -> if elemType == ptrType
-        then (env, Just targetType)
-        else (addError env (IncompatibleArrPtrType, loc), Nothing)
-    (Pointer ptrType, Array _ elemType) -> if ptrType == elemType
-        then (env, Just targetType)
-        else (addError env (IncompatiblePtrArrType, loc), Nothing)
-    _ -> (addError env (IncompatibleAssignment targetType sourceType, loc), Nothing) -- If it's not any of the above, the LExpr is actually a constant
-compatibleAssignment env _ _ loc = (env, Nothing)
-
 checkOptElse :: Env -> SimpleOptElse -> Bool -> Maybe SimpleType -> (Env, EnrichedOptElse)
 checkOptElse env optElse isLoop typeIfInsideFun = case optElse of
     NoElse -> (env, NoElse)
@@ -664,6 +646,26 @@ checkNegativeIndex env (IndexRange c1 c2 : xs) loc =
         (finalEnv, hasErrorInRest) = checkNegativeIndex env1 xs loc -- Recursive call, check the reset of the list
     in
         (finalEnv, isCurrentNegative || hasErrorInRest)
+
+-------------------- Assignments --------------------
+-- Check the type compatibility in an assignment
+compatibleAssignment :: Env -> Maybe SimpleType -> Maybe SimpleType -> Loc -> (Env, Maybe SimpleType)
+compatibleAssignment env (Just targetType) (Just sourceType) loc = case (targetType, sourceType) of
+    (t1, t2) | t1 == t2 -> (env, Just targetType) -- Same type: compatible
+    -- Numeric cast
+    (BasicType Real, BasicType Integer) -> (env, Just targetType) -- int -> real
+    (BasicType Integer, BasicType Real) -> (env, Just targetType) -- real -> int (loss of precision)
+    -- Cast between characters and strings
+    (BasicType String, BasicType Character) -> (env, Just targetType) -- char -> string
+    -- Cast between arrays and pointers
+    (Array _ elemType, Pointer ptrType) -> if elemType == ptrType
+        then (env, Just targetType)
+        else (addError env (IncompatibleArrPtrType, loc), Nothing)
+    (Pointer ptrType, Array _ elemType) -> if ptrType == elemType
+        then (env, Just targetType)
+        else (addError env (IncompatiblePtrArrType, loc), Nothing)
+    _ -> (addError env (IncompatibleAssignment targetType sourceType, loc), Nothing) -- If it's not any of the above, the LExpr is actually a constant
+compatibleAssignment env _ _ loc = (env, Nothing)
 
 
 
