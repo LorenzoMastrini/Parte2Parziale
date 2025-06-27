@@ -22,7 +22,7 @@ import LexLinguaggio
 %monad { Err } { (>>=) } { return }
 %tokentype {Token}
 
--- Add precedence rules
+-- Precedence rules
 %left 'or'
 %left 'and'
 %left '=' '<>' '<' '<=' '>' '>='

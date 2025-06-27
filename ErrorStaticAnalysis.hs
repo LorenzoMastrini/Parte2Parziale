@@ -39,8 +39,6 @@ data Error ty varInfo funInfo
     | ReturnTypeMismatch (Maybe SimpleType) (Maybe SimpleType)
     | NotIntegerArrIndex (Maybe SimpleType)
 {-
-    | DereferenceExcess (Ident ty varInfo funInfo)
-    | PointerArithmetic Loc
     | DifferentLenght Loc
     | DivideByZero Loc
 -}
