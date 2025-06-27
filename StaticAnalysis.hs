@@ -284,8 +284,8 @@ checkRExpr env expr = case expr of
             (addError env (NotAFunction ident, loc), FCall (enrichIdentUnknown ident) [] loc) -- Not a function
         Just (ProcFunEntry params retTy _, _) ->
             let
-                (env1, argsEnriched, hasTypeError) = checkArgsNumWithTypeError env args (paramsToList params) (length args) (length (paramsToList params)) loc
-                identEnriched = if hasTypeError
+                (env1, argsEnriched, hasErrors) = checkArgs env args (paramsToList params) (length args) (length (paramsToList params)) loc
+                identEnriched = if hasErrors
                     then setIdentType (enrichIdent ident (Just retTy) NoVarInfo (FunInfo retTy params)) Nothing
                     else enrichIdent ident (Just retTy) NoVarInfo (FunInfo retTy params)
             in (env1, FCall identEnriched argsEnriched loc)
@@ -308,28 +308,40 @@ checkRExpr env expr = case expr of
         in (env1, LExpr lexprEnriched ty)
     _ -> error $ "DEBUG: checkStatement pattern non gestito: " ++ show expr
 
-checkArgsNumWithTypeError :: Env -> [SimpleRExpr] -> [SimpleFormalParameters] -> Int -> Int -> Loc -> (Env, [EnrichedRExpr], Bool)
-checkArgsNumWithTypeError env [] [] origArgs origParams _ = (env, [], False)
-checkArgsNumWithTypeError env [] params origArgs origParams loc =
+checkArgs :: Env -> [SimpleRExpr] -> [SimpleFormalParameters] -> Int -> Int -> Loc -> (Env, [EnrichedRExpr], Bool) -- The boolean return True if there are errors
+checkArgs env [] [] origArgs origParams _ = (env, [], False) -- No parameters (no errors)
+-- Check mismatch between arguments and formal parameters
+checkArgs env [] params origArgs origParams loc = 
     let env1 = addError env (FunArgsNumMismatch origArgs origParams, loc)
     in (env1, [], True)
-checkArgsNumWithTypeError env args [] origArgs origParams loc =
+-- Check mismatch between arguments and formal parameters
+checkArgs env args [] origArgs origParams loc =
     let env1 = addError env (FunArgsNumMismatch origArgs origParams, loc)
     in (env1, [], True)
-checkArgsNumWithTypeError env (a:as) (p:ps) origArgs origParams loc =
+-- Same number of arguments and parameters, continue with other checks
+checkArgs env (a:as) (p:ps) origArgs origParams loc =
     let
         (env1, argEnriched) = checkRExpr env a
-        (env2, compatible) = checkArgType env1 argEnriched p loc
-        (env3, argsEnriched, hasTypeErrorRest) = checkArgsNumWithTypeError env2 as ps origArgs origParams loc
+        (env2, compatible) = checkArgType env1 argEnriched p loc -- Check type compatibility
+        (env3, argsEnriched, hasTypeErrorRest) = checkArgs env2 as ps origArgs origParams loc -- Recursive call on the rest of the two lists
         hasTypeError = not compatible || hasTypeErrorRest
     in (env3, argEnriched : argsEnriched, hasTypeError)
 
 checkArgType :: Env -> EnrichedRExpr -> SimpleFormalParameters -> Loc -> (Env, Bool)
-checkArgType env argEnriched (FormParam _ _ paramType) loc =
-    let
-        argType = getRExprType argEnriched
-        (env1, compatible) = argCompatible env argType paramType loc
-    in (env1, compatible)
+checkArgType env argEnriched (FormParam mod _ paramType) loc = case mod of
+    ByVal -> let
+                argType = getRExprType argEnriched
+                (env1, compatible) = argCompatible env argType paramType loc -- Regular compatibility type checks
+            in (env1, compatible)
+    _ -> -- ByRef and ByValRes modalities
+        if isLExpr argEnriched then
+            let
+                argType = getRExprType argEnriched 
+            in if argType == Just paramType -- In ByRef and ByValRes modality the types must be exactly the same
+                then (env, True)
+                else (addError env (IncompatibleModParamType mod argType paramType, loc), False)
+        else (addError env (NotLExprInMod mod, loc), False) -- Not L-expresion in ByRef or ByValRes modalities
+    
 
 checkLExpr :: Env -> SimpleLExpr -> (Env, EnrichedLExpr)
 checkLExpr env lexpr = case lexpr of
@@ -620,10 +632,22 @@ checkNumericType env op t loc = case t of
 
 -------------------- FCall --------------------
 argCompatible :: Env -> Maybe SimpleType -> SimpleType -> Loc -> (Env, Bool)
-argCompatible env (Just argType) paramType loc = if argType /= paramType
-    then (addError env (FunArgTypeMismatch argType paramType, loc), False)
-    else (env, True)
-argCompatible env Nothing _ loc = (env, False)
+argCompatible env (Just argType) paramType loc = case (argType, paramType) of
+    (t1, t2) | t1 == t2 -> (env, True) -- Same type: compatible
+    -- Numeric cast
+    (BasicType Real, BasicType Integer) -> (env, True) -- int -> real
+    (BasicType Integer, BasicType Real) -> (env, True) -- real -> int (loss of precision)
+    -- Cast between characters and strings
+    (BasicType Character, BasicType String) -> (env, True) -- char -> string
+    -- Cast between arrays and pointers
+    (Array _ elemType, Pointer ptrType) -> if elemType == ptrType
+        then (env, True)
+        else (addError env (IncompatibleArrPtrType, loc), False)
+    (Pointer ptrType, Array _ elemType) -> if ptrType == elemType
+        then (env, True)
+        else (addError env (IncompatiblePtrArrType, loc), False)
+    _ -> (addError env (FunArgTypeMismatch argType paramType, loc), False) -- If it's not any of the above, the LExpr is actually a constant
+argCompatible env _ _ loc = (env, False)
 
 -------------------- Arrays --------------------
 -- Check if any index in an array declaration is negative
