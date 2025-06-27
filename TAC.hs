@@ -5,12 +5,12 @@ import AbsLinguaggio
 
 data TAC
   = TacBinary Operand String Operand Operand -- dest = op1 `String` op2
-  | TacUnary String Operand Operand Operand
+  | TacUnary String Operand Operand
   | TacAssign Operand Operand              -- dest = src
   | TacLabel String
   | TacGoto String
   | TacIfZ Operand String
-  | TacReturn (Maybe Operand)
+  | TacReturn Operand
   | TacUnimplemented String  -- ^ Used when something isn't implemented
   | TacCall Operand [Operand] Operand Loc
   | TacArrayAccess Operand Operand [Operand]

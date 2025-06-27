@@ -87,18 +87,17 @@ genUnary op operand = do
   case op of
     UnaryPlus _loc ->
       -- Unary plus is usually a no-op
-      emit $ TacUnary "+" (TAC.ConstInt 0) rexpr result
+      emit $ TacUnary "+" rexpr result
 
     UnaryMinus _loc -> do
-      emit $ TacUnary "-" (TAC.ConstInt 0) rexpr result
+      emit $ TacUnary "-" rexpr result
 
     UnaryNot _loc -> do
-      emit $ TacUnary "not" rexpr (TAC.ConstInt 0) result
+      emit $ TacUnary "not" rexpr result
 
     UnaryRef _loc -> do
-      -- Reference operator (&) usually requires memory address knowledge,
-      -- we'll placeholder this for now
-      error "UnaryRef not implemented yet (requires memory model)"
+      emit $ TacUnary "*" rexpr result 
+
 
   return result 
 
@@ -153,6 +152,8 @@ getBinaryOp (BinaryPlus _)  = "+"
 getBinaryOp (BinaryMinus _) = "-"
 getBinaryOp (BinaryMul _)   = "*"
 getBinaryOp (BinaryDiv _)   = "/"
+getBinaryOp (BinaryIntDiv _) = "div"
+getBinaryOp (BinaryMod _) = "mod"
 getBinaryOp (BinaryAnd _)   = "and"
 getBinaryOp (BinaryOr _)    = "or"
 getBinaryOp (BinaryEq _)    = "=="
@@ -161,7 +162,6 @@ getBinaryOp (BinaryLt _)    = "<"
 getBinaryOp (BinaryLte _)   = "<="
 getBinaryOp (BinaryGt _)    = ">"
 getBinaryOp (BinaryGte _)   = ">="
-getBinaryOp _               = error "Unhandled binary operator"
 
 
 genLit :: Literal -> TACGen Operand
@@ -220,11 +220,13 @@ genStmt stmt = case stmt of
   -- Do-while loop
   DoWhile body cond _loc -> do
     start <- newLabel
+    end <- newLabel 
     emit $ TacLabel start
     genStmt body
     condOp <- genRExpr cond
-    emit $ TacIfZ condOp newLabel
+    emit $ TacIfZ condOp end
     emit $ TacGoto start
+    emit $ TacLabel end
 
   -- For loop (increasing)
   ForTo lexpr fromExpr toExpr body -> do
@@ -236,10 +238,10 @@ genStmt stmt = case stmt of
     end <- newLabel
     emit $ TacLabel start
     tmp <- newTemp
-    emit $ TacBinary tmp var "<=" to
+    emit $ TacBinary tmp "<=" var to
     emit $ TacIfZ tmp end
     genStmt body
-    emit $ TacBinary var var "+" "1"
+    emit $ TacBinary var "+" var (TAC.ConstInt 1)
     emit $ TacGoto start
     emit $ TacLabel end
 
@@ -253,10 +255,10 @@ genStmt stmt = case stmt of
     end <- newLabel
     emit $ TacLabel start
     tmp <- newTemp
-    emit $ TacBinary tmp var ">=" to
+    emit $ TacBinary tmp ">=" var to
     emit $ TacIfZ tmp end
     genStmt body
-    emit $ TacBinary var var "-" "1"
+    emit $ TacBinary var "-" var (TAC.ConstInt 1)
     emit $ TacGoto start
     emit $ TacLabel end
 
