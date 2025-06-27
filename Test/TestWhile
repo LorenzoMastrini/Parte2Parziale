@@ -79,7 +79,7 @@ begin
     while i < 5 do
     begin
         if i = 2 then
-            break;
+            break
         else
             continue;
         i := i + 1;

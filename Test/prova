@@ -125,4 +125,6 @@ begin
     // ERRORE: Break/Continue fuori da ciclo
     break;
     continue;
+
+    -6.89e-9;
 end. 

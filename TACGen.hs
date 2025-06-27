@@ -10,6 +10,8 @@ import Control.Monad.Writer
 data TACState = TACState
   { tempCount  :: Int
   , labelCount :: Int
+  , breakLabels :: [String]
+  , continueLabels :: [String]  -- Where to jump on `continue`
   } deriving (Show)
 
 type TACGen a = StateT TACState (Writer [TAC]) a
@@ -29,6 +31,33 @@ newLabel = do
   let l = labelCount st
   put st { labelCount = l + 1 }
   return ("L" ++ show l)
+
+pushBreakLabel :: String -> TACGen ()
+pushBreakLabel lbl = modify $ \s -> s { breakLabels = lbl : breakLabels s }
+
+popBreakLabel :: TACGen ()
+popBreakLabel = modify $ \s -> s { breakLabels = tail (breakLabels s) }
+
+getBreakLabel :: TACGen String
+getBreakLabel = do
+  s <- get
+  case breakLabels s of
+    (lbl:_) -> return lbl
+    [] -> error "Break used outside of loop"
+
+
+pushContinueLabel :: String -> TACGen ()
+pushContinueLabel lbl = modify $ \s -> s { continueLabels = lbl : continueLabels s }
+
+popContinueLabel :: TACGen ()
+popContinueLabel = modify $ \s -> s { continueLabels = tail (continueLabels s) }
+
+getContinueLabel :: TACGen String
+getContinueLabel = do
+  s <- get
+  case continueLabels s of
+    (lbl:_) -> return lbl
+    [] -> error "Continue used outside of loop"
 
 emit :: TAC -> TACGen ()
 emit tac = tell [tac]
@@ -210,6 +239,8 @@ genStmt stmt = case stmt of
   While cond body _loc -> do
     start <- newLabel
     condFalse <- newLabel
+    pushBreakLabel condFalse
+    pushContinueLabel start
     emit $ TacLabel start
     condOp <- genRExpr cond
     emit $ TacIfZ condOp condFalse
@@ -221,6 +252,8 @@ genStmt stmt = case stmt of
   DoWhile body cond _loc -> do
     start <- newLabel
     end <- newLabel 
+    pushBreakLabel end
+    pushContinueLabel start
     emit $ TacLabel start
     genStmt body
     condOp <- genRExpr cond
@@ -230,37 +263,38 @@ genStmt stmt = case stmt of
 
   -- For loop (increasing)
   ForTo lexpr fromExpr toExpr body -> do
-    var <- genLExpr lexpr
-    from <- genRExpr fromExpr
-    to <- genRExpr toExpr
-    emit $ TacAssign var from
-    start <- newLabel
-    end <- newLabel
-    emit $ TacLabel start
-    tmp <- newTemp
-    emit $ TacBinary tmp "<=" var to
-    emit $ TacIfZ tmp end
-    genStmt body
-    emit $ TacBinary var "+" var (TAC.ConstInt 1)
-    emit $ TacGoto start
-    emit $ TacLabel end
+    emit $ TacComment "not implemented yet"
+    -- var <- genLExpr lexpr
+    -- from <- genRExpr fromExpr
+    -- to <- genRExpr toExpr
+    -- emit $ TacAssign var from
+    -- start <- newLabel
+    -- end <- newLabel
+    -- emit $ TacLabel start
+    -- tmp <- newTemp
+    -- emit $ TacBinary tmp "<=" var to
+    -- emit $ TacIfZ tmp end
+    -- genStmt body
+    -- emit $ TacBinary var "+" var (TAC.ConstInt 1)
+    -- emit $ TacGoto start
+    -- emit $ TacLabel end
 
-  -- For loop (decreasing)
-  ForDownTo lexpr fromExpr toExpr body -> do
-    var <- genLExpr lexpr
-    from <- genRExpr fromExpr
-    to <- genRExpr toExpr
-    emit $ TacAssign var from
-    start <- newLabel
-    end <- newLabel
-    emit $ TacLabel start
-    tmp <- newTemp
-    emit $ TacBinary tmp ">=" var to
-    emit $ TacIfZ tmp end
-    genStmt body
-    emit $ TacBinary var "-" var (TAC.ConstInt 1)
-    emit $ TacGoto start
-    emit $ TacLabel end
+  -- -- For loop (decreasing)
+  -- ForDownTo lexpr fromExpr toExpr body -> do
+  --   var <- genLExpr lexpr
+  --   from <- genRExpr fromExpr
+  --   to <- genRExpr toExpr
+  --   emit $ TacAssign var from
+  --   start <- newLabel
+  --   end <- newLabel
+  --   emit $ TacLabel start
+  --   tmp <- newTemp
+  --   emit $ TacBinary tmp ">=" var to
+  --   emit $ TacIfZ tmp end
+  --   genStmt body
+  --   emit $ TacBinary var "-" var (TAC.ConstInt 1)
+  --   emit $ TacGoto start
+  --   emit $ TacLabel end
 
   -- If statement
   If cond thenStmt elseStmt _loc -> do
@@ -283,22 +317,30 @@ genStmt stmt = case stmt of
     val <- genRExpr expr
     emit $ TacReturn val
 
-  -- Break
-  BreakStmt _loc ->
-    emit $ TacComment "Break not implemented (needs loop context)"
+  -- Break statement
+  BreakStmt _loc -> do
+    endLabel <- getBreakLabel
+    emit $ TacGoto endLabel
 
   -- Continue
-  ContinueStmt _loc ->
-    emit $ TacComment "Continue not implemented (needs loop context)"
-
+  ContinueStmt _loc -> do
+    contLabel <- getContinueLabel
+    emit $ TacGoto contLabel
 
 
 
 
 -- main entry
+
+initState :: TACState
+initState = TACState
+  { tempCount = 0
+  , labelCount = 0
+  , breakLabels = []
+  , continueLabels = []
+  }
+
 genProgram :: EnrichedProgram -> [TAC]
 genProgram (Prog _ _ (Block _ _ _ (CompStmt stmts)) _) =
   let (_, code) = runWriter (evalStateT (mapM_ genStmt stmts) initState)
   in code
-  where
-    initState = TACState 0 0

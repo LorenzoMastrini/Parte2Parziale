@@ -1,8 +1,10 @@
-program TestFunzioniProcedure();
+program TestProcFun();
 
 var
     x: Integer;
-    y: Real;
+    y: String;
+    n: Integer;
+    res: Integer;
 
     procedure PrintInt(val: Integer);
     begin
@@ -11,27 +13,85 @@ var
 
     function Sum(a, b: Integer): Integer;
     begin
+        if true
+            then return a + b
+            else 0;                     // ERROR (MissingReturn)
+    end;
+
+    function SommaDue(a, b: Integer): Integer;
+    begin
         return a + b;
     end;
 
-    //function NoReturn(a: Integer);   // ERROR (Missing return type)
+    procedure PrintInt(val: Integer);   // ERROR (RedeclaredProcFun)
+    begin
+        return true;                    // ERROR (ReturnInsideProcedure)
+        0;
+    end;
+
+    procedure writeInt(val: Integer);   // ERROR (RedeclaredProcFun)
+    begin
+        0;
+    end;
+
+    // Ricorsione diretta
+    function Fattoriale(x: Integer): Integer;
+    begin
+        if x = 0 then return 1
+        else return x * Fattoriale(x - 1);
+    end;
+
+    // Mutua ricorsione
+    function Pari(x: Integer): Boolean;
+    begin
+        if x = 0 then return true
+        else return Dispari(x - 1);
+    end;
+
+    function Dispari(x: Integer): Boolean;
+    begin
+        if x = 0 then return false
+        else return Pari(x - 1);
+    end;
+
+    function UsaNonDefinita(x: Integer): Integer;
+    begin
+        return NonDefinita(x);          // ERROR (FunNotDefined)
+    end;
+
+    procedure ProcConReturn(x: Integer);
+    begin
+        return 1;                       // ERROR (ReturnInsideProcedure)
+    end;
+
+    function NessunReturn(x: Integer): Integer;
+    begin
+        x := x + 1;                     // ERROR (MissingReturn)
+    end;
+
+    //function NoReturn(a: Integer);    // SINTAX ERROR (Missing return type in function)
     //begin
     //    0;
     //end;
 
-    procedure PrintInt(val: Integer); // ERROR (RedeclaredProcFun)
-    begin
-        return true;
-        0;
-    end;
-
 begin
-    return 5;
     Sum(3, 4);
     PrintInt(x);
     Sum(2, (Sum(3, 2)));
-    Sum(1);                     // ERROR (FunArgNumMismatch)
-    Sum(1, 2, 3, 4, 5);         // ERROR (FunArgNumMismatch)
-    Sum(1, "hello");            // ERROR (FunArgTypeMismatch)
-    FunzioneNonDefinita(1);     // ERROR (FunNotDefined)
-end. 
+    Sum(1);                             // ERROR (FunArgNumMismatch)
+    Sum(1, 2, 3, 4, 5);                 // ERROR (FunArgNumMismatch)
+    Sum(1, "hello");                    // ERROR (FunArgTypeMismatch)
+    FunzioneNonDefinita(1);             // ERROR (FunNotDefined)
+
+    n := 5;
+    res := Fattoriale(n);
+    if Pari(n)
+        then res := res + 1;
+    if Dispari(n)
+        then res := res + 2;
+    res := SommaDue(1);                 // ERROR (FunArgNumMismatch)
+    res := SommaDue(1, 2, 3);           // ERROR (FunArgNumMismatch)
+    res := SommaDue(true, false);       // ERROR (FunArgTypeMismatch)
+    ProcConReturn(10);
+    UsaNonDefinita(3);
+end.

@@ -43,4 +43,5 @@ begin
     arr[2]^;        // ERROR (NotAPointer)
     b^;             // ERROR (NotAPointer)
     pmat^[4][1];    // ERROR (OutOfBound)
+    arr["ciao"];
 end.
