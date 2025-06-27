@@ -4,7 +4,6 @@ import System.IO ( stdin, hGetContents )
 import System.Environment ( getArgs, getProgName )
 import System.Exit ( exitFailure, exitSuccess )
 import Control.Monad (when)
-import Data.List
 import LexLinguaggio
 import ParLinguaggio
 import SkelLinguaggio
@@ -14,7 +13,6 @@ import PrintLinguaggio
 import PrettyPrinterTAC hiding (colorRed, colorGreen, colorYellow) 
 import StaticAnalysis
 import TACGen
---import TACGenerator
 import ErrM
 
 type Pos = (Int, Int)
@@ -36,84 +34,10 @@ run v p s = let ts = myLLexer s in case p ts of
                           putStrLn $ errorMsg s
                           exitFailure
            Ok tree  -> do putStrV v $ "\n" ++ colorGreen "[PARSING]: PASS\n" ++ show tree
-                          putStrV v typ
-                          putStrV v err
-                          --putStrNC v $ removeAnsi typ
-                          --putStrNC v $ removeAnsi err
                           let enriched = checkProgram tree
-                          putStrV v (StaticAnalysis.printEnv (fst enriched))
-                          putStrLn (prettyTree (snd enriched))
-                          --putStrV v (show (snd (staticAnalysis tree))) -- print the annotated
-                          --
-                          -- putStrT v (testingTAC (generateTAC tree) s)
-                          -- mapM_ print (genProgram (snd enriched))
-                          putStrLn (prettyTAC (genProgram (snd enriched)))
-                          --x <-testing tree s
-                          --putStrC v x
-                          --
-                          if nErr == 0 then
-                             do
-                             putStrV v silentAnalysis
-                             --putStrN v $ (infoMsg "TAC Generator\n")++(prettyTAC (generateTAC tree))
-                             --putStrNC v $ removeAnsi ((infoMsg "TAC Generator\n")++(prettyTAC (generateTAC tree)))
-                             --putStrV v $ (infoMsg "TAC State\n")++(printState $ genProgram tree)
-                            else
-                              exitSuccess
-                          exitSuccess
-                          where (typ,err,silentAnalysis, nErr) = showTree tree s
-
--- Helpers
-
-listPosition :: [String] -> [(String,Pos)] -> [(String, (String,Pos))]
-listPosition _ [] = []
-listPosition list (p:pos) =case snd p of
-  (0,0)     -> (list !! fst (snd p), p) : listPosition list pos
-  _ -> (list !! (fst (snd p) -1), p) : listPosition list pos
-
-printErrs errs = map printTypechekerError errs
-
-
-
-printTypechekerError :: (String , (String , Pos)) -> String
-printTypechekerError (code, (err, (_, col))) = case col == 0 of
-    False ->
-        err ++ "\n" ++
-        code ++ "\n" ++
-        underlineError ((replicate (col-1) '~' )++ "^")
-    True -> err ++ "\n"
-
-sortErr :: (String,(String,Pos)) -> (String,(String,Pos))-> Ordering
-sortErr (_,(_,p1)) (_,(_,p2)) = sortPos p1 p2
-  where sortPos (lin,col) (lin2,col2)
-          | lin < lin2 = LT
-          | lin > lin2 = GT
-          | lin == lin2 && col < col2 = LT
-          | otherwise = GT
-
-countError ::   [(String,Pos)] -> Int
-countError [] = 0
-countError ((x,_):xs) = if "[Error]:" `isInfixOf` x
-                        then 1 + countError xs
-                        else countError xs
-
-
-showTree :: Program () () () -> String -> (String,String,String,Int)
-showTree  tree s= (("\n" ++ infoMsg "Abstract Syntax Tree\n" ++
-                   {-prettyTree tree-}
-                   {-prettyTree tree-}
-                   {-prettyTree tree-}
-                   {-prettyTree tree-} "qua va il prettyTree") ++"\n", unlines (printErrs (sortBy sortErr (listPosition ["l", "i"] {-listTree-} [("error", (1,1))]{-envErrorsPos-})))++"\n" ++
-                   "numOfErrors", "silentAnalysis", 1 {-numOfErrors,silentAnalysis,errCount-})
-        {-where envErrorsPos = errors (rnbStaticAnalysis tree)
-              errCount = countError envErrorsPos
-              listTree = lines s
-              silentAnalysis | length envErrorsPos - errCount > 0 = colorYellow "[STATIC ANALYSIS]: PASS"
-                             | otherwise = colorGreen "[STATIC ANALYSIS]: PASS"
-              numOfErrors | length envErrorsPos ==0 = colorGreen "[STATIC ANALYSIS]: PASS"
-                          |  errCount == 0 =  (warningMsg ("Found "++ (show $ (length envErrorsPos - errCount)) ++ " warnigs."))
-                          |  otherwise =  ( errorMsg ("Found " ++ (show errCount)) ++ " errors"
-                                ++"\n"++warningMsg ("Found "++ (show $ (length envErrorsPos - errCount)) ++ " warnigs."))
-        -}
+                          putStrV v (StaticAnalysis.printEnv (fst enriched)) -- Print static analysis environment
+                          putStrLn (prettyTree (snd enriched)) -- Print enriched AST
+                          putStrLn (prettyTAC (genProgram (snd enriched))) -- Print TAC
 
 usage :: IO ()
 usage = do
@@ -137,7 +61,5 @@ main = do
   case args of
     ["--help"]      -> usage
     []              -> emptyInputError
-    --"--checkTAC":fs -> mapM_ (compile 5 pProgram) fs
     "-s":fs         -> mapM_ (compile 4 pProgram) fs
-    fs              -> mapM_ (compile 2 pProgram) fs
     fs              -> mapM_ (compile 2 pProgram) fs
