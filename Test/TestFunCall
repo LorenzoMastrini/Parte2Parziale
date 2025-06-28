@@ -72,7 +72,7 @@ begin
     sum(sum(1,2), 3);                       // Nested Function: (Integer, Integer -> Integer), Integer -> Integer
     concatenate(concatenate("a","b"), "c"); // Nested Function: (String, String -> String), String -> String
 
-    // ERROR CASES - Should generate "Incompatible types" errors [TypeError]
+    // ERROR CASES
     d();                    // ERROR (NotAFunction)
     h();                    // ERROR (FunNotDefined)
     sum("a", 2);            // String, Integer = ERROR (FunArgTypeMismatch)

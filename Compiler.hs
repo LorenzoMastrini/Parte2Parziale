@@ -8,11 +8,11 @@ import LexLinguaggio
 import ParLinguaggio
 import SkelLinguaggio
 import AbsLinguaggio
-import PrettyPrinter
+import PrettyPrinter (colorRed, colorGreen, errorMsg, prettyTree)
 import PrintLinguaggio
-import PrettyPrinterTAC (prettyTACabssynt) 
 import StaticAnalysis
 import TACGen
+import PrettyPrinterTAC (dumpTACRic) 
 import ErrM
 
 

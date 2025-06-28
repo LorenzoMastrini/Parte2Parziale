@@ -5,27 +5,30 @@ import qualified Data.Map as Map
 import AbsLinguaggio
 import TACabssynt
 import Control.Monad.State
-import Control.Monad.Writer
+import Data.Functor.Identity (Identity)
+
+
 
 data TACState = TACState {
     tempCounter :: Int,
     labelCounter :: Int,
-    breakLabels :: [TACLabel],      
-    continueLabels :: [TACLabel]    
+    breakLabels :: [TACLabel],
+    continueLabels :: [TACLabel],
+    stringCounter :: Int,                   -- counter for string addresses
+    stringTable :: Map.Map String String    -- table for constant strings
 }
 
-type TACGen a = StateT TACState (Writer [TAC TACLabel]) a
+type TACGen a = StateT TACState Identity a
 
-initialTacState :: TACState
-initialTacState = TACState 0 0 [] []
-
+initialTACState :: TACState
+initialTACState = TACState 0 0 [] [] 0 Map.empty
 
 newtemp :: TACType -> TACGen Address
-newtemp t = do
+newtemp tacTy = do
     state <- get
     let newCounter = tempCounter state + 1
     put (state { tempCounter = newCounter })
-    return $ int2AddrTempName (newCounter - 1) t
+    return $ Temporary (newCounter - 1) tacTy
 
 newlabel :: TACGen TACLabel
 newlabel = do
@@ -34,6 +37,15 @@ newlabel = do
     put (state { labelCounter = newCounter })
     return (newCounter - 1)
 
+-- Generate new unic address for a string
+newStringAddress :: String -> TACGen String
+newStringAddress str = do
+    state <- get
+    let cs = stringCounter state
+        strAddr = "str" ++ show cs
+        newTable = Map.insert str strAddr (stringTable state)
+    put state { stringCounter = cs + 1, stringTable = newTable }
+    return strAddr
 
 pushBreakLabel :: TACLabel -> TACGen ()
 pushBreakLabel label = do
@@ -63,5 +75,44 @@ popContinueLabel = do
             return label
         [] -> error "No continue label available"
 
-int2Label :: Int -> TACLabel
-int2Label = id
+tryPopBreakLabel :: TACGen (Maybe TACLabel)
+tryPopBreakLabel = do
+    state <- get
+    case breakLabels state of
+        (label:rest) -> do
+            put (state { breakLabels = rest })
+            return (Just label)
+        [] -> return Nothing
+
+tryPopContinueLabel :: TACGen (Maybe TACLabel)
+tryPopContinueLabel = do
+    state <- get
+    case continueLabels state of
+        (label:rest) -> do
+            put (state { continueLabels = rest })
+            return (Just label)
+        [] -> return Nothing
+
+
+
+-----------------------------------------------------------
+-------------------- SUPPORT FUNCTIONS --------------------
+-----------------------------------------------------------
+
+-- Convert Maybe SimpleType in TACType
+getTACType :: Maybe SimpleType -> TACType
+getTACType (Just (BasicType t)) = case t of
+  Integer   -> TACInteger
+  Real      -> TACReal
+  Character -> TACCharacter
+  Boolean   -> TACBoolean
+  String    -> TACAddr
+  _         -> TACError
+getTACType (Just (Pointer _)) = TACAddr
+getTACType (Just (Array _ _)) = TACAddr
+getTACType Nothing = TACError  -- default fallback
+
+-- Extract BasicType from a (Maybe SimpleType)
+getBasicType :: Maybe SimpleType -> BasicType
+getBasicType (Just (BasicType t)) = t
+getBasicType _ = Void  -- default fallback (error)

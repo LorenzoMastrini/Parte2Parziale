@@ -2,22 +2,28 @@ module TACabssynt where
 
 import AbsLinguaggio
 
+
+
+type TACLabel = Int
+
 data TACType
     = TACInteger
     | TACReal
     | TACBoolean
     | TACCharacter
-    | TACString [TACType]-- rappresentato come [TACCharacter]
-    | TACPointer
-    | TACArray
+    | TACAddr
     | TACError
     deriving (Show)
 
-type TACLabel = Int
+data XAddr
+    = Addr Address
+    | ArrayAddr { base :: Address, offset :: Address }
+    | RefAddr Address
+    deriving (Show)
 
 data Address
     = ProgVar { progVar :: TacProgVariable, addrT :: TACType }
-    | TacLit { tacLit :: Literal, addrT :: TACType }
+    | TACLit { tacLit :: Literal, addrT :: TACType }
     | Temporary { tempInt :: Int, addrT :: TACType }
     deriving (Show)
 
@@ -28,16 +34,10 @@ data TacProgVariable = TacProgVar {
     varBasicType :: BasicType
 } deriving (Show)
 
-data XAddr
-    = Addr Address
-    | ArrayAddr{base :: Address, offset :: Address}
-    | RefAddr Address
-    deriving (Show)
-
 data TAC label
-    = TACBinaryAss Address Binary BasicType Address Address
-    | TACUnaryAss Address Unary BasicType Address
-    | TACNullaryAss Address BasicType Address
+    = TACBinary Address Binary BasicType Address Address
+    | TACUnary Address Unary BasicType Address
+    | TACNullary Address BasicType Address
     | TACGoto TACLabel
     | TACIf Address TACLabel
     | TACIfFalse Address TACLabel
@@ -54,9 +54,3 @@ data TAC label
     | TACReturn
     | TACReturnVal Address
     | TACAddLabel TACLabel
-    -- | TACRefAss      -- “l = &id ”
-    -- | TACRDerefAss   -- “l1 = ∗l2 ”
-    -- | TACLDerefAss   -- “∗l = r” 
-
-int2AddrTempName :: Int -> TACType -> Address
-int2AddrTempName n t = Temporary n t

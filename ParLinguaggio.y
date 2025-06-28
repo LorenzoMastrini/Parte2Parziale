@@ -298,7 +298,7 @@ Literal
   | Char { AbsLinguaggio.LiteralChar $1 }
   | String { AbsLinguaggio.LiteralString $1 }
   | 'true' { AbsLinguaggio.Literal_true }
-  | 'false' { AbsLinguaggio.Literal_false }
+  | 'false' { AbsLinguaggio.Literal_false  }
 
 Unary :: { AbsLinguaggio.Unary }
 Unary
