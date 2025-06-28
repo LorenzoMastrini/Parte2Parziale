@@ -15,7 +15,7 @@ ALEX_OPTS  = --ghc
 all : Compiler
 	happy -gca ParLinguaggio.y
 	alex -g LexLinguaggio.x
-	ghc --make AbsLinguaggio.hs Compiler.hs ErrM.hs LexLinguaggio.hs ParLinguaggio.hs PrettyPrinter.hs PrintLinguaggio.hs  SkelLinguaggio.hs -o linguaggio
+	ghc --make AbsLinguaggio.hs Compiler.hs ErrM.hs LexLinguaggio.hs ParLinguaggio.hs PrettyPrinter.hs PrettyPrinterTAC.hs PrintLinguaggio.hs SkelLinguaggio.hs TACabssynt.hs TACGen.hs TACMonad.hs -o linguaggio
 	-rm -f *.log *.aux *.dvi *.bak
 
 # Rules for building the parser.

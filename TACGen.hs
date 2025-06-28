@@ -6,17 +6,11 @@ import Control.Monad.Writer
 import TACabssynt
 import TACMonad
 
-
-
---type TACGen a = StateT TacState (Writer [TAC]) a
-
-
-
-emit :: TAC TacLabel -> TACGen ()
+emit :: TAC TACLabel -> TACGen ()
 emit tac = tell [tac]
 
 emitArg :: Address -> TACGen () 
-emitArg operand = emit (TacParam operand)
+emitArg operand = emit (TACParam operand)
 
 -- basic expression gen
 genRExpr :: EnrichedRExpr -> TACGen Address
@@ -27,40 +21,37 @@ genRExpr expr = case expr of
   FCall ident rexpr loc -> genFCall ident rexpr loc
   Ref unary rexpr ty -> genRef unary rexpr 
   LExpr lexpr ty -> genLExpr lexpr
--- genRExpr (Lit (LiteralInteger i) _) = return $ TAC.ConstInt i
--- genRExpr (Lit Literal_true _)       = return $ TAC.ConstBool True
--- genRExpr (Lit Literal_false _)      = return $ TAC.ConstBool False
-  
-
 
 genLExpr :: EnrichedLExpr -> TACGen Address
-genLExpr (LId (Ident name _ _ _ _) _) = do
+genLExpr (LId (Ident name loc _ varInfo _) ty) = do
   -- this is just a variable like `x`
-  return $ Var name
+  -- We need to create a ProgVar from the identifier
+  let varInfo = TacProgVar (Ident name loc () () ()) True ByVal Integer  -- Default values, should be extracted from context
+  return $ ProgVar varInfo TACInteger
 genLExpr (LArr baseExpr indices ty _) = do
   -- like `arr[i][j]`
   baseAddr <- genLExpr baseExpr
   indexAddrs <- mapM genRExpr indices
   -- you might need to compute offset based on types and dimensions
   temp <- newtemp (getTacType ty)
-  emit $ TacArrayAccess temp baseAddr (head indexAddrs)
+  -- Use TACIndexedLoad instead of TACArrayAccess
+  let varInfo = TacProgVar (Ident "" (Loc 0 0) () () ()) True ByVal Integer  -- This should be extracted from baseExpr
+  emit $ TACIndexedLoad temp varInfo (head indexAddrs)
   return $ temp
 genLExpr (LDeref ptrExpr ty _) = do
   addr <- genLExpr ptrExpr
   temp <- newtemp (getTacType ty)
-  emit $ TacDeref temp addr
+  -- Use TACDerefRead instead of TACDeref
+  emit $ TACDerefRead temp addr
   return $ temp
 
-
-genOptElse :: OptElse (Maybe SimpleType) VarInfo FunInfo -> TACGen TacLabel
+genOptElse :: OptElse (Maybe SimpleType) VarInfo FunInfo -> TACGen TACLabel
 genOptElse NoElse = newlabel  -- generate a dummy label to jump over
 genOptElse (Else stmt) = do
   elseLabel <- newlabel
-  emit $ TacAddLabel elseLabel
+  emit $ TACAddLabel elseLabel
   genStmt stmt
   return elseLabel
-
-
 
 genUnary :: Unary -> EnrichedRExpr -> TACGen Address
 genUnary op operand@(Unary _ _ ty) = do
@@ -69,44 +60,43 @@ genUnary op operand@(Unary _ _ ty) = do
   case op of
     UnaryPlus _loc ->
       -- Unary plus is usually a no-op
-      emit $ TacUnary rexpr (UnaryPlus _loc) (getBasicType ty) result
+      emit $ TACUnaryAss rexpr (UnaryPlus _loc) (getBasicType ty) result
 
     UnaryMinus _loc -> do
-      emit $ TacUnary rexpr (UnaryMinus _loc) (getBasicType ty) result
+      emit $ TACUnaryAss rexpr (UnaryMinus _loc) (getBasicType ty) result
 
     UnaryNot _loc -> do
-      emit $ TacUnary rexpr (UnaryNot _loc) (getBasicType ty) result
+      emit $ TACUnaryAss rexpr (UnaryNot _loc) (getBasicType ty) result
 
     UnaryRef _loc -> do
-      emit $ TacUnary rexpr (UnaryRef _loc) (getBasicType ty) result 
-
+      emit $ TACUnaryAss rexpr (UnaryRef _loc) (getBasicType ty) result 
 
   return result 
-
 
 genBin :: Binary -> EnrichedRExpr -> EnrichedRExpr -> Maybe SimpleType -> TACGen Address
 genBin binOp leftOp rightOp ty = do
   temp <- newtemp (getTacType ty) -- generate a fresh temporary to hold the result
   left <- genRExpr leftOp
   right <- genRExpr rightOp
-  let op = getBinaryOp binOp
+  emit $ TACBinaryAss temp binOp (getBasicType ty) left right -- binOp already distinguish between each case
+  {-
   case binOp of
-    BinaryPlus loc    -> emit $ TacBinary temp (BinaryPlus loc) (getBasicType ty) left right
-    BinaryMinus loc   -> emit $ TacBinary temp (BinaryMinus loc) (getBasicType ty) left right
-    BinaryMul loc     -> emit $ TacBinary temp (BinaryMul loc) (getBasicType ty) left right
-    BinaryDiv loc     -> emit $ TacBinary temp (BinaryDiv loc) (getBasicType ty) left right
-    BinaryIntDiv loc  -> emit $ TacBinary temp (BinaryIntDiv loc) (getBasicType ty) left right
-    BinaryMod loc     -> emit $ TacBinary temp (BinaryMod loc) (getBasicType ty) left right
-    BinaryOr loc      -> emit $ TacBinary temp (BinaryOr loc) (getBasicType ty) left right
-    BinaryAnd loc     -> emit $ TacBinary temp (BinaryAnd loc) (getBasicType ty) left right
-    BinaryEq loc      -> emit $ TacBinary temp (BinaryEq loc) (getBasicType ty) left right
-    BinaryNeq loc     -> emit $ TacBinary temp (BinaryNeq loc) (getBasicType ty) left right
-    BinaryLt loc      -> emit $ TacBinary temp (BinaryLt loc) (getBasicType ty) left right
-    BinaryLte loc     -> emit $ TacBinary temp (BinaryLte loc) (getBasicType ty) left right
-    BinaryGt loc      -> emit $ TacBinary temp (BinaryGt loc) (getBasicType ty) left right
-    BinaryGte loc     -> emit $ TacBinary temp (BinaryGte loc) (getBasicType ty) left right
+    BinaryPlus loc    -> emit $ TACBinaryAss temp binOp (getBasicType ty) left right
+    BinaryMinus loc   -> emit $ TACBinaryAss temp binOp (getBasicType ty) left right
+    BinaryMul loc     -> emit $ TACBinaryAss temp binOp (getBasicType ty) left right
+    BinaryDiv loc     -> emit $ TACBinaryAss temp binOp (getBasicType ty) left right
+    BinaryIntDiv loc  -> emit $ TACBinaryAss temp binOp (getBasicType ty) left right
+    BinaryMod loc     -> emit $ TACBinaryAss temp binOp (getBasicType ty) left right
+    BinaryOr loc      -> emit $ TACBinaryAss temp binOp (getBasicType ty) left right
+    BinaryAnd loc     -> emit $ TACBinaryAss temp binOp (getBasicType ty) left right
+    BinaryEq loc      -> emit $ TACBinaryAss temp binOp (getBasicType ty) left right
+    BinaryNeq loc     -> emit $ TACBinaryAss temp binOp (getBasicType ty) left right
+    BinaryLt loc      -> emit $ TACBinaryAss temp binOp (getBasicType ty) left right
+    BinaryLte loc     -> emit $ TACBinaryAss temp binOp (getBasicType ty) left right
+    BinaryGt loc      -> emit $ TACBinaryAss temp binOp (getBasicType ty) left right
+    BinaryGte loc     -> emit $ TACBinaryAss temp binOp (getBasicType ty) left right
+  -}
   return temp
-
 
 genFCall :: EnrichedIdent -> [EnrichedRExpr] -> Loc -> TACGen Address
 genFCall ident@(Ident _ _ ty _ _) rexprs loc = do 
@@ -117,7 +107,10 @@ genFCall ident@(Ident _ _ ty _ _) rexprs loc = do
   
   -- Emit the call instruction, result in a fresh temporary
   result <- newtemp (getTacType ty)
-  emit $ TacFCall (identToOperand ident) argOperands result
+  -- Fix TACFCall constructor: it takes Address, TACLabel, Int
+  let funcAddr = identToOperand ident
+  let numArgs = length argOperands
+  emit $ TACFCall funcAddr 0 numArgs  -- Using 0 as default label, numArgs as the count
   
   -- Return the temp holding the call result
   return result
@@ -125,38 +118,21 @@ genFCall ident@(Ident _ _ ty _ _) rexprs loc = do
 genRef :: Unary -> EnrichedRExpr -> TACGen Address
 genRef unaryOp operandExpr = genUnary unaryOp operandExpr 
 
-
 identToOperand :: EnrichedIdent -> Address
-identToOperand (Ident name _ _ _ _loc) = TAC.Var name  -- or some constructor like `Temp name`, if needed
-
-getBinaryOp :: Binary -> String
-getBinaryOp (BinaryPlus _)  = "+"
-getBinaryOp (BinaryMinus _) = "-"
-getBinaryOp (BinaryMul _)   = "*"
-getBinaryOp (BinaryDiv _)   = "/"
-getBinaryOp (BinaryIntDiv _) = "div"
-getBinaryOp (BinaryMod _)   = "mod"
-getBinaryOp (BinaryAnd _)   = "and"
-getBinaryOp (BinaryOr _)    = "or"
-getBinaryOp (BinaryEq _)    = "=="
-getBinaryOp (BinaryNeq _)   = "!="
-getBinaryOp (BinaryLt _)    = "<"
-getBinaryOp (BinaryLte _)   = "<="
-getBinaryOp (BinaryGt _)    = ">"
-getBinaryOp (BinaryGte _)   = ">="
-
+identToOperand (Ident name _ _ _ _loc) = 
+  let varInfo = TacProgVar (Ident name (Loc 0 0) () () ()) True ByVal Integer  -- Default values, should be extracted from context
+  in ProgVar varInfo TACInteger
 
 genLit :: Literal -> TACGen Address
 genLit lit = case lit of
-  LiteralInteger i -> return $ TAC.ConstInt i
-  LiteralDouble d  -> return $ TAC.ConstDouble d
-  LiteralChar c    -> return $ TAC.ConstChar c
-  LiteralString s  -> return $ TAC.Var s
-  Literal_true     -> return $ TAC.ConstBool True
-  Literal_false    -> return $ TAC.ConstBool False
+  LiteralInteger i -> return $ TacLit (LiteralInteger i) TACInteger
+  LiteralDouble d  -> return $ TacLit (LiteralDouble d) TACReal
+  LiteralChar c    -> return $ TacLit (LiteralChar c) TACCharacter
+  LiteralString s  -> return $ TacLit (LiteralString s) (TACString [TACCharacter])
+  Literal_true     -> return $ TacLit Literal_true TACBoolean
+  Literal_false    -> return $ TacLit Literal_false TACBoolean
 
 -- assignment and statements
-
 -- genStmt :: EnrichedStatement -> TACGen ()
 -- genStmt (Assign (LId (Ident name _ _ _ _) _) expr _ _) = do
 --   rhs <- genRExpr expr
@@ -168,7 +144,6 @@ genLit lit = case lit of
 --
 -- genStmt (Stmts (CompStmt stmts)) = mapM_ genStmt stmts
 -- genStmt _ = error "Unhandled statement for now"
-
 
 genStmt :: EnrichedStatement -> TACGen ()
 genStmt stmt = case stmt of
@@ -186,7 +161,7 @@ genStmt stmt = case stmt of
   Assign lexpr rexpr _ty _loc -> do
     src <- genRExpr rexpr
     dst <- genLExpr lexpr
-    emit $ TacAssign dst src
+    emit $ TACAssign dst src
 
   -- While loop
   While cond body _loc -> do
@@ -194,12 +169,12 @@ genStmt stmt = case stmt of
     condFalse <- newlabel
     pushBreakLabel condFalse
     pushContinueLabel start
-    emit $ TacAddLabel start
+    emit $ TACAddLabel start
     condOp <- genRExpr cond
-    emit $ TacIfFalse condOp condFalse
+    emit $ TACIfFalse condOp condFalse
     genStmt body
-    emit $ TacGoto start
-    emit $ TacAddLabel condFalse
+    emit $ TACGoto start
+    emit $ TACAddLabel condFalse
 
   -- Do-while loop
   DoWhile body cond _loc -> do
@@ -207,12 +182,12 @@ genStmt stmt = case stmt of
     end <- newlabel 
     pushBreakLabel end
     pushContinueLabel start
-    emit $ TacAddLabel start
+    emit $ TACAddLabel start
     genStmt body
     condOp <- genRExpr cond
-    emit $ TacIfFalse condOp end
-    emit $ TacGoto start
-    emit $ TacAddLabel end
+    emit $ TACIfFalse condOp end
+    emit $ TACGoto start
+    emit $ TACAddLabel end
 
   -- For loop (increasing)
   --ForTo lexpr fromExpr toExpr body -> do
@@ -223,43 +198,26 @@ genStmt stmt = case stmt of
     -- emit $ TacAssign var from
     -- start <- newLabel
     -- end <- newLabel
-    -- emit $ TacLabel start
+    -- emit $ TACLabel start
     -- tmp <- newTemp
     -- emit $ TacBinary tmp "<=" var to
     -- emit $ TacIfZ tmp end
     -- genStmt body
     -- emit $ TacBinary var "+" var (TAC.ConstInt 1)
     -- emit $ TacGoto start
-    -- emit $ TacLabel end
-
-  -- -- For loop (decreasing)
-  -- ForDownTo lexpr fromExpr toExpr body -> do
-  --   var <- genLExpr lexpr
-  --   from <- genRExpr fromExpr
-  --   to <- genRExpr toExpr
-  --   emit $ TacAssign var from
-  --   start <- newLabel
-  --   end <- newLabel
-  --   emit $ TacLabel start
-  --   tmp <- newTemp
-  --   emit $ TacBinary tmp ">=" var to
-  --   emit $ TacIfZ tmp end
-  --   genStmt body
-  --   emit $ TacBinary var "-" var (TAC.ConstInt 1)
-  --   emit $ TacGoto start
-  --   emit $ TacLabel end
+    -- emit $ TACLabel end
 
   -- If statement
   If cond thenStmt elseStmt _loc -> do
     elseLabel <- newlabel
     endLabel <- newlabel
     condOp <- genRExpr cond
-    emit $ TacIfFalse condOp elseLabel
+    emit $ TACIfFalse condOp elseLabel
     genStmt thenStmt
-    emit $ TacGoto endLabel
-    emit $ TacAddLabel elseLabel
+    emit $ TACGoto endLabel
+    emit $ TACAddLabel elseLabel
     genOptElse elseStmt
-    emit $ TacAddLabel endLabel
+    emit $ TACAddLabel endLabel
 
   -- Case statement (not implemented yet)
   --Case expr items -> do
@@ -268,44 +226,49 @@ genStmt stmt = case stmt of
   -- Return statement
   ReturnStmt expr _ty _loc -> do
     val <- genRExpr expr
-    emit $ TacReturnVal val
+    emit $ TACReturnVal val
 
   -- Break statement
   BreakStmt _loc -> do
     endLabel <- popBreakLabel
-    emit $ TacGoto endLabel
+    emit $ TACGoto endLabel
 
   -- Continue
   ContinueStmt _loc -> do
     contLabel <- popContinueLabel
-    emit $ TacGoto contLabel
+    emit $ TACGoto contLabel
 
 
-
-
+    
 -- main entry
 
-initState :: TacState
-initState = TacState
+initState :: TACState
+initState = TACState
   { tempCounter = 0
   , labelCounter = 0
   , breakLabels = []
   , continueLabels = []
   }
 
-genProgram :: EnrichedProgram -> [TAC TacLabel]
+genProgram :: EnrichedProgram -> [TAC TACLabel]
 genProgram (Prog _ _ (Block _ _ _ (CompStmt stmts)) _) =
   let (_, code) = runWriter (evalStateT (mapM_ genStmt stmts) initState)
   in code
 
--- Converte Maybe SimpleType in TacType (BasicType)
-getTacType :: Maybe SimpleType -> TacType
+
+
+-----------------------------------------------------------
+-------------------- SUPPORT FUNCTIONS --------------------
+-----------------------------------------------------------
+
+-- Convert Maybe SimpleType in TACType
+getTacType :: Maybe SimpleType -> TACType
 getTacType (Just (BasicType t)) = case t of
   Integer -> TACInteger
   Real -> TACReal
   Character -> TACCharacter
   Boolean -> TACBoolean
-  String -> TACString
+  String -> TACString [TACCharacter]
   _ -> TACError
 getTacType (Just (Pointer _)) = TACPointer 
 getTacType (Just (Array _ _)) = TACArray
@@ -314,4 +277,22 @@ getTacType Nothing = TACError  -- default fallback
 -- Estrae il BasicType da un Maybe SimpleType
 getBasicType :: Maybe SimpleType -> BasicType
 getBasicType (Just (BasicType t)) = t
-getBasicType _ = Integer  -- default fallback
+getBasicType _ = Void  -- default fallback (error)
+
+{-
+getBinaryOp :: Binary -> String
+getBinaryOp (BinaryPlus _)  = "+"
+getBinaryOp (BinaryMinus _) = "-"
+getBinaryOp (BinaryMul _)   = "*"
+getBinaryOp (BinaryDiv _)   = "/"
+getBinaryOp (BinaryIntDiv _) = "div"
+getBinaryOp (BinaryMod _)   = "mod"
+getBinaryOp (BinaryAnd _)   = "and"
+getBinaryOp (BinaryOr _)    = "or"
+getBinaryOp (BinaryEq _)    = "=="
+getBinaryOp (BinaryNeq _)   = "!="
+getBinaryOp (BinaryLt _)    = "<"
+getBinaryOp (BinaryLte _)   = "<="
+getBinaryOp (BinaryGt _)    = ">"
+getBinaryOp (BinaryGte _)   = ">="
+-}

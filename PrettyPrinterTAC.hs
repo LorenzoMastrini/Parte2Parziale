@@ -1,6 +1,6 @@
 module PrettyPrinterTAC where
 
-import TAC
+import qualified TACabssynt
 import AbsLinguaggio
 
 -- Color helpers (copied from PrettyPrinter.hs)
@@ -38,61 +38,86 @@ underlineYel x = "\x001b[33;4m" ++ x ++ "\x1b[37;0m"++"\x1b[37;1m"
 defaultShowLoc :: Loc -> String
 defaultShowLoc (Loc l c) = "(line: " ++ show l ++ ", column: " ++ show c ++ ")"
 
--- Pretty print Operand
-prettyOperand :: Operand -> String
-prettyOperand op = case op of
-  TAC.Temp n        -> colorCyan ("t" ++ show n)
-  TAC.ConstInt i    -> colorYellow (show i)
-  TAC.ConstDouble d -> colorYellow (show d)
-  TAC.ConstChar c   -> colorMagenta ("'" ++ [c] ++ "'")
-  TAC.ConstBool b   -> colorMagenta (show b)
-  TAC.Var s         -> colorBlue s
+-- Pretty print Address
+prettyAddress :: TACabssynt.Address -> String
+prettyAddress addr = case addr of
+  TACabssynt.ProgVar varInfo _ -> colorBlue (show (TACabssynt.varName varInfo))
+  TACabssynt.TacLit lit _ -> case lit of
+    LiteralInteger i -> colorYellow (show i)
+    LiteralDouble d -> colorYellow (show d)
+    LiteralChar c -> colorMagenta ("'" ++ [c] ++ "'")
+    LiteralString s -> colorMagenta ("\"" ++ s ++ "\"")
+    Literal_true -> colorMagenta "true"
+    Literal_false -> colorMagenta "false"
+  TACabssynt.Temporary n _ -> colorCyan ("t" ++ show n)
 
--- Safe init and last for non-empty lists
-safeInit :: [a] -> [a]
-safeInit [] = []
-safeInit xs = take (length xs - 1) xs
+-- Pretty print Binary operator
+prettyBinary :: Binary -> String
+prettyBinary bin = case bin of
+  BinaryPlus _ -> "+"
+  BinaryMinus _ -> "-"
+  BinaryMul _ -> "*"
+  BinaryDiv _ -> "/"
+  BinaryIntDiv _ -> "div"
+  BinaryMod _ -> "mod"
+  BinaryOr _ -> "or"
+  BinaryAnd _ -> "and"
+  BinaryEq _ -> "=="
+  BinaryNeq _ -> "!="
+  BinaryLt _ -> "<"
+  BinaryLte _ -> "<="
+  BinaryGt _ -> ">"
+  BinaryGte _ -> ">="
 
-safeLast :: [a] -> a
-safeLast [] = error "safeLast: empty list"
-safeLast xs = xs !! (length xs - 1)
+-- Pretty print Unary operator
+prettyUnary :: Unary -> String
+prettyUnary unary = case unary of
+  UnaryPlus _ -> "+"
+  UnaryMinus _ -> "-"
+  UnaryNot _ -> "not"
+  UnaryRef _ -> "&"
 
--- Pretty print a list of operands
-prettyOperands :: [Operand] -> String
-prettyOperands ops = case ops of
-  [] -> ""
-  [x] -> prettyOperand x
-  xs -> concatMap (\o -> prettyOperand o ++ ", ") (safeInit xs) ++ prettyOperand (safeLast xs)
+-- Pretty print TACabssynt.TAC
+prettyTACabssynt :: [TACabssynt.TAC TACabssynt.TACLabel] -> String
+prettyTACabssynt = unlines . map prettyTACabssyntInstr
 
--- Pretty print TAC
-prettyTAC :: [TAC] -> String
-prettyTAC = unlines . map prettyTACInstr
-
-prettyTACInstr :: TAC -> String
-prettyTACInstr tac = case tac of
-  TacBinary dst op src1 src2 ->
-    colorGreen (prettyOperand dst) ++ " = " ++ colorYellow op ++ " " ++ prettyOperand src1 ++ ", " ++ prettyOperand src2
-  TacUnary op src dst ->
-    colorGreen (prettyOperand dst) ++ " = " ++ colorYellow op ++ " " ++ prettyOperand src
-  TacAssign dst src ->
-    colorGreen (prettyOperand dst) ++ " = " ++ prettyOperand src
-  TacLabel lbl ->
-    colorMagenta (lbl ++ ":")
-  TacGoto lbl ->
-    colorCyan ("goto ") ++ colorMagenta lbl
-  TacIfZ cond lbl ->
-    colorRed ("ifz ") ++ prettyOperand cond ++ colorRed (" goto ") ++ colorMagenta lbl
-  TacReturn op ->
-    colorGreen "return " ++ prettyOperand op
-  TacUnimplemented msg ->
-    colorRed "[Unimplemented] " ++ colorGrey msg
-  TacCall fun args dst loc ->
-    colorGreen (prettyOperand dst) ++ " = " ++ colorCyan "call " ++ prettyOperand fun ++ "(" ++ prettyOperands args ++ ") " ++ colorGrey (defaultShowLoc loc)
-  TacArrayAccess dst base indices ->
-    colorGreen (prettyOperand dst) ++ " = " ++ prettyOperand base ++ "[" ++ prettyOperands indices ++ "]"
-  TacDeref dst addr ->
-    colorGreen (prettyOperand dst) ++ " = *" ++ prettyOperand addr
-  TacComment msg ->
-    colorGrey ("// " ++ msg)
-  TacArg op ->
-    colorCyan "arg " ++ prettyOperand op
+prettyTACabssyntInstr :: TACabssynt.TAC TACabssynt.TACLabel -> String
+prettyTACabssyntInstr tac = case tac of
+  TACabssynt.TACBinaryAss dst binOp basicType src1 src2 ->
+    colorGreen (prettyAddress dst) ++ " = " ++ colorYellow (prettyBinary binOp) ++ " " ++ prettyAddress src1 ++ ", " ++ prettyAddress src2
+  TACabssynt.TACUnaryAss dst unaryOp basicType src ->
+    colorGreen (prettyAddress dst) ++ " = " ++ colorYellow (prettyUnary unaryOp) ++ " " ++ prettyAddress src
+  TACabssynt.TACNullaryAss dst basicType src ->
+    colorGreen (prettyAddress dst) ++ " = " ++ prettyAddress src
+  TACabssynt.TACGoto label ->
+    colorCyan ("goto ") ++ colorMagenta (show label)
+  TACabssynt.TACIf cond label ->
+    colorRed ("if ") ++ prettyAddress cond ++ colorRed (" goto ") ++ colorMagenta (show label)
+  TACabssynt.TACIfFalse cond label ->
+    colorRed ("ifz ") ++ prettyAddress cond ++ colorRed (" goto ") ++ colorMagenta (show label)
+  TACabssynt.TACIfRel cond binOp addr label ->
+    colorRed ("if ") ++ prettyAddress cond ++ " " ++ prettyBinary binOp ++ " " ++ prettyAddress addr ++ colorRed (" goto ") ++ colorMagenta (show label)
+  TACabssynt.TACIndexedLoad dst varInfo addr ->
+    colorGreen (prettyAddress dst) ++ " = " ++ show (TACabssynt.varName varInfo) ++ "[" ++ prettyAddress addr ++ "]"
+  TACabssynt.TACIndexedStore varInfo addr src ->
+    show (TACabssynt.varName varInfo) ++ "[" ++ prettyAddress addr ++ "] = " ++ prettyAddress src
+  TACabssynt.TACAddrOf dst varInfo ->
+    colorGreen (prettyAddress dst) ++ " = &" ++ show (TACabssynt.varName varInfo)
+  TACabssynt.TACAssign dst src ->
+    colorGreen (prettyAddress dst) ++ " = " ++ prettyAddress src
+  TACabssynt.TACDerefRead dst addr ->
+    colorGreen (prettyAddress dst) ++ " = *" ++ prettyAddress addr
+  TACabssynt.TACDerefWrite addr src ->
+    "*" ++ prettyAddress addr ++ " = " ++ prettyAddress src
+  TACabssynt.TACParam operand ->
+    colorCyan "param " ++ prettyAddress operand
+  TACabssynt.TACPCall label numArgs ->
+    colorCyan "pcall " ++ colorMagenta (show label) ++ " " ++ show numArgs
+  TACabssynt.TACFCall funcAddr label numArgs ->
+    colorCyan "fcall " ++ prettyAddress funcAddr ++ " " ++ colorMagenta (show label) ++ " " ++ show numArgs
+  TACabssynt.TACReturn ->
+    colorGreen "return"
+  TACabssynt.TACReturnVal operand ->
+    colorGreen "return " ++ prettyAddress operand
+  TACabssynt.TACAddLabel label ->
+    colorMagenta (show label ++ ":")

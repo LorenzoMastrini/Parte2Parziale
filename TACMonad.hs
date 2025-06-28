@@ -1,35 +1,33 @@
-module TACMonad (
-    module TACMonad
-) where
+module TACMonad where
 
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import AbsLinguaggio
 import TACabssynt
 import Control.Monad.State
+import Control.Monad.Writer
 
-
-data TacState = TacState {
+data TACState = TACState {
     tempCounter :: Int,
     labelCounter :: Int,
-    breakLabels :: [TacLabel],      
-    continueLabels :: [TacLabel]    
+    breakLabels :: [TACLabel],      
+    continueLabels :: [TACLabel]    
 }
 
-type TACGen a = State TacState a
+type TACGen a = StateT TACState (Writer [TAC TACLabel]) a
 
-initialTacState :: TacState
-initialTacState = TacState 0 0 [] []
+initialTacState :: TACState
+initialTacState = TACState 0 0 [] []
 
 
-newtemp :: TacType -> TACGen Address
+newtemp :: TACType -> TACGen Address
 newtemp t = do
     state <- get
     let newCounter = tempCounter state + 1
     put (state { tempCounter = newCounter })
     return $ int2AddrTempName (newCounter - 1) t
 
-newlabel :: TACGen TacLabel
+newlabel :: TACGen TACLabel
 newlabel = do
     state <- get
     let newCounter = labelCounter state + 1
@@ -37,12 +35,12 @@ newlabel = do
     return (newCounter - 1)
 
 
-pushBreakLabel :: TacLabel -> TACGen ()
+pushBreakLabel :: TACLabel -> TACGen ()
 pushBreakLabel label = do
     state <- get
     put (state { breakLabels = label : breakLabels state })
 
-popBreakLabel :: TACGen TacLabel
+popBreakLabel :: TACGen TACLabel
 popBreakLabel = do
     state <- get
     case breakLabels state of
@@ -51,12 +49,12 @@ popBreakLabel = do
             return label
         [] -> error "No break label available"
 
-pushContinueLabel :: TacLabel -> TACGen ()
+pushContinueLabel :: TACLabel -> TACGen ()
 pushContinueLabel label = do
     state <- get
     put (state { continueLabels = label : continueLabels state })
 
-popContinueLabel :: TACGen TacLabel
+popContinueLabel :: TACGen TACLabel
 popContinueLabel = do
     state <- get
     case continueLabels state of
@@ -65,5 +63,5 @@ popContinueLabel = do
             return label
         [] -> error "No continue label available"
 
-int2Label :: Int -> TacLabel
+int2Label :: Int -> TACLabel
 int2Label = id

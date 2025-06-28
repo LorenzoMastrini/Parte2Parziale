@@ -10,12 +10,13 @@ import SkelLinguaggio
 import AbsLinguaggio
 import PrettyPrinter
 import PrintLinguaggio
-import PrettyPrinterTAC hiding (colorRed, colorGreen, colorYellow) 
+import PrettyPrinterTAC (prettyTACabssynt) 
 import StaticAnalysis
 import TACGen
 import ErrM
 
-type Pos = (Int, Int)
+
+
 type ParseFun a = [Token] -> ErrM.Err a
 
 myLLexer = myLexer
@@ -37,7 +38,7 @@ run v p s = let ts = myLLexer s in case p ts of
                           let enriched = checkProgram tree
                           putStrV v (StaticAnalysis.printEnv (fst enriched)) -- Print static analysis environment
                           putStrLn (prettyTree (snd enriched)) -- Print enriched AST
-                          putStrLn (prettyTAC (genProgram (snd enriched))) -- Print TAC
+                          putStrLn (prettyTACabssynt (genProgram (snd enriched))) -- Print TAC
 
 usage :: IO ()
 usage = do
