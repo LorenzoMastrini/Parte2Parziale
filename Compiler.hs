@@ -35,6 +35,8 @@ run v p s = let ts = myLLexer s in case p ts of
                           putStrLn $ errorMsg s
                           exitFailure
            Ok tree  -> do putStrV v $ "\n" ++ colorGreen "[PARSING]: PASS\n" ++ show tree
+                          putStrV v $ colorRed "Source code:\n"
+                          putStrLn (prettyPrintSource tree) -- Print source code
                           let enriched = checkProgram tree
                           putStrV v (StaticAnalysis.printEnv (fst enriched)) -- Print static analysis environment
                           putStrLn (prettyTree (snd enriched)) -- Print enriched AST
