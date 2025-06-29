@@ -67,11 +67,9 @@ pad :: String -> String -> [String] -> [String]
 pad first rest lines = zipWith (++) (first : repeat rest) lines
 
 paddingMultiple :: [String] -> [String]
--- pipe colorata e spaziatura originale
 paddingMultiple = pad (colorPipe "   ") (colorPipe "|  ")
 
 paddingSingle :: [String] -> [String]
--- pipe colorata e spaziatura originale
 paddingSingle = pad (colorPipe "   ") (colorPipe "|  ")
 
 colorType :: String -> String
@@ -125,7 +123,7 @@ instance PrintTree [EnrichedProcedureAndFunctionDeclaration] where
   buildTree (d:ds) = paddingMultiple (buildTree d) ++ buildTree ds
 
 instance PrintTree EnrichedProcedureAndFunctionDeclaration where
-  buildTree (ProcFunDecl heading block) = (colorDecl "ProcFunDecl") : (paddingMultiple (buildTree heading) ++ buildTree block)
+  buildTree (ProcFunDecl heading block) = colorDecl "ProcFunDecl" : (paddingMultiple (buildTree heading) ++ buildTree block)
 
 instance PrintTree EnrichedProcedureAndFunctionHeading where
   buildTree (ProcHead id params) = [colorDecl "ProcHead " ++ showId id] ++ buildTree params
@@ -161,7 +159,7 @@ instance PrintTree EnrichedConstant where
     buildTree (ConstBool b) = [" " ++ show b]
 
 instance PrintTree EnrichedCompoundStatement where
-  buildTree (CompStmt stmts) = (colorStmt "CompoundStmt") : buildTree stmts
+  buildTree (CompStmt stmts) = colorStmt "CompoundStmt" : buildTree stmts
 
 instance PrintTree [EnrichedStatement] where
   buildTree [] = []
@@ -222,8 +220,8 @@ instance PrintTree Literal where
   buildTree Literal_true = ["Bool true"]
   buildTree Literal_false = ["Bool false"]
 
--- Istanze per i tipi semplici usati in VarInfo
-instance PrintTree (Constant () () ()) where
+-- Instances for the simple types used in VarInfo
+instance PrintTree SimpleConstant where
     buildTree (ConstId sign id) = [show sign ++ " " ++ showId (idToEnriched id)]
         where idToEnriched (Ident s l _ _ _) = Ident s l Nothing NoVarInfo NoFunInfo
     buildTree (ConstInt sign i) = [show sign ++ " " ++ show i]

@@ -209,8 +209,6 @@ data Loc = Loc {line, column :: Int}
 -- Variable informations for the enriched AST
 data VarInfo =
   VarInfo {
-    --constCompTime :: Bool,            -- True if is const at CompileTime
-    --varLoc :: Loc,                    -- location (line, column)
     init :: Maybe (Constant () () ()),  -- Value of a constant known at compile time (if present)
     const :: Bool                       -- True if it's a constant
   }
@@ -222,7 +220,6 @@ data FunInfo =
   FunInfo {
     retType :: SimpleType,              -- Function return type
     params :: [SimpleFormalParameters]  -- List of parameters
-    --pos :: Loc                        -- Location (line, column)
   }
   | NoFunInfo
   deriving (C.Eq, C.Show)

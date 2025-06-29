@@ -27,7 +27,7 @@ import qualified AbsLinguaggio
 printTree :: Print a => a -> String
 printTree = render . prt 0
 
--- | Pretty-print simile al sorgente, senza indentazione automatica.
+-- Pretty-print of the source code
 prettyPrintSource :: Print a => a -> String
 prettyPrintSource x = concatMap ($ "") (prt 0 x [])
 
@@ -40,8 +40,8 @@ render :: Doc -> String
 render d = rend 0 False (map ($ "") $ d []) ""
   where
   rend
-    :: Int        -- ^ Indentation level.
-    -> Bool       -- ^ Pending indentation to be output before next character?
+    :: Int        -- Indentation level.
+    -> Bool       -- Pending indentation to be output before next character?
     -> [String]
     -> ShowS
   rend i p = \case
@@ -57,27 +57,27 @@ render d = rend 0 False (map ($ "") $ d []) ""
       t        :ts -> pending . space t      . rend i False ts
       []           -> id
     where
-    -- Output character after pending indentation.
+    -- Output character after pending indentation
     char :: Char -> ShowS
     char c = pending . showChar c
 
-    -- Output pending indentation.
+    -- Output pending indentation
     pending :: ShowS
     pending = if p then indent i else id
 
-  -- Indentation (spaces) for given indentation level.
+  -- Indentation (spaces) for given indentation level
   indent :: Int -> ShowS
   indent i = replicateS (2*i) (showChar ' ')
 
-  -- Continue rendering in new line with new indentation.
+  -- Continue rendering in new line with new indentation
   new :: Int -> [String] -> ShowS
   new j ts = showChar '\n' . rend j True ts
 
-  -- Make sure we are on a fresh line.
+  -- Check if we are on a fresh line
   onNewLine :: Int -> Bool -> ShowS
   onNewLine i p = (if p then id else showChar '\n') . indent i
 
-  -- Separate given string from following text by a space (if needed).
+  -- Separate given string from following text by a space (if needed)
   space :: String -> ShowS
   space t s =
     case (all isSpace t, null spc, null rest) of
@@ -107,7 +107,6 @@ concatD = foldr (.) id
 replicateS :: Int -> ShowS -> ShowS
 replicateS n f = concatS (replicate n f)
 
--- | The printer class does the job.
 
 class Print a where
   prt :: Int -> a -> Doc
@@ -209,7 +208,6 @@ instance Print [AbsLinguaggio.Statement () () ()] where
       _ ->
         concatD [prt i x, doc (showString ";\n"), prt i xs]
 
--- Modifica la stampa dell'if per evitare ; e newline tra end ed else
 instance Print (AbsLinguaggio.Statement () () ()) where
   prt i (AbsLinguaggio.Stmts compoundstatement) = prt i compoundstatement
   prt i (AbsLinguaggio.RExprStmt expr ty) = concatD [doc (showString (replicate (2*i) ' ')), prt 0 expr]
@@ -250,7 +248,7 @@ instance Print (AbsLinguaggio.Statement () () ()) where
         elseBlock = case stmt2 of
           AbsLinguaggio.NoElse -> concatD []
           AbsLinguaggio.Else s -> 
-            -- Calcola l'indentazione corretta per l'else
+            -- Calculate correct indentationfor the else
             let elseIndent = getElseIndent stmt1 i
             in concatD [doc (showString ("\n" ++ replicate (2*elseIndent) ' ' ++ "else\n")), prt (i+1) s]
     in concatD [
@@ -434,11 +432,11 @@ instance Print AbsLinguaggio.Unary where
 instance Print AbsLinguaggio.Loc where
   prt _ (AbsLinguaggio.Loc line col) = doc (showString ("(" ++ show line ++ "," ++ show col ++ ")"))
 
--- Funzione helper per calcolare l'indentazione dell'else basata sulla struttura dell'if
+-- Calcolare the else indentation based on the structure of the if
 getElseIndent :: AbsLinguaggio.Statement () () () -> Int -> Int
 getElseIndent stmt baseIndent = case stmt of
   AbsLinguaggio.If _ thenStmt _ _ -> 
     case thenStmt of
-      AbsLinguaggio.If {} -> baseIndent  -- L'else va allineato con l'if corrente
+      AbsLinguaggio.If {} -> baseIndent  -- else aligned with the current if
       _ -> baseIndent
   _ -> baseIndent

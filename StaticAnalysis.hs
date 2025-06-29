@@ -157,14 +157,14 @@ checkProcFunDeclList env decls =
   let envWithFuncs = collectFunctionDeclarations env decls -- To handle mutual ricursion
   in checkProcFunBodies envWithFuncs decls
 
--- Two-pass: raccoglie tutte le intestazioni di funzioni/procedure nell'ambiente
+-- Two-pass analysis: get only the headings of the procesdures/functions in the environment
 collectFunctionDeclarations :: Env -> [SimpleProcedureAndFunctionDeclaration] -> Env
 collectFunctionDeclarations env [] = env
 collectFunctionDeclarations env (ProcFunDecl heading _ : rest) =
   let env1 = addProcFunSignature env heading
   in collectFunctionDeclarations env1 rest
 
--- Aggiunge solo la signature della funzione/procedura all'environment
+-- Add only the procedure/function signature to the environment
 addProcFunSignature :: Env -> SimpleProcedureAndFunctionHeading -> Env
 addProcFunSignature env (ProcHead ident params) =
   if any (\(Ident name _ _ _ _, _) -> name == getIdentName ident) (Map.toList (symbols env))
@@ -198,7 +198,6 @@ checkProcFunHead :: Env -> SimpleProcedureAndFunctionHeading -> (Env, EnrichedPr
 checkProcFunHead localEnv head = case head of
     (ProcHead ident params) ->
         let
-            --  solo l'ientificatore per l'AST
             identEnriched = enrichIdent ident (Just (BasicType Void)) NoVarInfo (FunInfo (BasicType Void) params)
             (localEnvWithFunc, _) = checkProcFunIdent localEnv ident (BasicType Void) NoVarInfo (FunInfo (BasicType Void) params) params -- Add signature only to localEnv for recursion
             (localEnv1, paramsEnriched) = checkFormalParametersList localEnvWithFunc params
@@ -236,7 +235,7 @@ checkIdent env ident@(Ident name loc _ _ _) ty varInfo@(VarInfo constVal isConst
 -- Update the environment with the declaration of a procedure/function and return its enriched identifier
 checkProcFunIdent :: Env -> SimpleIdent -> SimpleType -> VarInfo -> FunInfo -> [SimpleFormalParameters] -> (Env, EnrichedIdent)
 checkProcFunIdent env ident ty NoVarInfo (FunInfo retTy paramsEnriched) simpleParams =
-    let res = Map.lookup ident (symbols env) -- controlla solo lo scope locale per funzioni/procedure
+    let res = Map.lookup ident (symbols env) -- check only the local scope for procedures/functions
     in case res of
         Just (ConstVarEntry _ isConst _ _) ->
             (addError env (RedeclaredConstVar ident isConst, getIdentLoc ident), enrichIdentUnknown ident)
@@ -247,7 +246,7 @@ checkProcFunIdent env ident ty NoVarInfo (FunInfo retTy paramsEnriched) simplePa
                 then (addEntry env ident (ProcFunEntry simpleParams (BasicType Void) (getIdentLoc ident)), enrichIdent ident (Just ty) NoVarInfo (FunInfo retTy paramsEnriched))
                 else (addEntry env ident (ProcFunEntry simpleParams ty (getIdentLoc ident)), enrichIdent ident (Just ty) NoVarInfo (FunInfo retTy paramsEnriched))
 checkProcFunIdent env ident ty (VarInfo _ isConst) funInfo _ =
-    let res = lookupByName env (getIdentName ident) -- per variabili/altro lascia invariato
+    let res = lookupByName env (getIdentName ident)
     in case res of
         Just (ConstVarEntry _ entryIsConst _ _, _) ->
             (addError env (RedeclaredConstVar ident entryIsConst, getIdentLoc ident), enrichIdentUnknown ident)
@@ -606,8 +605,6 @@ checkIntegerType env op t loc = case t of
 checkBooleanType :: Env -> String -> SimpleType -> Loc -> (Env, Maybe SimpleType)
 checkBooleanType env op t loc = case t of
     BasicType Boolean -> (env, Just (BasicType Boolean))
-    -- BasicType Integer -> (env, Just (BasicType Boolean)) -- 0 = false, non-zero = true
-    -- BasicType Real    -> (env, Just (BasicType Boolean)) -- 0.0 = false, non-zero = true
     _ -> (addError env (NotBooleanType op t, loc), Nothing)
 
 checkNumericType :: Env -> String -> SimpleType -> Loc -> (Env, Maybe SimpleType)
@@ -926,6 +923,8 @@ hasNonInteger = any (\e -> getRExprType e /= Just (BasicType Integer))
 
 hasErrors :: Env -> Bool
 hasErrors env = not (null (errors env))
+
+
 
 -----------------------------------------------------------
 -------------------- PRINT ENVIRONMENT --------------------

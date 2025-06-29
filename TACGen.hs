@@ -5,7 +5,6 @@ import TACMonad
 import AbsLinguaggio
 import Control.Monad.State
 import Control.Monad (forM)
-import Control.Monad.Writer
 import Data.Functor.Identity (runIdentity)
 import qualified Data.Map as Map
 
@@ -94,7 +93,7 @@ genRExpr (Binary e1 op e2 t) = do
 
 genRExpr (Unary op e1 t) = do
     (code1, xaddr1) <- genRExpr e1
-    let addr1 = case xaddr1 of Addr a -> a; _ -> error "Operando non Address"
+    let addr1 = case xaddr1 of Addr a -> a; _ -> error "Non-Address operand"
     addr <- newtemp (getTACType t)
     let code = code1 ++ [TACUnary addr op (getBasicType t) addr1]
     return (code, Addr addr)

@@ -5,6 +5,7 @@ import PrettyPrinter
 import Data.Data (toConstr, showConstr)
 
 
+
 data Error ty varInfo funInfo
     = RedeclaredConstVar SimpleIdent Bool
     | NotConstantValue String
@@ -38,10 +39,6 @@ data Error ty varInfo funInfo
     | MissingReturn
     | ReturnTypeMismatch (Maybe SimpleType) (Maybe SimpleType)
     | NotIntegerArrIndex (Maybe SimpleType)
-{-
-    | DifferentLenght Loc
-    | DivideByZero Loc
--}
 
 errorType :: Error ty varInfo funInfo -> String
 errorType x =
@@ -148,8 +145,6 @@ errorType x =
         
         MissingReturn ->
             errorMsg "A \"return\" statement must be present in each possible execution flow of the function." ++ " [Control Flow Error]"
-
-
 
         NotLExprInMod mod -> case mod of
             ByRef       -> errorMsg "The argument for the \"By reference\" modality must be an L-expression." ++ " [Type Error]"

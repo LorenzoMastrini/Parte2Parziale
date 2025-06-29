@@ -34,7 +34,7 @@ underlineMag x = "\x1b[35;4m" ++ x ++ "\x1b[37;0m"++"\x1b[37;1m"
 underlineYel :: String -> String
 underlineYel x = "\x001b[33;4m" ++ x ++ "\x1b[37;0m"++"\x1b[37;1m"
 
--- Indentation helper for TAC format (12 spaces like in TACOutput.txt)
+-- Indentation helper for TAC format
 tacIndent :: String
 tacIndent = replicate 12 ' '
 
@@ -43,7 +43,7 @@ formatLabel :: Maybe TACabssynt.TACLabel -> String
 formatLabel Nothing = tacIndent
 formatLabel (Just label) = "l" ++ show label ++ ":" ++ replicate (max 0 (8 - length (show label))) ' '
 
--- Pretty print Address
+-- Pretty-print Address
 prettyAddress :: TACabssynt.Address -> String
 prettyAddress addr = case addr of
   TACabssynt.ProgVar varInfo _ -> 
@@ -64,7 +64,7 @@ prettyAddress addr = case addr of
     Literal_false -> colorMagenta "false"
   TACabssynt.Temporary n _ -> colorCyan ("t" ++ show n)
 
--- Pretty print Binary operator
+-- Pretty-print Binary operator
 prettyBinary :: Binary -> String
 prettyBinary bin = case bin of
   BinaryPlus _ -> "+"
@@ -82,7 +82,7 @@ prettyBinary bin = case bin of
   BinaryGt _ -> ">"
   BinaryGte _ -> ">="
 
--- Pretty print Unary operator
+-- Pretty-print Unary operator
 prettyUnary :: Unary -> String
 prettyUnary unary = case unary of
   UnaryPlus _ -> "+"
@@ -90,11 +90,10 @@ prettyUnary unary = case unary of
   UnaryNot _ -> "not"
   UnaryRef _ -> "&"
 
--- Pretty print TACabssynt.TAC with TACOutput.txt format
 prettyTACabssynt :: [TACabssynt.TAC TACabssynt.TACLabel] -> String
 prettyTACabssynt = unlines . map prettyTACabssyntInstr
 
--- Estrae il tipo principale di una istruzione TAC (se presente)
+-- Extract the main type form a list of TAC instructions (if present)
 getTACInstrType :: TACabssynt.TAC TACabssynt.TACLabel -> Maybe TACabssynt.TACType
 getTACInstrType tac = case tac of
   TACabssynt.TACBinary dst _ _ _ _ -> Just (getAddrType dst)
@@ -115,7 +114,6 @@ getTACInstrType tac = case tac of
       TACabssynt.TACLit _ t -> t
       TACabssynt.Temporary _ t -> t
 
--- Modifica: aggiungi il tipo SOLO a fine riga, mai dopo '='
 prettyTACabssyntInstr :: TACabssynt.TAC TACabssynt.TACLabel -> String
 prettyTACabssyntInstr tac = 
   let base = case tac of

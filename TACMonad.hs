@@ -9,6 +9,8 @@ import Data.Functor.Identity (Identity)
 
 
 
+type TACGen a = StateT TACState Identity a
+
 data TACState = TACState {
     tempCounter :: Int,
     labelCounter :: Int,
@@ -17,8 +19,6 @@ data TACState = TACState {
     stringCounter :: Int,                   -- counter for string addresses
     stringTable :: Map.Map String String    -- table for constant strings
 }
-
-type TACGen a = StateT TACState Identity a
 
 initialTACState :: TACState
 initialTACState = TACState 0 0 [] [] 0 Map.empty
