@@ -8,11 +8,11 @@ import LexLinguaggio
 import ParLinguaggio
 import SkelLinguaggio
 import AbsLinguaggio
-import PrettyPrinter (colorRed, colorGreen, errorMsg, prettyTree)
+import PrettyPrinter (colorRed, colorGreen, errorMsg, prettyAST)
 import PrintLinguaggio
 import StaticAnalysis
 import TACGen
-import PrettyPrinterTAC (dumpTACRic) 
+import PrettyPrinterTAC (dumpTAC) 
 import ErrM
 
 
@@ -26,21 +26,33 @@ type Verbosity = Int
 putStrV :: Verbosity -> String -> IO ()
 putStrV v s = when (v > 1) $ putStrLn s
 
-compile :: Verbosity -> ParseFun (Program () () ())-> FilePath -> IO ()
+compile :: Verbosity -> ParseFun SimpleProgram-> FilePath -> IO ()
 compile v p f = putStrLn f >> readFile f >>= run v p
 
-run ::  Verbosity -> ParseFun (Program () () ())-> String -> IO ()
+run ::  Verbosity -> ParseFun SimpleProgram -> String -> IO ()
 run v p s = let ts = myLLexer s in case p ts of
            Bad s    -> do putStrLn (colorRed "[PARSING]: FAIL" )
                           putStrLn $ errorMsg s
                           exitFailure
-           Ok tree  -> do putStrV v $ "\n" ++ colorGreen "[PARSING]: PASS\n" ++ show tree
-                          putStrV v $ colorRed "Source code:\n"
+           Ok tree  -> do putStrV v $ "\n" ++ colorGreen "[PARSING]: PASS\n"
+                          putStrLn "------------------------------ SOURCE CODE ------------------------------"
                           putStrLn (prettyPrintSource tree) -- Print source code
-                          let enriched = checkProgram tree
-                          putStrV v (StaticAnalysis.printEnv (fst enriched)) -- Print static analysis environment
-                          putStrLn (prettyTree (snd enriched)) -- Print enriched AST
-                          putStrLn (prettyTACabssynt (genProgram (snd enriched))) -- Print TAC
+
+                          -- Static semantic analysis
+                          putStrLn "------------------------------ STATIC SEMANTIC ANALYSIS ------------------------------"
+                          let (env, enrichedAST) = checkProgram tree
+                          putStrLn (StaticAnalysis.printEnv env)
+                          putStrLn ""
+                          -- Print enriched AST
+                          putStrLn (prettyAST enrichedAST)
+                          
+                          putStrLn "------------------------------ TAC GENERATION ------------------------------"
+                          if hasErrors env
+                            then putStrLn $ colorRed "Cannot generate TAC: the file contains semantic errors."
+                            else do
+                              -- TAC generation
+                              let (tacList, _) = genProgram enrichedAST
+                              dumpTAC tacList
 
 usage :: IO ()
 usage = do

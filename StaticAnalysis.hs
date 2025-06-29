@@ -461,14 +461,18 @@ checkStatement env stmt isLoop typeIfInsideFun = case stmt of
             (env2, stmtEnriched) = checkStatement env1 stmt True typeIfInsideFun
         in if isBoolean rexprEnriched
             then (env2, While rexprEnriched stmtEnriched loc)
-            else (addError env2 (NotBooleanCondition "while" (getRExprType rexprEnriched), loc), While rexprEnriched stmtEnriched loc)
+            else case getRExprType rexprEnriched of
+                Nothing -> (env2, While rexprEnriched stmtEnriched loc) -- Don't add an error if the condition itself contains an error
+                _ -> (addError env2 (NotBooleanCondition "while" (getRExprType rexprEnriched), loc), While rexprEnriched stmtEnriched loc)
     DoWhile stmt rexpr loc ->
         let
             (env1, rexprEnriched) = checkRExpr env rexpr
             (env2, stmtEnriched) = checkStatement env1 stmt True typeIfInsideFun
         in if isBoolean rexprEnriched
             then (env2, DoWhile stmtEnriched rexprEnriched loc)
-            else (addError env2 (NotBooleanCondition "repeat-until" (getRExprType rexprEnriched), loc), DoWhile stmtEnriched rexprEnriched loc)
+            else case getRExprType rexprEnriched of
+                Nothing -> (env2, DoWhile stmtEnriched rexprEnriched loc) -- Don't add an error if the condition itself contains an error
+                _ -> (addError env2 (NotBooleanCondition "repeat-until" (getRExprType rexprEnriched), loc), DoWhile stmtEnriched rexprEnriched loc)
     ForTo lexpr rexpr1 rexpr2 stmt ->
         let
             (env1, lexprEnriched) = checkLExpr env lexpr
@@ -920,7 +924,8 @@ hasReturnEveryPath stmts = anyPathReturns stmts
 hasNonInteger :: [EnrichedRExpr] -> Bool
 hasNonInteger = any (\e -> getRExprType e /= Just (BasicType Integer))
 
-
+hasErrors :: Env -> Bool
+hasErrors env = not (null (errors env))
 
 -----------------------------------------------------------
 -------------------- PRINT ENVIRONMENT --------------------
@@ -931,7 +936,7 @@ printEnv env =
     let
         entries = Map.toList (symbols env)
         errs = errors env
-    in "\nSymbol Table:" ++ showNames entries ++ "\nErrors:\n" ++ showErrors errs
+    in "Symbol Table:" ++ showNames entries ++ "\n\nErrors:\n" ++ showErrors errs
 
 showNames :: [(SimpleIdent, EnvEntry)] -> String
 showNames [] = ""

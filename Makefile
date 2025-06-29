@@ -23,6 +23,28 @@ all : Compiler
 #AbsLinguaggio.hs LexLinguaggio.x ParLinguaggio.y PrettyPrinter.hs PrintLinguaggio.hs TestLinguaggioOld.hs: linguaggio.cf
 #	bnfc --haskell linguaggio.cf
 
+# test cases
+demo: Compiler Test/Demo1 Test/Demo2
+	@echo "------------------------------------------------------------------------------"
+	@echo "----------------------------------- DEMO 1 -----------------------------------"
+	@echo "------------------------------------------------------------------------------"
+	@echo "INPUT: Demo1 (source code with semantic errors)"
+	@echo
+	@echo "OUTPUT:"
+	@./linguaggio Test/Demo1
+	@echo
+	@echo
+	@echo
+	@echo "------------------------------------------------------------------------------"
+	@echo "----------------------------------- DEMO 2 -----------------------------------"
+	@echo "------------------------------------------------------------------------------"
+	@echo "INPUT: Demo2"
+	@echo
+	@echo "OUTPUT:"
+	@./linguaggio Test/Demo2
+	@echo
+
+
 %.hs : %.y
 	${HAPPY} ${HAPPY_OPTS} $<
 

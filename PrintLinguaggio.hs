@@ -439,6 +439,6 @@ getElseIndent :: AbsLinguaggio.Statement () () () -> Int -> Int
 getElseIndent stmt baseIndent = case stmt of
   AbsLinguaggio.If _ thenStmt _ _ -> 
     case thenStmt of
-      AbsLinguaggio.If _ _ _ _ -> baseIndent  -- L'else va allineato con l'if corrente
+      AbsLinguaggio.If {} -> baseIndent  -- L'else va allineato con l'if corrente
       _ -> baseIndent
   _ -> baseIndent

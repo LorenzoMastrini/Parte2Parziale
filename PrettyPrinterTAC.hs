@@ -3,7 +3,7 @@ module PrettyPrinterTAC where
 import qualified TACabssynt
 import AbsLinguaggio
 
--- Color helpers (copiati da PrettyPrinterTAC.hs)
+-- Color helpers
 colorRed :: String -> String
 colorRed x  =  "\x1b[31;1m" ++ x ++ "\x1b[37;1m"
 
@@ -197,13 +197,13 @@ prettyTACabssyntInstr tac =
       tipoStr = maybe "" (\t -> "   [" ++ show t ++ "]") tipo
   in base ++ tipoStr
 
--- Pretty printer
+-- Pretty-printer TAC
 prettyTACabssyntEnhanced :: [TACabssynt.TAC TACabssynt.TACLabel] -> String
 prettyTACabssyntEnhanced instructions = 
-  "[Info]: TAC Generator\n" ++
+  "TAC Generator:\n" ++
   prettyTACabssynt instructions ++
   "\n"
 
 -- Print on stdout
-dumpTACRic :: [TACabssynt.TAC TACabssynt.TACLabel] -> IO ()
-dumpTACRic tacList = putStrLn (prettyTACabssyntEnhanced tacList) 
+dumpTAC :: [TACabssynt.TAC TACabssynt.TACLabel] -> IO ()
+dumpTAC tacList = putStrLn (prettyTACabssyntEnhanced tacList) 

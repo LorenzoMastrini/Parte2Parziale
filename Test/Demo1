@@ -1,0 +1,76 @@
+program Demo1();
+
+const
+    answer = 42;
+    greeting = "Hello";
+
+var
+    x: Integer;
+    y: Real;
+    flag: Boolean;
+    i: Integer;
+    arr: array[0..9] of Integer;
+    mat: array[0..2,0..2] of Integer;
+
+procedure TestProc(a: Integer);
+begin
+    // ERROR: return inside procedure
+    return a;
+    // ERROR: variable not declared
+    while z < 10 do
+        z := z + 1;
+    // ERROR: index out of bound
+    arr[10] := 5;
+end;
+
+function BoolToInt(b: Boolean): Integer;
+begin
+    // ERROR: while loop with non-boolean condition
+    while 5 do
+        b := false;
+    if b then
+        return 1
+    else
+        return false; // ERROR: return type mismatch
+end;
+
+function LoopSum(n: Integer): Integer;
+var
+    sum: Integer;
+    i: Integer;
+    localArr: array[0..4] of Integer;
+begin
+    sum := 0;
+    i := 0;
+    while i < n do
+    begin
+        sum := sum + i;
+        i := i + 1;
+    end;
+    // ERROR: non-integer index
+    localArr[true] := 7;
+    // ERRORE: index out of bound
+    localArr[5] := 10;
+    // ERROR: return missing inside function
+end;
+
+begin
+    // ERROR: assignment to costant
+    answer := 100;
+    // ERROR: variable not declared
+    z := 5;
+    // ERROR: non-boolean condition
+    if y then
+        x := 1;
+    // ERROR: parameter type mismatch
+    TestProc(true);
+    // ERROR: return outside a function
+    return 0;
+
+    i := 0;
+    while i < 5 do
+    begin
+        x := x + i;
+        i := i + 1;
+    end;
+end. 

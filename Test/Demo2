@@ -1,0 +1,115 @@
+program Demo2();
+
+const
+    pi = 3.1415;
+    welcome = "Hello";
+
+var
+    a, b: Integer;
+    r: Real;
+    s: String;
+    ok: Boolean;
+    arr: array[0..9] of Integer;
+    parr: array[0..4] of ^Integer;
+    p: ^Integer;
+
+function Square(x: Integer): Integer;
+begin
+    return x * x;
+end;
+
+function Factorial(n: Integer): Integer;
+begin
+    if n <= 1 then
+        return 1
+    else
+        return n * Factorial(n - 1);
+end;
+
+function IsEven(n: Integer): Boolean;
+begin
+    if n = 0 then
+        return true
+    else
+        return IsOdd(n - 1);
+end;
+
+function IsOdd(n: Integer): Boolean;
+begin
+    if n = 0 then
+        return false
+    else
+        return IsEven(n - 1);
+end;
+
+function SumArray(a: array[0..9] of Integer, n: Integer): Integer;
+var
+    sum, i: Integer;
+begin
+    sum := 0;
+    i := 0;
+    repeat
+        begin
+            sum := sum + a[i];
+            i := i + 1;
+        end
+    until i > n;
+    return sum;
+end;
+
+procedure InitArray(var a: array[0..9] of Integer);
+var
+    i: Integer;
+begin
+    i := 0;
+    repeat
+        begin
+            a[i] := i * 2;
+            i := i + 1;
+        end
+    until i > 9;
+end;
+
+procedure InitParr(var parr: array[0..4] of ^Integer, var arr: array[0..9] of Integer);
+var
+    i: Integer;
+begin
+    i := 0;
+    repeat
+        begin
+            parr[i] := ^arr[i * 2];
+            i := i + 1;
+        end
+    until i > 4;
+end;
+
+procedure PrintMessage(msg: String);
+begin
+    writeString(msg);
+end;
+
+begin
+    a := 5;
+    b := Square(a);
+    r := pi * b;
+    s := welcome;
+    ok := true;
+    InitArray(arr);
+    InitParr(parr, arr);
+    b := SumArray(arr, 9);
+    a := Factorial(5);
+    ok := IsEven(a);
+    p := ^arr[3];
+    b := p^ + 10;
+    a := 0;
+    b := 0;
+    repeat
+        begin
+            if arr[a] mod 2 = 0 then
+                b := b + arr[a];
+            a := a + 1;
+        end
+    until a > 9;
+    if ok then
+        PrintMessage(s);
+end. 
