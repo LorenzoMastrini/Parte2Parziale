@@ -29,8 +29,12 @@ genBlock (Block constDefs varDecls procFunDecls compStmt) = do
     procFunResults <- mapM genProcedureFunctionDeclaration procFunDecls -- Procedures and functions
     let procFunCodes = concat procFunResults
     compStmtCode <- genCompoundStatement compStmt -- Compound statement
+
+    errorHandlerCode <- genError
+
     st <- get
-    return (concat constCodes ++ concat varCodes ++ procFunCodes ++ compStmtCode, st)
+    return (concat constCodes ++ concat varCodes ++ procFunCodes ++ compStmtCode ++ errorHandlerCode, st)
+    -- return (concat constCodes ++ concat varCodes ++ procFunCodes ++ compStmtCode, st)
 
 -- TAC Generator for ConstantDefinition
 genConstDef :: EnrichedConstantDefinition -> TACGen [TAC TACLabel]
@@ -155,7 +159,7 @@ genLExpr (LArr e1 [e2] ty loc) = do
     let size = e1Ty >>= getArraySize
     let justsize = case size of Just a -> a; Nothing -> error "array has no size"
 
-    (codeBound, xbound) <- arrayBoundCheck xidx justsize
+    codeBound <- arrayBoundCheck xidx justsize
     
     let idxAddr = case xidx of Addr a -> a; _ -> error "Non-Address index"
     case xbase of
@@ -442,29 +446,26 @@ genRExprFCall ident args paramModes t = do
 -----------------------------------------------------------
 -------------------- SUPPORT FUNCTIONS --------------------
 -----------------------------------------------------------
-arrayBoundCheck :: XAddr -> Int -> TACGen ([TAC TACLabel], XAddr)
+arrayBoundCheck :: XAddr -> Int -> TACGen ([TAC TACLabel])
 arrayBoundCheck idxOperand size = do
-  let zero = (TACLit (LiteralInteger 0) TACInteger)
-  let sizeOp = (TACLit (LiteralInteger (fromIntegral size)) TACInteger)
+  let loc = Loc 0 0 
+  let zero = TACLit (LiteralInteger 0) TACInteger
+  let sizeLit = TACLit (LiteralInteger (fromIntegral size)) TACInteger
 
   checkLower <- newtemp TACBoolean
   checkUpper <- newtemp TACBoolean
-  isValid <- newtemp TACBoolean
+  isValid    <- newtemp TACBoolean
 
-  let xlower = [TACBinary checkLower (BinaryGte (Loc 0 0)) Integer (extractAddr idxOperand) zero]
-  let xupper = [TACBinary checkUpper (BinaryLt (Loc 0 0)) Integer (extractAddr idxOperand) sizeOp]
-  let xvalid = [TACBinary isValid (BinaryAnd (Loc 0 0)) Integer checkLower checkUpper]
+  let xlower = [TACBinary checkLower (BinaryGte loc) Integer (extractAddr idxOperand) zero]
+  let xupper = [TACBinary checkUpper (BinaryLt loc) Integer (extractAddr idxOperand) sizeLit]
+  let xvalid = [TACBinary isValid (BinaryAnd loc) Boolean checkLower checkUpper]
 
-  errLabel <- newlabel
-  let xiferror = [TACIfFalse isValid errLabel]
-  let xerror = [TACAddLabel errLabel]
-  voidTemp <- newtemp TACAddr
-  let xvoid = [TACFCall voidTemp 0 0]
+  let errLabel = array_index_out_of_bounds
+  let onFail = [TACIfFalse isValid errLabel]
 
+  errHandler <- genError
 
-  addr <- newtemp TACAddr
-
-  return (xlower ++ xupper ++ xvalid ++ xiferror ++ xerror ++ xvoid, Addr addr)
+  return (xlower ++ xupper ++ xvalid ++ onFail ++ errHandler)
 
 
 -- Get array size for out of bound check
@@ -507,3 +508,4 @@ basicTypeToTACType Void       = TACError
 enrichedTypeToBasicType :: EnrichedType -> BasicType
 enrichedTypeToBasicType (BasicType bt) = bt
 enrichedTypeToBasicType _ = Void
+

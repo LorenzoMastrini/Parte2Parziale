@@ -5,10 +5,11 @@ const
     welcome = "Hello";
 
 var
-    a, b: Integer;
+    a, b, c: Integer;
     r: Real;
     s: String;
     ok: Boolean;
+    array_ac: array[0..20] of Integer;
     arr: array[0..9] of Integer;
     parr: array[0..4] of ^Integer;
     p: ^Integer;
@@ -91,6 +92,8 @@ end;
 begin
     a := 5;
     b := Square(a);
+    c := 6;
+    array_ac[a + c] := 99;
     r := pi * b;
     s := welcome;
     ok := true;
