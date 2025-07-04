@@ -7,6 +7,7 @@ import TACabssynt
 import Control.Monad.State
 import Data.Functor.Identity (Identity)
 
+import Debug.Trace (trace)
 
 
 type TACGen a = StateT TACState Identity a
@@ -17,12 +18,11 @@ data TACState = TACState {
     breakLabels :: [TACLabel],
     continueLabels :: [TACLabel],
     stringCounter :: Int,                   -- counter for string addresses
-    stringTable :: Map.Map String String,    -- table for constant strings
-    errorHandled :: Bool --has an error occured
+    stringTable :: Map.Map String String    -- table for constant strings
 }
 
 initialTACState :: TACState
-initialTACState = TACState 0 0 [] [] 0 Map.empty False
+initialTACState = TACState 0 0 [] [] 0 Map.empty
 
 newtemp :: TACType -> TACGen Address
 newtemp tacTy = do
@@ -100,22 +100,13 @@ tryPopContinueLabel = do
 array_index_out_of_bounds :: TACLabel
 array_index_out_of_bounds = 999
 
-arrayBoundsErrorHandler :: TACLabel -> [TAC TACLabel]
-arrayBoundsErrorHandler lbl = [
-  TACAddLabel lbl,
+outOfBoundHandler :: [TAC TACLabel]
+outOfBoundHandler  = [
+  TACAddLabel array_index_out_of_bounds,
   TACComment "Runtime Error: Array index out of bounds",
-  TACGoto lbl  -- infinite loop to simulate halt
+  TACGoto array_index_out_of_bounds  -- infinite loop to simulate halt
   ]
 
-
-genError :: TACGen [TAC TACLabel]
-genError = do
-  handled <- gets errorHandled
-  if handled
-    then return []
-    else do
-      modify (\s -> s { errorHandled = True })
-      return (arrayBoundsErrorHandler array_index_out_of_bounds) 
 
 
 -----------------------------------------------------------
