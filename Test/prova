@@ -87,12 +87,12 @@ begin
     mat[1][2] := 2.2;
     mat[2][1] := 3.3;
     mat[2][2] := 4.4;
-    
+    i:*=2;
     PrintMatrix(mat);
     s := msg;
     b := flag or true;
     r := pi * 2;
-    
+
     // ERRORE: Assegnamento a costante
     one := 100;
     

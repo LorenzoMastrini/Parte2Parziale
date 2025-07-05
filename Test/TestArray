@@ -1,0 +1,9 @@
+program TestArray();
+var
+    arr: array[1..5] of Integer;
+    a: Integer;
+
+begin
+    arr[1] = 5;
+    a:=a+1;
+end.

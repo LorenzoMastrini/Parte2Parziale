@@ -54,6 +54,7 @@ data Statement ty varInfo funInfo
   = Stmts (CompoundStatement ty varInfo funInfo)
   | RExprStmt (RExpr ty varInfo funInfo) ty
   | Assign (LExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) ty Loc
+  | OpAssign (LExpr ty varInfo funInfo) OpAssignType (RExpr ty varInfo funInfo) ty
   | While (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo) Loc
   | DoWhile (Statement ty varInfo funInfo) (RExpr ty varInfo funInfo) Loc
   | ForTo (LExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo)
@@ -80,6 +81,12 @@ data Constant ty varInfo funInfo
   | ConstStr String
   | ConstChar Char
   | ConstBool Bool
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
+data OpAssignType
+  = OpAssignAdd Loc
+  | OpAssignSub Loc
+  | OpAssignMul Loc
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data OptSign

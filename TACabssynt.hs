@@ -54,3 +54,4 @@ data TAC label
     | TACReturn
     | TACReturnVal Address
     | TACAddLabel TACLabel
+    | TACComment String

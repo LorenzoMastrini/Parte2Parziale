@@ -191,6 +191,9 @@ prettyTACabssyntInstr tac =
           colorGreen "return " ++ prettyAddress operand
         TACabssynt.TACAddLabel label ->
           colorMagenta (show label ++ ":")
+        TACabssynt.TACComment string ->
+          formatLabel Nothing ++ 
+          colorRed string
       tipo = getTACInstrType tac
       tipoStr = maybe "" (\t -> "   [" ++ show t ++ "]") tipo
   in base ++ tipoStr

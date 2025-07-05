@@ -1,0 +1,15 @@
+program TestArrayOutOfBounds();
+var
+    arr: array[0..10] of Integer;
+    a: Integer;
+
+begin
+    // Accesso valido
+    arr[7] := 5;
+    
+    // Accesso fuori dai limiti - dovrebbe generare errore a runtime
+    arr[0] := 10;
+    
+    // Accesso fuori dai limiti - dovrebbe generare errore a runtime
+    arr[6] := 20;
+end. 

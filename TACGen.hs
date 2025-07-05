@@ -16,8 +16,11 @@ runTACGen gen = runIdentity (evalStateT gen initialTACState)
 
 -- TAC Generator for Program
 genProgram :: EnrichedProgram -> ([TAC TACLabel], TACState)
-genProgram (Prog ident params block loc) = 
-    runTACGen (genBlock block)
+genProgram (Prog ident params block loc) =
+  runTACGen $ do
+    (code, st) <- genBlock block
+    codeOutOfBound <- genOutOfBound
+    return (code ++ codeOutOfBound, st)
 
 --TAC Generator for Block
 genBlock :: EnrichedBlock -> TACGen ([TAC TACLabel], TACState)
@@ -128,18 +131,9 @@ genRExpr (LExpr le ty) = do
     (code, xaddr) <- genLExpr le
     case xaddr of
         Addr addr -> return (code, Addr addr)
-        ArrayAddr{base, offset} -> do
-            let t = addrT base
-            tmp <- newtemp t
-            let code' = code ++ [TACIndexedLoad tmp (case base of ProgVar v _ -> v; _ -> error "base is not ProgVar") offset]
-            return (code', Addr tmp)
-        RefAddr addr -> do
-            let t = addrT addr
-            tmp <- newtemp t
-            let code' = code ++ [TACDerefRead tmp addr]
-            return (code', Addr tmp)
+        _ -> error "genRExpr (LExpr): unexpected XAddr type"
 
--- TAC Generator for LExpr 
+-- TAC Generator for LExpr (for reading values)
 genLExpr :: EnrichedLExpr -> TACGen ([TAC TACLabel], XAddr)
 genLExpr (LId ident ty) = do 
     let addr = ProgVar (TacProgVar (extractSimpleIdent ident) True ByVal (getBasicType ty)) (getTACType ty)
@@ -148,11 +142,22 @@ genLExpr (LId ident ty) = do
 genLExpr (LArr e1 [e2] ty loc) = do
     (codeBase, xbase) <- genLExpr e1
     (codeIdx, xidx) <- genRExpr e2
+
+    let e1Ty = getLExprType e1
+    let lowerBound = e1Ty >>= getArrayLowerBound
+    let upperBound = e1Ty >>= getArraySize
+    let justLower = case lowerBound of Just a -> a; Nothing -> error "array has no lower bound"
+    let justUpper = case upperBound of Just a -> a - 1; Nothing -> error "array has no upper bound"
+
+    codeBound <- arrayBoundCheck xidx justLower justUpper
+
     let idxAddr = case xidx of Addr a -> a; _ -> error "Non-Address index"
     case xbase of
         Addr baseAddr -> do
-            let xaddr = ArrayAddr { base = baseAddr, offset = idxAddr }
-            return (codeBase ++ codeIdx, xaddr)
+            -- Load the value from array
+            tmp <- newtemp (getTACType ty)
+            let code' = codeBase ++ codeIdx ++ codeBound ++ [TACIndexedLoad tmp (case baseAddr of ProgVar v _ -> v; _ -> error "base is not ProgVar") idxAddr]
+            return (code', Addr tmp)
         ArrayAddr{base, offset} -> do
             -- Multi-dimentional arrays: calculate total offset
             dimAddr <- newtemp TACInteger
@@ -161,17 +166,24 @@ genLExpr (LArr e1 [e2] ty loc) = do
             let mulCode = [TACBinary totalOffsetAddr (BinaryMul (Loc 0 0)) Integer offset dimAddr]
             finalOffsetAddr <- newtemp TACInteger
             let addCode = [TACBinary finalOffsetAddr (BinaryPlus (Loc 0 0)) Integer totalOffsetAddr idxAddr]
-            let xaddr = ArrayAddr { base = base, offset = finalOffsetAddr }
-            return (codeBase ++ codeIdx ++ dimCode ++ mulCode ++ addCode, xaddr)
+            -- Load the value from the calculated address
+            tmp <- newtemp (getTACType ty)
+            let loadCode = [TACIndexedLoad tmp (case base of ProgVar v _ -> v; _ -> error "base is not ProgVar") finalOffsetAddr]
+            return (codeBase ++ codeIdx ++ codeBound ++ dimCode ++ mulCode ++ addCode ++ loadCode, Addr tmp)
         RefAddr baseAddr -> do
-            -- Dereferenced pointers: create an ArrayAddr with the base of the pointer
-            let xaddr = ArrayAddr { base = baseAddr, offset = idxAddr }
-            return (codeBase ++ codeIdx, xaddr)
+            -- Load the value from the dereferenced pointer
+            tmp <- newtemp (getTACType ty)
+            let code' = codeBase ++ codeIdx ++ codeBound ++ [TACIndexedLoad tmp (case baseAddr of ProgVar v _ -> v; _ -> error "base is not ProgVar") idxAddr]
+            return (code', Addr tmp)
 
 genLExpr (LDeref e1 ty loc) = do
     (code1, xaddr) <- genLExpr e1
     case xaddr of
-        Addr addr -> return (code1, RefAddr addr)
+        Addr addr -> do
+            -- Load the value pointed to
+            tmp <- newtemp (case ty of Just t' -> getTACType (Just t'); Nothing -> TACInteger)
+            let code' = code1 ++ [TACDerefRead tmp addr]
+            return (code', Addr tmp)
         RefAddr addr -> do
             -- if dereferencing a RefAddr, generate new temporary and make a TACDerefRead
             tmp <- newtemp (case ty of Just t' -> getTACType (Just t'); Nothing -> TACInteger)
@@ -182,7 +194,7 @@ genLExpr (LDeref e1 ty loc) = do
             tmp <- newtemp (case ty of Just t' -> getTACType (Just t'); Nothing -> TACInteger)
             return (code1, Addr tmp)
 
--- TAC Generator for LExpr 
+-- TAC Generator for LExpr (for writing targets)
 genLExprTarget :: EnrichedLExpr -> TACGen ([TAC TACLabel], XAddr)
 genLExprTarget (LId ident t) = do 
     let addr = ProgVar (TacProgVar (extractSimpleIdent ident) True ByVal (getBasicType t)) (getTACType t)
@@ -191,11 +203,21 @@ genLExprTarget (LId ident t) = do
 genLExprTarget (LArr e1 [e2] ty loc) = do
     (codeBase, xbase) <- genLExpr e1
     (codeIdx, xidx) <- genRExpr e2
-    let idxAddr = case xidx of Addr a -> a; _ -> error "Indice non Address"
+
+    let e1Ty = getLExprType e1
+    let lowerBound = e1Ty >>= getArrayLowerBound
+    let upperBound = e1Ty >>= getArraySize
+    let justLower = case lowerBound of Just a -> a; Nothing -> error "array has no lower bound"
+    let justUpper = case upperBound of Just a -> a - 1; Nothing -> error "array has no upper bound"
+
+    codeBound <- arrayBoundCheck xidx justLower justUpper
+
+    let idxAddr = case xidx of Addr a -> a; _ -> error "Non-Address index"
     case xbase of
         Addr baseAddr -> do
+            -- Return the target address for writing (don't load the value)
             let xaddr = ArrayAddr { base = baseAddr, offset = idxAddr }
-            return (codeBase ++ codeIdx, xaddr)
+            return (codeBase ++ codeIdx ++ codeBound, xaddr)
         ArrayAddr{base, offset} -> do
             -- Multi-dimentional arrays: calculate total offset
             dimAddr <- newtemp TACInteger
@@ -204,22 +226,23 @@ genLExprTarget (LArr e1 [e2] ty loc) = do
             let mulCode = [TACBinary totalOffsetAddr (BinaryMul (Loc 0 0)) Integer offset dimAddr]
             finalOffsetAddr <- newtemp TACInteger
             let addCode = [TACBinary finalOffsetAddr (BinaryPlus (Loc 0 0)) Integer totalOffsetAddr idxAddr]
+            -- Return the target address for writing (don't load the value)
             let xaddr = ArrayAddr { base = base, offset = finalOffsetAddr }
-            return (codeBase ++ codeIdx ++ dimCode ++ mulCode ++ addCode, xaddr)
+            return (codeBase ++ codeIdx ++ codeBound ++ dimCode ++ mulCode ++ addCode, xaddr)
         RefAddr baseAddr -> do
-            -- Dereferenced pointers: create an ArrayAddr with the base of the pointer
+            -- Return the target address for writing (don't load the value)
             let xaddr = ArrayAddr { base = baseAddr, offset = idxAddr }
-            return (codeBase ++ codeIdx, xaddr)
+            return (codeBase ++ codeIdx ++ codeBound, xaddr)
 
 genLExprTarget (LDeref e1 ty loc) = do
     (code1, xaddr) <- genLExpr e1
     case xaddr of
-        Addr addr -> return (code1, RefAddr addr)
+        Addr addr -> do
+            -- Return the target address for writing (don't load the value)
+            return (code1, RefAddr addr)
         RefAddr addr -> do
-            -- if dereferencing a RefAddr, generate new temporary and make a TACDerefRead
-            tmp <- newtemp (case ty of Just t' -> getTACType (Just t'); Nothing -> TACInteger)
-            let code' = code1 ++ [TACDerefRead tmp addr]
-            return (code', Addr tmp)
+            -- Return the target address for writing (don't load the value)
+            return (code1, RefAddr addr)
         _ -> do
             -- Error: dereference of a not-address
             tmp <- newtemp (case ty of Just t' -> getTACType (Just t'); Nothing -> TACInteger)
@@ -336,14 +359,103 @@ genStatement (BreakStmt loc) = do
     mBreakLabel <- tryPopBreakLabel
     case mBreakLabel of
         Just breakLabel -> return [TACGoto breakLabel]
-        Nothing -> return [] -- Not inside a loop: don't generate anyhing
+        Nothing -> return [] -- Not inside a loop: don't generate anything
 
 -- "continue" statement
 genStatement (ContinueStmt loc) = do
     mContinueLabel <- tryPopContinueLabel
     case mContinueLabel of
         Just continueLabel -> return [TACGoto continueLabel]
-        Nothing -> return [] -- Not inside a loop: don't generate anyhing
+        Nothing -> return [] -- Not inside a loop: don't generate anything
+
+-- "for" statement (for variable := start to end do statement)
+genStatement (ForTo var start end body) = do
+    -- Generate labels for the loop
+    loopLabel <- newlabel
+    endLabel <- newlabel
+    bodyLabel <- newlabel
+    
+    -- Push break/continue labels
+    pushBreakLabel endLabel
+    pushContinueLabel loopLabel
+    
+    -- Generate code for start and end expressions
+    (startCode, xstartAddr) <- genRExpr start
+    (endCode, xendAddr) <- genRExpr end
+    let startAddr = case xstartAddr of Addr a -> a; _ -> error "ForTo: start not Address"
+    let endAddr = case xendAddr of Addr a -> a; _ -> error "ForTo: end not Address"
+    
+    -- Generate code for the loop variable (LHS of assignment)
+    (varCode, xvarAddr) <- genLExprTarget var
+    let varAddr = case xvarAddr of Addr a -> a; _ -> error "ForTo: variable not Address"
+    
+    -- Generate code for the loop body
+    bodyCode <- genStatement body
+    
+    -- Pop labels
+    _ <- popBreakLabel
+    _ <- popContinueLabel
+    
+    -- Generate the complete for loop code
+    let initCode = startCode ++ endCode ++ varCode ++ [TACAssign varAddr startAddr]
+    let conditionCode = [TACIfRel varAddr (BinaryGt (Loc 0 0)) endAddr endLabel]
+    let incrementCode = [TACBinary varAddr (BinaryPlus (Loc 0 0)) (tacTypeToBasicType (addrT varAddr)) varAddr (TACLit (LiteralInteger 1) TACInteger)]
+    
+    return (initCode ++ 
+            [TACAddLabel loopLabel] ++ 
+            conditionCode ++ 
+            [TACAddLabel bodyLabel] ++ 
+            bodyCode ++ 
+            incrementCode ++ 
+            [TACGoto loopLabel] ++ 
+            [TACAddLabel endLabel])
+
+-- Assignment operation statement
+genStatement (OpAssign lexpr opAssignType rexpr ty) = do
+    (codeL, xaddrL) <- genLExprTarget lexpr
+    (codeR, xaddrR) <- genRExpr rexpr
+    let rhsAddr = case xaddrR of Addr a -> a; _ -> error "OpAssign: RHS not Address"
+    
+    case xaddrL of
+        Addr lhsAddr -> do
+            -- Simple variable assignment: load current value, apply operation, store result
+            tmpL <- newtemp (addrT lhsAddr)
+            let loadCode = [TACAssign tmpL lhsAddr]
+            tmpRes <- newtemp (addrT lhsAddr)
+            let binOp = case opAssignType of
+                    OpAssignAdd _ -> BinaryPlus (Loc 0 0)
+                    OpAssignSub _ -> BinaryMinus (Loc 0 0)
+                    OpAssignMul _ -> BinaryMul (Loc 0 0)
+            let binCode = [TACBinary tmpRes binOp (tacTypeToBasicType (addrT lhsAddr)) tmpL rhsAddr]
+            let storeCode = [TACAssign lhsAddr tmpRes]
+            return (codeL ++ codeR ++ loadCode ++ binCode ++ storeCode)
+            
+        ArrayAddr{base, offset} -> do
+            -- Array element assignment: load current value, apply operation, store result
+            tmpL <- newtemp (addrT base)
+            let loadCode = [TACIndexedLoad tmpL (case base of ProgVar v _ -> v; _ -> error "base is not ProgVar") offset]
+            tmpRes <- newtemp (addrT base)
+            let binOp = case opAssignType of
+                    OpAssignAdd _ -> BinaryPlus (Loc 0 0)
+                    OpAssignSub _ -> BinaryMinus (Loc 0 0)
+                    OpAssignMul _ -> BinaryMul (Loc 0 0)
+            let binCode = [TACBinary tmpRes binOp (tacTypeToBasicType (addrT base)) tmpL rhsAddr]
+            let storeCode = [TACIndexedStore (case base of ProgVar v _ -> v; _ -> error "base is not ProgVar") offset tmpRes]
+            return (codeL ++ codeR ++ loadCode ++ binCode ++ storeCode)
+            
+        RefAddr addr -> do
+            -- Pointer dereference assignment: load current value, apply operation, store result
+            tmpL <- newtemp (addrT addr)
+            let loadCode = [TACDerefRead tmpL addr]
+            tmpRes <- newtemp (addrT addr)
+            let binOp = case opAssignType of
+                    OpAssignAdd _ -> BinaryPlus (Loc 0 0)
+                    OpAssignSub _ -> BinaryMinus (Loc 0 0)
+                    OpAssignMul _ -> BinaryMul (Loc 0 0)
+            let binCode = [TACBinary tmpRes binOp (tacTypeToBasicType (addrT addr)) tmpL rhsAddr]
+            let storeCode = [TACDerefWrite addr tmpRes]
+            return (codeL ++ codeR ++ loadCode ++ binCode ++ storeCode)
+
 
 -- Generate costants
 genConstant :: EnrichedConstant -> TACGen ([TAC TACLabel], Address)
@@ -433,9 +545,6 @@ genParamInit params = fmap (concat . concat) $ forM params $ \(FormParam mode id
             ByRef -> do
                 tmp <- newtemp (enrichedTypeToTACType typ)
                 return [TACParam tmp, TACAssign var tmp]
-            ByValRes -> do
-                tmp <- newtemp (enrichedTypeToTACType typ)
-                return [TACParam tmp, TACAssign var tmp]
 
 -- Extract the flatten list of the formal parameters modality
 extractParamModes :: [SimpleFormalParameters] -> [OptModality]
@@ -447,20 +556,12 @@ genRExprFCall ident args paramModes t = do
         case mode of
             ByVal -> do
                 (code, xaddr) <- genRExpr arg
-                let addr = case xaddr of Addr a -> a; _ -> error "Parametro ByVal non Address"
+                let addr = case xaddr of Addr a -> a; _ -> error "Parameter ByVal not Address"
                 return (code, TACParam addr)
             ByRef -> case arg of
                 LExpr le t -> do
                     (code, xaddr) <- genLExprTarget le
-                    let addr = case xaddr of Addr a -> a; _ -> error "Parametro ByRef non Address"
-                    return (code, TACParam addr)
-                _ -> do
-                    -- Errore: ByRef parameter (not LExpr)
-                    return ([], TACParam (Temporary 0 TACInteger)) -- Temporary not used
-            ByValRes -> case arg of
-                LExpr le t -> do
-                    (code, xaddr) <- genLExprTarget le
-                    let addr = case xaddr of Addr a -> a; _ -> error "Parametro ByValRes non Address"
+                    let addr = case xaddr of Addr a -> a; _ -> error "Parameter ByRef not Address"
                     return (code, TACParam addr)
                 _ -> do
                     -- Errore: ByRef parameter (not LExpr)
@@ -475,6 +576,50 @@ genRExprFCall ident args paramModes t = do
 -----------------------------------------------------------
 -------------------- SUPPORT FUNCTIONS --------------------
 -----------------------------------------------------------
+
+
+arrayBoundCheck :: XAddr -> Int -> Int -> TACGen ([TAC TACLabel])
+arrayBoundCheck idxOperand lowerBound upperBound = do
+  let loc = Loc 0 0 
+  let lowerLit = TACLit (LiteralInteger (fromIntegral lowerBound)) TACInteger
+  let upperLit = TACLit (LiteralInteger (fromIntegral upperBound)) TACInteger
+
+  checkLower <- newtemp TACBoolean
+  checkUpper <- newtemp TACBoolean
+  isValid    <- newtemp TACBoolean
+
+  let xlower = [TACBinary checkLower (BinaryGte loc) Integer (extractAddr idxOperand) lowerLit]
+  let xupper = [TACBinary checkUpper (BinaryLte loc) Integer (extractAddr idxOperand) upperLit]
+  let xvalid = [TACBinary isValid (BinaryAnd loc) Boolean checkLower checkUpper]
+
+  let errLabel = array_index_out_of_bounds
+  let onFail = [TACIfFalse isValid errLabel]
+
+  -- Mark that we need the out-of-bounds handler
+  modify (\s -> s { outOfBound = True })
+
+  return (xlower ++ xupper ++ xvalid ++ onFail)
+
+
+-- Get array size for out of bound check
+getArraySize :: Type ty varInfo funInfo -> Maybe Int
+getArraySize (Array [IndexRange (ConstInt _ low) (ConstInt _ high)] _) =
+  Just (fromInteger high - fromInteger low + 1)
+getArraySize _ = Nothing
+
+-- Get array lower bound for out of bound check
+getArrayLowerBound :: Type ty varInfo funInfo -> Maybe Int
+getArrayLowerBound (Array [IndexRange (ConstInt _ low) (ConstInt _ high)] _) =
+  Just (fromInteger low)
+getArrayLowerBound _ = Nothing
+
+
+
+--
+getLExprType :: LExpr ty varInfo funInfo -> ty
+getLExprType (LId _ ty)      = ty
+getLExprType (LArr _ _ ty _)  = ty
+getLExprType (LDeref _ ty _)    = ty
 
 -- Extract SimpleIdent form EnrichedIdent
 extractSimpleIdent :: EnrichedIdent -> SimpleIdent
@@ -504,3 +649,12 @@ basicTypeToTACType Void       = TACError
 enrichedTypeToBasicType :: EnrichedType -> BasicType
 enrichedTypeToBasicType (BasicType bt) = bt
 enrichedTypeToBasicType _ = Void
+
+-- Convert TACType to BasicType
+tacTypeToBasicType :: TACType -> BasicType
+tacTypeToBasicType TACInteger   = Integer
+tacTypeToBasicType TACReal      = Real
+tacTypeToBasicType TACBoolean   = Boolean
+tacTypeToBasicType TACCharacter = Character
+tacTypeToBasicType TACAddr      = Integer  -- Default for addresses
+tacTypeToBasicType TACError     = Void

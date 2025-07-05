@@ -1,0 +1,17 @@
+program TestArrayBounds();
+var
+    arr: array[1..5] of Integer;
+    a: Integer;
+
+begin
+    // Accesso valido - non dovrebbe generare errore
+    arr[1] := 5;
+    a := arr[3];
+    
+    // Accesso valido - non dovrebbe generare errore
+    arr[5] := 10;
+    a := arr[2];
+    
+    // Accesso valido - non dovrebbe generare errore
+    arr[4] := a;
+end. 

@@ -27,10 +27,11 @@ $i = [$l $d _ ']     -- identifier character
 $u = [. \n]          -- universal: any character
 
 -- Symbols and non-identifier-like reserved words
-
-@rsyms = \; | \. | \( | \) | \, | \= | \: | \[ | \] | \^ | \. \. | \+ | \- | \: \= | \* | \/ | \< \> | \< | \< \= | \> | \> \=
+@rsyms = \:\*\= | \:\+\= | \:\-\= | \.\. | \<\= | \>\= | \<\> | \:\= | \( | \) | \[ | \] | \; | \. | \, | \= | \: | \^ | \+ | \- | \/ | \< | \> | \*
 
 :-
+
+
 
 -- Line comment "//"
 "//" [.]* ;
@@ -180,40 +181,50 @@ eitherResIdent tv s = treeFind resWords
       GT -> treeFind right
       EQ -> t
 
+
+
 -- | The keywords and symbols of the language organized as binary search tree.
 resWords :: BTree
 resWords =
   b "begin" 29
     (b "<>" 15
-       (b ".." 8
-          (b "+" 4
-             (b ")" 2 (b "(" 1 N N) (b "*" 3 N N))
-             (b "-" 6 (b "," 5 N N) (b "." 7 N N)))
-          (b ";" 12
-             (b ":" 10 (b "/" 9 N N) (b ":=" 11 N N))
-             (b "<=" 14 (b "<" 13 N N) N)))
-       (b "Real" 22
-          (b "Boolean" 19
-             (b ">" 17 (b "=" 16 N N) (b ">=" 18 N N))
-             (b "Integer" 21 (b "Character" 20 N N) N))
-          (b "^" 26
-             (b "[" 24 (b "String" 23 N N) (b "]" 25 N N))
-             (b "array" 28 (b "and" 27 N N) N))))
+      (b ".." 8
+        (b "+" 4
+          (b ")" 2 (b "(" 1 N N) (b "*" 3 N N))
+          (b "-" 6 (b "," 5 N N) (b "." 7 N N)))
+        (b ";" 12
+          (b ":" 10 (b "/" 9 N N)
+            (b ":=" 11 
+              (b ":*=" 59 N 
+                (b ":+=" 57 N 
+                  (b ":-=" 58 N N))) 
+              N))
+          (b "<=" 14 (b "<" 13 N N) N)))
+      (b "Real" 22
+        (b "Boolean" 19
+          (b ">" 17 (b "=" 16 N N) (b ">=" 18 N N))
+          (b "Integer" 21 (b "Character" 20 N N) N))
+        (b "^" 26
+          (b "[" 24 (b "String" 23 N N) (b "]" 25 N N))
+          (b "array" 28 (b "and" 27 N N) N))))
     (b "not" 43
-       (b "else" 36
-          (b "continue" 33
-             (b "case" 31 (b "break" 30 N N) (b "const" 32 N N))
-             (b "do" 35 (b "div" 34 N N) N))
-          (b "function" 40
-             (b "false" 38 (b "end" 37 N N) (b "for" 39 N N))
-             (b "mod" 42 (b "if" 41 N N) N)))
-       (b "then" 50
-          (b "program" 47
-             (b "or" 45 (b "of" 44 N N) (b "procedure" 46 N N))
-             (b "return" 49 (b "repeat" 48 N N) N))
-          (b "valres" 54
-             (b "true" 52 (b "to" 51 N N) (b "until" 53 N N))
-             (b "while" 56 (b "var" 55 N N) N))))
+      (b "else" 36
+        (b "continue" 33
+          (b "case" 31 (b "break" 30 N N) (b "const" 32 N N))
+          (b "do" 35 (b "div" 34 N N) N))
+        (b "function" 40
+          (b "false" 38 (b "end" 37 N N) (b "for" 39 N N))
+          (b "mod" 42 (b "if" 41 N N) N)))
+      (b "then" 50
+        (b "program" 47
+          (b "or" 45 (b "of" 44 N N) (b "procedure" 46 N N))
+          (b "return" 49 (b "repeat" 48 N N) N))
+        (b "valres" 54
+          (b "true" 52 (b "to" 51 N N) (b "until" 53 N N))
+          (b "while" 56 (b "var" 55 N N) N)
+        )
+      )
+    )
   where
   b s n = B bs (TS bs n)
     where

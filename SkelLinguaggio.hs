@@ -89,6 +89,7 @@ transStatement :: AbsLinguaggio.SimpleStatement -> Result
 transStatement x = case x of
   AbsLinguaggio.RExprStmt rexpr ty -> failure x
   AbsLinguaggio.Assign lexpr rexpr ty loc -> failure x
+  AbsLinguaggio.OpAssign lexpr opassigntype rexpr ty -> failure x
   AbsLinguaggio.While rexpr statement loc -> failure x
   AbsLinguaggio.DoWhile statement rexpr loc -> failure x
   AbsLinguaggio.ForTo lexpr rexpr1 rexpr2 statement -> failure x
@@ -153,3 +154,9 @@ transUnary x = case x of
   AbsLinguaggio.UnaryPlus loc -> failure x
   AbsLinguaggio.UnaryMinus loc -> failure x
   AbsLinguaggio.UnaryNot loc -> failure x
+
+transOpAssignType :: AbsLinguaggio.OpAssignType -> Result
+transOpAssignType x = case x of
+  AbsLinguaggio.OpAssignAdd loc -> failure x
+  AbsLinguaggio.OpAssignSub loc -> failure x
+  AbsLinguaggio.OpAssignMul loc -> failure x

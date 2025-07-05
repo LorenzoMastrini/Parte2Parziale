@@ -30,6 +30,7 @@ import LexLinguaggio
 %left '*' '/' 'div' 'mod'
 %right 'not' UnaryPlus UnaryMinus
 %right '^'
+%left ':+=' ':-=' ':*='
 
 %token
   '('         { PT pos (TS _ 1)  }
@@ -88,6 +89,9 @@ import LexLinguaggio
   'valres'    { PT _ (TS _ 54) }
   'var'       { PT _ (TS _ 55) }
   'while'     { PT pos (TS _ 56) }
+  ':+='       { PT pos (TS _ 57) }
+  ':-='       { PT pos (TS _ 58) }
+  ':*='       { PT pos (TS _ 59) }
   L_Ident     { PT pos (TV $$) }
   L_charac    { PT _ (TC $$)   }
   L_doubl     { PT _ (TD $$)   }
@@ -224,11 +228,18 @@ ListStatement
   : Statement ';' { (:[]) $1 }
   | Statement ';' ListStatement { (:) $1 $3 }
 
+OpAssignType :: { AbsLinguaggio.OpAssignType }
+OpAssignType
+  : ':+=' %prec ':+=' { AbsLinguaggio.OpAssignAdd (posToLoc(getPos $1)) }
+  | ':-=' %prec ':-=' { AbsLinguaggio.OpAssignSub (posToLoc(getPos $1)) }
+  | ':*=' %prec ':*=' { AbsLinguaggio.OpAssignMul (posToLoc(getPos $1)) }
+
 Statement :: { AbsLinguaggio.Statement () () () }
 Statement
   : CompoundStatement { AbsLinguaggio.Stmts $1 }
   | RExpr { AbsLinguaggio.RExprStmt $1 () }
-  | LExpr ':=' RExpr { AbsLinguaggio.Assign $1 $3 () (posToLoc (getPos $2)) }
+  | LExpr ':=' RExpr  { AbsLinguaggio.Assign $1 $3 () (posToLoc (getPos $2)) }
+  | LExpr OpAssignType RExpr { AbsLinguaggio.OpAssign $1 $2 $3 () }
   | 'while' RExpr 'do' Statement { AbsLinguaggio.While $2 $4 (posToLoc (getPos $1)) }
   | 'repeat' Statement 'until' RExpr { AbsLinguaggio.DoWhile $2 $4 (posToLoc (getPos $3)) }
   | 'for' LExpr ':=' RExpr 'to' RExpr 'do' Statement { AbsLinguaggio.ForTo $2 $4 $6 $8 }
@@ -237,6 +248,7 @@ Statement
   | 'return' RExpr { AbsLinguaggio.ReturnStmt $2 () (posToLoc (getPos $1)) }
   | 'break' { AbsLinguaggio.BreakStmt (posToLoc (getPos $1)) }
   | 'continue' { AbsLinguaggio.ContinueStmt (posToLoc (getPos $1)) }
+
 
 OptElse :: { AbsLinguaggio.OptElse () () () }
 OptElse

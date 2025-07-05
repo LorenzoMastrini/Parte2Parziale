@@ -363,9 +363,9 @@ checkLExpr env lexpr = case lexpr of
                     else
                         let
                             Just (Array i ty) = getLExprType lexprEnriched
-                            (env3, hasError) = checkRange env2 lexprEnriched indicesEnriched loc
-                            finalType = if hasError then Nothing else Just ty
-                        in (env3, LArr lexprEnriched indicesEnriched finalType loc)
+                            --(env3, hasError) = checkRange env2 lexprEnriched indicesEnriched loc
+                            --finalType = if hasError then Nothing else Just ty
+                        in (env2, LArr lexprEnriched indicesEnriched (Just ty) loc)
             else (addError env2 (NotAnArray, loc), LArr lexprEnriched indicesEnriched Nothing loc)
     LDeref lexpr' _ loc ->
         let

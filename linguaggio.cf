@@ -63,6 +63,7 @@ Stmts.      Statement ::= CompoundStatement ;
 NoStmt.     Statement ::= ;
 RExprStmt.  Statement ::= RExpr ;
 Assign.     Statement ::= LExpr ":=" RExpr ;
+OpAssign.   Statement ::= LExpr OpAssignType RExpr ;
 While.      Statement ::= "while" RExpr "do" Statement ;
 DoWhile.    Statement ::= "repeat" Statement "until" RExpr ;
 ForTo.      Statement ::= "for" LExpr ":=" RExpr "to" RExpr "do" Statement ;
@@ -89,6 +90,7 @@ separator RExpr "," ;
 rules Literal ::= Integer | Double | Char | String | "true" | "false" ;
 rules Binary  ::= "+" | "-" | "*" | "/" | "div" | "mod" | "or" | "and" | "=" | "<>" | "<" | "<=" | ">" | ">=" ;
 rules Unary   ::= "+" | "-" | "not" ;
+rules OpAssignType ::= ":+=" | ":-=" | ":*=" ;
 
 -- Comments
 comment "//" ;

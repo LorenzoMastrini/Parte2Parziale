@@ -218,6 +218,13 @@ instance Print (AbsLinguaggio.Statement () () ()) where
       doc (showString " := "),
       prt 0 expr
     ]
+  prt i (AbsLinguaggio.OpAssign lexpr opassigntype rexpr _ty) =
+    concatD [
+      doc (showString (replicate (2*i) ' ')),
+      prt 0 lexpr,
+      prt 0 opassigntype,
+      prt 0 rexpr
+    ]
   prt i (AbsLinguaggio.While expr stmt loc) =
     concatD [
       doc (showString (replicate (2*i) ' ' ++ "while ")),
@@ -248,7 +255,6 @@ instance Print (AbsLinguaggio.Statement () () ()) where
         elseBlock = case stmt2 of
           AbsLinguaggio.NoElse -> concatD []
           AbsLinguaggio.Else s -> 
-            -- Calculate correct indentationfor the else
             let elseIndent = getElseIndent stmt1 i
             in concatD [doc (showString ("\n" ++ replicate (2*elseIndent) ' ' ++ "else\n")), prt (i+1) s]
     in concatD [
@@ -440,3 +446,8 @@ getElseIndent stmt baseIndent = case stmt of
       AbsLinguaggio.If {} -> baseIndent  -- else aligned with the current if
       _ -> baseIndent
   _ -> baseIndent
+
+instance Print AbsLinguaggio.OpAssignType where
+  prt _ (AbsLinguaggio.OpAssignAdd _) = doc (showString " :+= ")
+  prt _ (AbsLinguaggio.OpAssignSub _) = doc (showString " :-= ")
+  prt _ (AbsLinguaggio.OpAssignMul _) = doc (showString " :*= ")

@@ -17,11 +17,12 @@ data TACState = TACState {
     breakLabels :: [TACLabel],
     continueLabels :: [TACLabel],
     stringCounter :: Int,                   -- counter for string addresses
-    stringTable :: Map.Map String String    -- table for constant strings
+    stringTable :: Map.Map String String,    -- table for constant strings
+    outOfBound :: Bool
 }
 
 initialTACState :: TACState
-initialTACState = TACState 0 0 [] [] 0 Map.empty
+initialTACState = TACState 0 0 [] [] 0 Map.empty False
 
 newtemp :: TACType -> TACGen Address
 newtemp tacTy = do
@@ -93,7 +94,23 @@ tryPopContinueLabel = do
             return (Just label)
         [] -> return Nothing
 
+-- error handling
+array_index_out_of_bounds :: TACLabel
+array_index_out_of_bounds = 999
 
+outOfBoundHandler :: [TAC TACLabel]
+outOfBoundHandler  = [
+  TACAddLabel array_index_out_of_bounds,
+  TACComment "Runtime Error: Array index out of bounds",
+  TACGoto array_index_out_of_bounds  -- infinite loop to simulate halt
+  ]
+
+genOutOfBound :: TACGen [TAC TACLabel] 
+genOutOfBound = do 
+  happened <- gets outOfBound 
+  if happened 
+    then return outOfBoundHandler
+    else return []
 
 -----------------------------------------------------------
 -------------------- SUPPORT FUNCTIONS --------------------
