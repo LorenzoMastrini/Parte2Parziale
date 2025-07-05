@@ -18,11 +18,12 @@ data TACState = TACState {
     breakLabels :: [TACLabel],
     continueLabels :: [TACLabel],
     stringCounter :: Int,                   -- counter for string addresses
-    stringTable :: Map.Map String String    -- table for constant strings
+    stringTable :: Map.Map String String,    -- table for constant strings
+    outOfBound :: Bool
 }
 
 initialTACState :: TACState
-initialTACState = TACState 0 0 [] [] 0 Map.empty
+initialTACState = TACState 0 0 [] [] 0 Map.empty False
 
 newtemp :: TACType -> TACGen Address
 newtemp tacTy = do
@@ -107,6 +108,14 @@ outOfBoundHandler  = [
   TACGoto array_index_out_of_bounds  -- infinite loop to simulate halt
   ]
 
+genOutOfBound :: TACGen [TAC TACLabel] 
+genOutOfBound = do 
+  happened <- gets outOfBound 
+  if happened 
+    then return outOfBoundHandler
+    else do
+      modify (\s -> s { outOfBound = True })
+      return []
 
 
 -----------------------------------------------------------

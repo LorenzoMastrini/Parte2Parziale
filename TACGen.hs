@@ -18,9 +18,12 @@ runTACGen gen = runIdentity (evalStateT gen initialTACState)
 
 -- TAC Generator for Program
 genProgram :: EnrichedProgram -> ([TAC TACLabel], TACState)
-genProgram (Prog ident params block loc) = let (code, st) = runTACGen (genBlock block)
-  in (code ++ outOfBoundHandler, st)
-
+  
+genProgram (Prog ident params block loc) =
+  runTACGen $ do
+    (code, st) <- genBlock block
+    codeOutOfBound <- genOutOfBound
+    return (code ++ codeOutOfBound, st)
 --TAC Generator for Block
 genBlock :: EnrichedBlock -> TACGen ([TAC TACLabel], TACState)
 genBlock (Block constDefs varDecls procFunDecls compStmt) = do 
@@ -461,6 +464,7 @@ arrayBoundCheck idxOperand size = do
   let errLabel = array_index_out_of_bounds
   let onFail = [TACIfFalse isValid errLabel]
 
+  genOutOfBound
 
   return (xlower ++ xupper ++ xvalid ++ onFail)
 
