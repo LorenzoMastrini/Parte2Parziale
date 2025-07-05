@@ -71,7 +71,7 @@ import LexLinguaggio
   'else'      { PT _ (TS _ 36) }
   'end'       { PT _ (TS _ 37) }
   'false'     { PT _ (TS _ 38) }
-  'for'       { PT _ (TS _ 39) }
+  'for'       { PT pos (TS _ 39) }
   'function'  { PT pos (TS _ 40) }
   'if'        { PT pos (TS _ 41) }
   'mod'       { PT pos (TS _ 42) }
@@ -178,11 +178,10 @@ OptModality :: { AbsLinguaggio.OptModality }
 OptModality
   : {- empty -} { AbsLinguaggio.ByVal }
   | 'var' { AbsLinguaggio.ByRef }
-  | 'valres' { AbsLinguaggio.ByValRes }
 
 Type :: { AbsLinguaggio.Type () () () }
 Type
-  : 'array' '[' ListIndexType ']' 'of' Type { AbsLinguaggio.Array $3 $6 }
+  : 'array' '[' IndexType ']' 'of' Type { AbsLinguaggio.Array $3 $6 () }
   | '^' Type { AbsLinguaggio.Pointer $2 }
   | BasicType { AbsLinguaggio.BasicType $1 }
 
@@ -242,9 +241,8 @@ Statement
   | LExpr OpAssignType RExpr { AbsLinguaggio.OpAssign $1 $2 $3 () }
   | 'while' RExpr 'do' Statement { AbsLinguaggio.While $2 $4 (posToLoc (getPos $1)) }
   | 'repeat' Statement 'until' RExpr { AbsLinguaggio.DoWhile $2 $4 (posToLoc (getPos $3)) }
-  | 'for' LExpr ':=' RExpr 'to' RExpr 'do' Statement { AbsLinguaggio.ForTo $2 $4 $6 $8 }
+  | 'for' LExpr ':=' RExpr 'to' RExpr 'do' Statement { AbsLinguaggio.ForTo $2 $4 $6 $8 (posToLoc (getPos $3)) }
   | 'if' RExpr 'then' Statement OptElse { AbsLinguaggio.If $2 $4 $5 (posToLoc (getPos $1)) }
-  | 'case' RExpr 'of' ListCaseItem 'end' { AbsLinguaggio.Case $2 $4 }
   | 'return' RExpr { AbsLinguaggio.ReturnStmt $2 () (posToLoc (getPos $1)) }
   | 'break' { AbsLinguaggio.BreakStmt (posToLoc (getPos $1)) }
   | 'continue' { AbsLinguaggio.ContinueStmt (posToLoc (getPos $1)) }
@@ -255,20 +253,10 @@ OptElse
   : {- empty -} { AbsLinguaggio.NoElse }
   | 'else' Statement { AbsLinguaggio.Else $2 }
 
-CaseItem :: { AbsLinguaggio.CaseItem () () () }
-CaseItem
-  : Constant ':' Statement { AbsLinguaggio.CaseItem $1 $3 }
-
-ListCaseItem :: { [AbsLinguaggio.CaseItem () () ()] }
-ListCaseItem
-  : {- empty -} { [] }
-  | CaseItem { (:[]) $1 }
-  | CaseItem ';' ListCaseItem { (:) $1 $3 }
-
 LExpr :: { AbsLinguaggio.LExpr () () () }
 LExpr
   : Ident { AbsLinguaggio.LId $1 () }
-  | LExpr '[' ListRExpr ']' { AbsLinguaggio.LArr $1 $3 () (posToLoc (getPos $2)) }
+  | LExpr '[' RExpr ']' { AbsLinguaggio.LArr $1 $3 () (posToLoc (getPos $2)) }
   | LExpr '^' { AbsLinguaggio.LDeref $1 () (posToLoc (getPos $2)) }
   | '(' LExpr ')' { $2 }
 

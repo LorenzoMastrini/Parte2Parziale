@@ -1,11 +1,13 @@
 module StaticAnalysis where
 
-import AbsLinguaggio
-import ErrorStaticAnalysis hiding (showTy)
 import Data.Map (Map, toList)
 import qualified Data.Map as Map
-import Data.List (intercalate, nub)
 import Data.Maybe (isJust, isNothing)
+import Data.List (intercalate, nub, sortBy)
+import Data.Ord (comparing)
+import AbsLinguaggio
+import ErrorStaticAnalysis hiding (showTy)
+
 
 
 -- Environment
@@ -16,7 +18,7 @@ data Env = Env {
   } deriving (Eq, Show)
 
 data EnvEntry
-    = ConstVarEntry SimpleType Bool (Maybe (Constant () () ())) Loc -- (type, is constant, value if constant, location)
+    = ConstVarEntry SimpleType Bool (Maybe SimpleConstant) (Maybe (Int, Int)) Loc -- (type, is constant, value if constant, arrayBound(if array) location)
     | ProcFunEntry [SimpleFormalParameters] SimpleType Loc          -- (parameters, return type, location)
     deriving (Eq, Show)
 
@@ -56,7 +58,7 @@ checkProgram :: SimpleProgram -> (Env, EnrichedProgram)
 checkProgram (Prog ident params block loc) =
     let
         (env1, paramsEnriched) = checkFormalParametersList defaultEnv params
-        (env2, blockEnriched) = checkBlock env1 block Nothing
+        (env2, blockEnriched) = checkBlock env1 block False (BasicType Void)
     in (env2, Prog (enrichIdentUnknown ident) paramsEnriched blockEnriched loc)
 
 checkFormalParametersList :: Env -> [SimpleFormalParameters] -> (Env, [EnrichedFormalParameters])
@@ -70,24 +72,23 @@ checkFormalParametersList env (params:paramsList) =
 checkFormalParameters :: Env -> SimpleFormalParameters -> (Env, EnrichedFormalParameters)
 checkFormalParameters env (FormParam mod idents ty) =
     let
-        tyEnriched = enrichType ty
-        (env1, identsEnriched) = checkIdentsList env idents ty (VarInfo Nothing False) NoFunInfo
-    in (env1, FormParam mod identsEnriched tyEnriched)
+        (env1, identsEnriched) = checkIdentsList env idents ty (VarInfo Nothing False Nothing) NoFunInfo
+    in (env1, FormParam mod identsEnriched (enrichType ty))
 
-checkBlock :: Env -> SimpleBlock -> Maybe SimpleType -> (Env, EnrichedBlock)
-checkBlock env (Block constDefList varDeclList procFunDeclList compStmt) typeIfInsideFun =
+checkBlock :: Env -> SimpleBlock -> Bool -> SimpleType -> (Env, EnrichedBlock)
+checkBlock env (Block constDefList varDeclList procFunDeclList compStmt) isInsideFun funType =
     let
         -- Don't create new scope if already in a function scope
         localEnv = case parent env of
             Just _ -> env  -- Already in a function, use the same environment
             Nothing -> env  -- Program uses the default environment
-        
+
         -- Two-pass: raccoglie tutte le intestazioni di funzioni/procedure nell'ambiente
         -- Second pass: analyze constants, variables, and function bodies
         (env1, constDefListEnriched) = checkConstDefList localEnv constDefList
         (env2, varDeclListEnriched) = checkVarDeclList env1 varDeclList
         (env3, procFunDeclListEnriched) = checkProcFunDeclList env2 procFunDeclList
-        (env4, compStmtEnriched) = checkCompoundStatement env3 compStmt False typeIfInsideFun
+        (env4, compStmtEnriched) = checkCompoundStatement env3 compStmt False isInsideFun funType Nothing
         mergedEnv = mergeEnvs env env4
     in (mergedEnv, Block constDefListEnriched varDeclListEnriched procFunDeclListEnriched compStmtEnriched)
 
@@ -111,7 +112,7 @@ checkConstDef :: Env -> SimpleConstantDefinition -> (Env, EnrichedConstantDefini
 checkConstDef env def@(ConstDef ident constVal) =
     let
         ty = inferConstantType constVal
-        (env1, identEnriched) = checkIdent env ident ty (VarInfo (Just constVal) True) NoFunInfo
+        (env1, identEnriched) = checkIdent env ident ty (VarInfo (Just constVal) True Nothing) NoFunInfo
     in if ty /= BasicType Void -- The value is not constant
         then (env1, ConstDef identEnriched (enrichConst constVal))
         else case constVal of -- As the syntax is defined, it must be an identifier
@@ -134,22 +135,19 @@ checkVarDeclSequence :: Env -> [SimpleIdent] -> SimpleType -> (Env, EnrichedVari
 checkVarDeclSequence env [] ty = (env, VarDecl [] (enrichType ty))
 checkVarDeclSequence env (id:ids) ty =
     let
-        -- Check for negative indices if the type is an array, then check identifier for redeclarations
+        -- Check for identifiers redeclarations
         (envWithId, idEnr) = case ty of
-            Array indexTypes _ ->
+            Array indexType _ _ ->
                 let
                     loc = getIdentLoc id
-                    (env1, hasNegativeIndex) = checkNegativeIndex env indexTypes loc -- Check for negative indices
-                    (env2, baseIdEnr) = checkIdent env1 id ty (VarInfo Nothing False) NoFunInfo
-                    finalIdEnr = if hasNegativeIndex
-                        then setIdentType baseIdEnr Nothing -- If (at least) one index is negative, set identifier's type as Nothing
-                        else baseIdEnr
-                in (env2, finalIdEnr)
-            _ -> checkIdent env id ty (VarInfo Nothing False) NoFunInfo -- Not an array, check just the identifier
+                    arrRange = getRange indexType
+                    enrichedTy = enrichType ty
+                    (env1, baseIdEnr) = checkIdent env id ty (VarInfo Nothing False arrRange) NoFunInfo
+                in (env1, baseIdEnr)
+            _ -> checkIdent env id ty (VarInfo Nothing False Nothing) NoFunInfo -- Not an array, check just the identifier
         -- Recursive call
         (finalEnv, VarDecl idsEnr tyEnr) = checkVarDeclSequence envWithId ids ty
-    in
-        (finalEnv, VarDecl (idEnr : idsEnr) tyEnr) -- Final result
+    in (finalEnv, VarDecl (idEnr : idsEnr) tyEnr) -- Final result
 
 -- Iterate the list of procedures and functions declarations
 checkProcFunDeclList :: Env -> [SimpleProcedureAndFunctionDeclaration] -> (Env, [EnrichedProcedureAndFunctionDeclaration])
@@ -187,7 +185,8 @@ checkProcFunDecl env (ProcFunDecl heading block) =
     let
         localEnv = enterScope env -- Create a scope for the function
         (localEnv1, headingEnriched) = checkProcFunHead localEnv heading
-        (finalLocalEnv, blockEnriched) = checkBlock localEnv1 block (getFunHeadType headingEnriched)
+        retTy = getHeadingType headingEnriched
+        (finalLocalEnv, blockEnriched) = checkBlock localEnv1 block True retTy
         envHasReturn = hasReturnStmt finalLocalEnv headingEnriched blockEnriched
         Just outerEnv = parent envHasReturn -- Get the updated outer environment
         finalOuterEnv = outerEnv { errors = errors outerEnv ++ errors envHasReturn } -- Propagate the errors to the outer environment
@@ -198,19 +197,18 @@ checkProcFunHead :: Env -> SimpleProcedureAndFunctionHeading -> (Env, EnrichedPr
 checkProcFunHead localEnv head = case head of
     (ProcHead ident params) ->
         let
-            identEnriched = enrichIdent ident (Just (BasicType Void)) NoVarInfo (FunInfo (BasicType Void) params)
+            identEnriched = enrichIdent ident (BasicType Void) NoVarInfo (FunInfo (BasicType Void) params)
             (localEnvWithFunc, _) = checkProcFunIdent localEnv ident (BasicType Void) NoVarInfo (FunInfo (BasicType Void) params) params -- Add signature only to localEnv for recursion
             (localEnv1, paramsEnriched) = checkFormalParametersList localEnvWithFunc params
             updatedLocalEnv = localEnv1 { parent = parent localEnv }
         in (updatedLocalEnv, ProcHead identEnriched paramsEnriched)
     (FunHead ident params retTy loc) ->
         let
-            retTyEnriched = enrichType retTy
-            identEnriched = enrichIdent ident (Just retTy) NoVarInfo (FunInfo retTy params)
+            identEnriched = enrichIdent ident (enrichType retTy) NoVarInfo (FunInfo retTy params)
             (localEnvWithFunc, _) = checkProcFunIdent localEnv ident retTy NoVarInfo (FunInfo retTy params) params -- Add signature only to localEnv for recursion
             (localEnv1, paramsEnriched) = checkFormalParametersList localEnvWithFunc params
             updatedLocalEnv = localEnv1 { parent = parent localEnv }
-        in (updatedLocalEnv, FunHead identEnriched paramsEnriched retTyEnriched loc)
+        in (updatedLocalEnv, FunHead identEnriched paramsEnriched retTy loc)
 
 -- Given a list of identifiers, check recursively if each of them is already used inside the environment
 checkIdentsList :: Env -> [SimpleIdent] -> SimpleType -> VarInfo -> FunInfo -> (Env, [EnrichedIdent])
@@ -222,37 +220,37 @@ checkIdentsList env (i:is) ty varInfo funInfo =
 
 -- Check if the identifier is already used inside the environment. If not, add it to the environment
 checkIdent :: Env -> SimpleIdent -> SimpleType -> VarInfo -> FunInfo -> (Env, EnrichedIdent)
-checkIdent env ident@(Ident name loc _ _ _) ty varInfo@(VarInfo constVal isConst) funInfo =
+checkIdent env ident@(Ident name loc _ _ _) ty varInfo@(VarInfo constVal isConst arrayRange) funInfo =
     let res = lookupByName env name
     in case res of
-        Just (ConstVarEntry _ entryIsConst _ _, False) ->
+        Just (ConstVarEntry _ entryIsConst _ _ _, False) ->
             (addError env (RedeclaredConstVar ident entryIsConst, loc), enrichIdentUnknown ident)
         Just (ProcFunEntry _ _ existingFunLoc, False) ->
             (addError env (RedeclaredProcFun ident existingFunLoc, loc), enrichIdentUnknown ident)
         _ ->
-            (addEntry env ident (ConstVarEntry ty isConst constVal loc), enrichIdent ident (Just ty) varInfo funInfo)
+            (addEntry env ident (ConstVarEntry ty isConst constVal arrayRange loc), enrichIdent ident (enrichType ty) varInfo funInfo)
 
 -- Update the environment with the declaration of a procedure/function and return its enriched identifier
 checkProcFunIdent :: Env -> SimpleIdent -> SimpleType -> VarInfo -> FunInfo -> [SimpleFormalParameters] -> (Env, EnrichedIdent)
 checkProcFunIdent env ident ty NoVarInfo (FunInfo retTy paramsEnriched) simpleParams =
     let res = Map.lookup ident (symbols env) -- check only the local scope for procedures/functions
     in case res of
-        Just (ConstVarEntry _ isConst _ _) ->
+        Just (ConstVarEntry _ isConst _ _ _) ->
             (addError env (RedeclaredConstVar ident isConst, getIdentLoc ident), enrichIdentUnknown ident)
         Just (ProcFunEntry _ _ existingFunLoc) ->
             (addError env (RedeclaredProcFun ident existingFunLoc, getIdentLoc ident), enrichIdentUnknown ident)
         Nothing ->
             if retTy == BasicType Void
-                then (addEntry env ident (ProcFunEntry simpleParams (BasicType Void) (getIdentLoc ident)), enrichIdent ident (Just ty) NoVarInfo (FunInfo retTy paramsEnriched))
-                else (addEntry env ident (ProcFunEntry simpleParams ty (getIdentLoc ident)), enrichIdent ident (Just ty) NoVarInfo (FunInfo retTy paramsEnriched))
-checkProcFunIdent env ident ty (VarInfo _ isConst) funInfo _ =
+                then (addEntry env ident (ProcFunEntry simpleParams (BasicType Void) (getIdentLoc ident)), enrichIdent ident (enrichType ty) NoVarInfo (FunInfo retTy paramsEnriched))
+                else (addEntry env ident (ProcFunEntry simpleParams ty (getIdentLoc ident)), enrichIdent ident (enrichType ty) NoVarInfo (FunInfo retTy paramsEnriched))
+checkProcFunIdent env ident ty (VarInfo _ isConst arrayRange) funInfo _ =
     let res = lookupByName env (getIdentName ident)
     in case res of
-        Just (ConstVarEntry _ entryIsConst _ _, _) ->
+        Just (ConstVarEntry _ entryIsConst _ _ _, _) ->
             (addError env (RedeclaredConstVar ident entryIsConst, getIdentLoc ident), enrichIdentUnknown ident)
         Just (ProcFunEntry _ _ existingFunLoc, _) ->
             (addError env (RedeclaredProcFun ident existingFunLoc, getIdentLoc ident), enrichIdentUnknown ident)
-        Nothing -> (addEntry env ident (ConstVarEntry ty isConst Nothing (getIdentLoc ident)), enrichIdent ident (Just ty) (VarInfo Nothing isConst) funInfo)
+        Nothing -> (addEntry env ident (ConstVarEntry ty isConst Nothing arrayRange (getIdentLoc ident)), enrichIdent ident (enrichType ty) (VarInfo Nothing isConst arrayRange) funInfo)
 
 
 
@@ -260,22 +258,22 @@ checkProcFunIdent env ident ty (VarInfo _ isConst) funInfo _ =
 -------------------- EXPRESSIONS --------------------
 -----------------------------------------------------
 
-checkRExpr :: Env -> SimpleRExpr -> (Env, EnrichedRExpr)
-checkRExpr env expr = case expr of
+checkRExpr :: Env -> SimpleRExpr -> Maybe String -> (Env, EnrichedRExpr)
+checkRExpr env expr mForVar = case expr of
     Binary e1 op e2 _ ->
         let
-            (env1, e1Enriched) = checkRExpr env e1
-            (env2, e2Enriched) = checkRExpr env1 e2
+            (env1, e1Enriched) = checkRExpr env e1 mForVar
+            (env2, e2Enriched) = checkRExpr env1 e2 mForVar
             t1 = getRExprType e1Enriched
             t2 = getRExprType e2Enriched
             (env3, ty) = checkBinaryOp env2 op t1 t2
-        in (env3, Binary e1Enriched op e2Enriched ty)
+        in (env3, Binary e1Enriched op e2Enriched (enrichType ty))
     Unary op e _ ->
         let
-            (env1, eEnriched) = checkRExpr env e
+            (env1, eEnriched) = checkRExpr env e mForVar
             t = getRExprType eEnriched
             (env3, ty) = checkUnaryOp env1 op t
-        in (env3, Unary op eEnriched ty)
+        in (env3, Unary op eEnriched (enrichType ty))
     Lit lit _ -> (env, enrichLitExpr lit)
     FCall ident@(Ident name _ _ _ _) args loc -> case lookupByName env name of
         Nothing ->
@@ -284,46 +282,46 @@ checkRExpr env expr = case expr of
             (addError env (NotAFunction ident, loc), FCall (enrichIdentUnknown ident) [] loc) -- Not a function
         Just (ProcFunEntry params retTy _, _) ->
             let
-                (env1, argsEnriched, hasErrors) = checkArgs env args (paramsToList params) (length args) (length (paramsToList params)) loc
+                (env1, argsEnriched, hasErrors) = checkArgs env args (paramsToList params) (length args) (length (paramsToList params)) loc mForVar
                 identEnriched = if hasErrors
-                    then setIdentType (enrichIdent ident (Just retTy) NoVarInfo (FunInfo retTy params)) Nothing
-                    else enrichIdent ident (Just retTy) NoVarInfo (FunInfo retTy params)
+                    then enrichIdent ident Error NoVarInfo (FunInfo retTy params)
+                    else enrichIdent ident (enrichType retTy) NoVarInfo (FunInfo retTy params)
             in (env1, FCall identEnriched argsEnriched loc)
     Ref op@(UnaryRef loc) rexpr _ ->
         let
-            (env1, rexprEnriched) = checkRExpr env rexpr
+            (env1, rexprEnriched) = checkRExpr env rexpr mForVar
             isLExprResult = isLExpr rexprEnriched
         in if isLExprResult
             then let
-                mTy = getRExprType rexprEnriched
-                refType = case mTy of
-                            Just t -> Just (Pointer t)
-                            Nothing -> Nothing
-                in (env1, Ref op rexprEnriched refType)
-            else (addError env1 (NotLExpr op, loc), Ref op rexprEnriched Nothing)
+                t = getRExprType rexprEnriched
+                refType = case t of
+                            Error -> Error
+                            _     -> Pointer t
+                in (env1, Ref op rexprEnriched (enrichType refType))
+            else (addError env1 (NotLExpr op, loc), Ref op rexprEnriched Error)
     LExpr lexpr _ ->
         let
-            (env1, lexprEnriched) = checkLExpr env lexpr
+            (env1, lexprEnriched) = checkLExpr env lexpr mForVar
             ty = getLExprType lexprEnriched
-        in (env1, LExpr lexprEnriched ty)
+        in (env1, LExpr lexprEnriched (enrichType ty))
     _ -> error $ "DEBUG: checkStatement pattern non gestito: " ++ show expr
 
-checkArgs :: Env -> [SimpleRExpr] -> [SimpleFormalParameters] -> Int -> Int -> Loc -> (Env, [EnrichedRExpr], Bool) -- The boolean return True if there are errors
-checkArgs env [] [] origArgs origParams _ = (env, [], False) -- No parameters (no errors)
+checkArgs :: Env -> [SimpleRExpr] -> [SimpleFormalParameters] -> Int -> Int -> Loc -> Maybe String -> (Env, [EnrichedRExpr], Bool) -- The boolean return True if there are errors
+checkArgs env [] [] origArgs origParams _ _ = (env, [], False) -- No parameters (no errors)
 -- Check mismatch between arguments and formal parameters
-checkArgs env [] params origArgs origParams loc = 
+checkArgs env [] params origArgs origParams loc _ =
     let env1 = addError env (FunArgsNumMismatch origArgs origParams, loc)
     in (env1, [], True)
 -- Check mismatch between arguments and formal parameters
-checkArgs env args [] origArgs origParams loc =
+checkArgs env args [] origArgs origParams loc _ =
     let env1 = addError env (FunArgsNumMismatch origArgs origParams, loc)
     in (env1, [], True)
 -- Same number of arguments and parameters, continue with other checks
-checkArgs env (a:as) (p:ps) origArgs origParams loc =
+checkArgs env (a:as) (p:ps) origArgs origParams loc mForVar =
     let
-        (env1, argEnriched) = checkRExpr env a
-        (env2, compatible) = checkArgType env1 argEnriched p loc -- Check type compatibility
-        (env3, argsEnriched, hasTypeErrorRest) = checkArgs env2 as ps origArgs origParams loc -- Recursive call on the rest of the two lists
+        (env1, argEnriched) = checkRExpr env a mForVar
+        (env2, compatible) = checkArgType env1 argEnriched p loc
+        (env3, argsEnriched, hasTypeErrorRest) = checkArgs env2 as ps origArgs origParams loc mForVar
         hasTypeError = not compatible || hasTypeErrorRest
     in (env3, argEnriched : argsEnriched, hasTypeError)
 
@@ -331,167 +329,160 @@ checkArgType :: Env -> EnrichedRExpr -> SimpleFormalParameters -> Loc -> (Env, B
 checkArgType env argEnriched (FormParam mod _ paramType) loc = case mod of
     ByVal -> let
                 argType = getRExprType argEnriched
-                (env1, compatible) = argCompatible env argType paramType loc -- Regular compatibility type checks
+                (env1, compatible) = areParamsCompatible env argType paramType loc -- Regular compatibility type checks
             in (env1, compatible)
-    _ -> -- ByRef and ByValRes modalities
+    _ -> -- ByRef modality
         if isLExpr argEnriched then
             let
-                argType = getRExprType argEnriched 
-            in if argType == Just paramType -- In ByRef and ByValRes modality the types must be exactly the same
+                argType = getRExprType argEnriched
+            in if argType == paramType -- In ByRef modality the types must be exactly the same
                 then (env, True)
-                else (addError env (IncompatibleModParamType mod argType paramType, loc), False)
-        else (addError env (NotLExprInMod mod, loc), False) -- Not L-expresion in ByRef or ByValRes modalities
-    
+                else (addError env (IncompatibleRefModParamType argType paramType, loc), False)
+        else (addError env (NotLExprInRefMod, loc), False) -- Not L-expresion in ByRef modality
 
-checkLExpr :: Env -> SimpleLExpr -> (Env, EnrichedLExpr)
-checkLExpr env lexpr = case lexpr of
+checkLExpr :: Env -> SimpleLExpr -> Maybe String -> (Env, EnrichedLExpr)
+checkLExpr env lexpr mForVar = case lexpr of
     LId ident _ ->
         let
-            (env1, identEnriched) = identExists env ident
-            ty = getIdentType identEnriched
-        in (env1, LId identEnriched ty)
-    LArr lexpr' indices _ loc ->
+            (env1, hasErrors) = case mForVar of
+                    -- Control variable of for loop cannot be used inside its body
+                    Just forName | getIdentName ident == forName -> (addError env (ForControlVarUsedInBody ident (getIdentLoc ident), getIdentLoc ident), True)
+                    _ -> (env, False)
+        in if hasErrors
+            then
+                (env1, LId (enrichIdentUnknown ident) Error)  -- Don't add errors caused by other errors (for control variable used inside for)
+            else let
+                    (env2, identEnriched) = identExists env1 ident
+                    ty = getIdentType identEnriched
+                in (env2, LId identEnriched ty)
+    LArr lexpr' index _ loc ->
         let
-            (env1, lexprEnriched) = checkLExpr env lexpr'
-            (env2, indicesEnriched) = checkIndices env1 indices loc
-            nonIntIndices = hasNonInteger indicesEnriched
+            (env1, lexprEnriched) = checkLExpr env lexpr' mForVar
+            (env2, indexEnriched) = checkArrIndex env1 index loc mForVar
             isArrayResult = isArray lexprEnriched
-            childHasUnknown = isNothing (getLExprType lexprEnriched) || any (isNothing . getRExprType) indicesEnriched
-        in if isArrayResult && not childHasUnknown
-            then if nonIntIndices
-                    then (env2, LArr lexprEnriched indicesEnriched Nothing loc)
-                    else
-                        let
-                            Just (Array i ty) = getLExprType lexprEnriched
-                            --(env3, hasError) = checkRange env2 lexprEnriched indicesEnriched loc
-                            --finalType = if hasError then Nothing else Just ty
-                        in (env2, LArr lexprEnriched indicesEnriched (Just ty) loc)
-            else (addError env2 (NotAnArray, loc), LArr lexprEnriched indicesEnriched Nothing loc)
+            hasError = getLExprType lexprEnriched == Error || getRExprType indexEnriched == Error
+        in if hasError
+            then (env2, LArr lexprEnriched indexEnriched Error loc)
+            else if isArrayResult && not hasError
+                then if isInteger indexEnriched
+                    then
+                        let Array i ty varInfo = getLExprType lexprEnriched
+                        in (env2, LArr lexprEnriched indexEnriched (enrichType ty) loc)
+                    else (addError env2 (NotIntegerArrIndex (getRExprType indexEnriched), loc), LArr lexprEnriched indexEnriched Error loc)
+                else (addError env2 (NotAnArray, loc), LArr lexprEnriched indexEnriched Error loc)
     LDeref lexpr' _ loc ->
         let
-            (env1, lexprEnriched) = checkLExpr env lexpr'
+            (env1, lexprEnriched) = checkLExpr env lexpr' mForVar
             isPointerResult = isPointer lexprEnriched
         in if isPointerResult
             then let
-                Just (Pointer t) = getLExprType lexprEnriched
-                in (env1, LDeref lexprEnriched (Just t) loc)
-            else (addError env1 (NotAPointer, loc), LDeref lexprEnriched Nothing loc)
+                Pointer t = getLExprType lexprEnriched
+                in (env1, LDeref lexprEnriched (enrichType t) loc)
+            else (addError env1 (NotAPointer, loc), LDeref lexprEnriched Error loc)
 
-checkIndices :: Env -> [SimpleRExpr] -> Loc -> (Env, [EnrichedRExpr])
-checkIndices env [] loc = (env, [])
-checkIndices env (index:indices) loc =
+checkArrIndex :: Env -> SimpleRExpr -> Loc -> Maybe String -> (Env, EnrichedRExpr)
+checkArrIndex env index loc mForVar =
     let
-        (env1, indexEnriched) = checkRExpr env index
-        (env2, indicesEnriched) = checkIndices env1 indices loc
+        (env1, indexEnriched) = checkRExpr env index mForVar
         indexType = getRExprType indexEnriched
-    in if indexType == Just (BasicType Integer)
-        then (env2, indexEnriched : indicesEnriched)
-        else
+    in (if (indexType == Error) || (indexType == BasicType Integer)
+        then (env1, indexEnriched) -- If there's an error or the type is correct do not add errors to environment
+        else (
             let env2 = addError env1 (NotIntegerArrIndex indexType, loc)
-            in (env2, indexEnriched : indicesEnriched)
-
-checkRange :: Env -> EnrichedLExpr -> [EnrichedRExpr] -> Loc -> (Env, Bool)
-checkRange env lexpr indices loc =
-    case getLExprType lexpr of
-        Just (Array indTy _) ->
-            let
-                (min, max) = getArrRange env indTy
-                values = getValFromIndices indices
-                allKnown = all isJust values -- If all indices are known, check the bounds of the array
-                outOfBounds = [v | Just v <- values, v < min || v > max]
-            in if allKnown
-               then if null outOfBounds
-                    then (env, False)
-                    else (addError env (OutOfBound outOfBounds loc, loc), True)
-               else (env, False) -- Indices not known: no static error
-        _ -> (addError env (NotAnArray, loc), False)
+            in (env2, indexEnriched)
+        ))
 
 
-        
+
 ----------------------------------------------------
 -------------------- STATEMENTS --------------------
 ----------------------------------------------------
 
-checkCompoundStatement :: Env -> SimpleCompoundStatement -> Bool -> Maybe SimpleType -> (Env, EnrichedCompoundStatement)
-checkCompoundStatement env (CompStmt stmts) isLoop  typeIfInsideFun =
+checkCompoundStatement :: Env -> SimpleCompoundStatement -> Bool -> Bool -> SimpleType -> Maybe String -> (Env, EnrichedCompoundStatement)
+checkCompoundStatement env (CompStmt stmts) isLoop isInsideFun funType mForVar =
     let
-        (env1, stmtsEnriched) = checkStatementList env stmts isLoop typeIfInsideFun
+        (env1, stmtsEnriched) = checkStatementList env stmts isLoop isInsideFun funType mForVar
     in (env1, CompStmt stmtsEnriched)
 
-checkStatementList :: Env -> [SimpleStatement] -> Bool -> Maybe SimpleType -> (Env, [EnrichedStatement])
-checkStatementList env [] isLoop typeIfInsideFun = (env, [])
-checkStatementList env (stmt:stmts) isLoop typeIfInsideFun =
+checkStatementList :: Env -> [SimpleStatement] -> Bool -> Bool -> SimpleType -> Maybe String -> (Env, [EnrichedStatement])
+checkStatementList env [] isLoop isInsideFun funType mForVar = (env, [])
+checkStatementList env (stmt:stmts) isLoop isInsideFun funType mForVar =
     let
-        (env1, stmtEnriched) = checkStatement env stmt isLoop typeIfInsideFun
-        (env2, stmtsEnriched) = checkStatementList env1 stmts isLoop typeIfInsideFun
+        (env1, stmtEnriched) = checkStatement env stmt isLoop isInsideFun funType mForVar
+        (env2, stmtsEnriched) = checkStatementList env1 stmts isLoop isInsideFun funType mForVar
     in (env2, stmtEnriched:stmtsEnriched)
 
-checkStatement :: Env -> SimpleStatement -> Bool -> Maybe SimpleType -> (Env, EnrichedStatement)
-checkStatement env stmt isLoop typeIfInsideFun = case stmt of
+checkStatement :: Env -> SimpleStatement -> Bool -> Bool -> SimpleType -> Maybe String -> (Env, EnrichedStatement)
+checkStatement env stmt isLoop isInsideFun funType mForVar = case stmt of
     Stmts compStmt ->
         let
-            (env1, compStmtEnriched) = checkCompoundStatement env compStmt isLoop typeIfInsideFun
+            (env1, compStmtEnriched) = checkCompoundStatement env compStmt isLoop isInsideFun funType mForVar
         in (env1, Stmts compStmtEnriched)
     RExprStmt expr _ ->
         let
-            (env1, exprEnriched) = checkRExpr env expr
-        in (env1, RExprStmt exprEnriched (getRExprType exprEnriched))
+            (env1, exprEnriched) = checkRExpr env expr mForVar
+        in (env1, RExprStmt exprEnriched (enrichType (getRExprType exprEnriched)))
     Assign lexpr rexpr _ loc ->
         let
-            (env1, lexprEnriched) = checkLExpr env lexpr
-            (env2, rexprEnriched) = checkRExpr env1 rexpr
+            (env1, lexprEnriched) = checkLExpr env lexpr mForVar
+            (env2, rexprEnriched) = checkRExpr env1 rexpr mForVar
         in if isConstant lexprEnriched
-            then (addError env2 (AssignmentToConstant, loc), Assign lexprEnriched rexprEnriched Nothing loc) -- If the checks didn't pass as defined in the grammar, it must be a constant
+            then (addError env2 (AssignmentToConstant, loc), Assign lexprEnriched rexprEnriched Error loc) -- If the checks didn't pass as defined in the grammar, it must be a constant
             else let
-                (env3, assTy) = compatibleAssignment env2 (getLExprType lexprEnriched) (getRExprType rexprEnriched) loc
-                in (env3, Assign lexprEnriched rexprEnriched assTy loc)
+                (env3, assTy) = checkCompatibleAssignmentTypes env2 (getLExprType lexprEnriched) (getRExprType rexprEnriched) loc
+                in (env3, Assign lexprEnriched rexprEnriched (enrichType assTy) loc)
     If cond thenStmt optElse loc ->
         let
-            (env1, condEnriched) = checkRExpr env cond
-            (env2, thenEnriched) = checkStatement env1 thenStmt isLoop typeIfInsideFun
-            (env3, optElseEnriched) = checkOptElse env2 optElse isLoop typeIfInsideFun
-            envFinal = if getRExprType condEnriched == Just (BasicType Boolean)
+            (env1, condEnriched) = checkRExpr env cond mForVar
+            (env2, thenEnriched) = checkStatement env1 thenStmt isLoop isInsideFun funType mForVar
+            (env3, optElseEnriched) = checkOptElse env2 optElse isLoop isInsideFun funType mForVar
+            envFinal = if getRExprType condEnriched == BasicType Boolean
                 then env3
                 else addError env3 (NotBooleanCondition "if" (getRExprType condEnriched), loc)
         in (envFinal, If condEnriched thenEnriched optElseEnriched loc)
     While rexpr stmt loc ->
         let
-            (env1, rexprEnriched) = checkRExpr env rexpr
-            (env2, stmtEnriched) = checkStatement env1 stmt True typeIfInsideFun
+            (env1, rexprEnriched) = checkRExpr env rexpr mForVar
+            (env2, stmtEnriched) = checkStatement env1 stmt True isInsideFun funType mForVar
         in if isBoolean rexprEnriched
             then (env2, While rexprEnriched stmtEnriched loc)
             else case getRExprType rexprEnriched of
-                Nothing -> (env2, While rexprEnriched stmtEnriched loc) -- Don't add an error if the condition itself contains an error
+                Error -> (env2, While rexprEnriched stmtEnriched loc) -- Don't add an error if the condition itself contains an error
                 _ -> (addError env2 (NotBooleanCondition "while" (getRExprType rexprEnriched), loc), While rexprEnriched stmtEnriched loc)
     DoWhile stmt rexpr loc ->
         let
-            (env1, rexprEnriched) = checkRExpr env rexpr
-            (env2, stmtEnriched) = checkStatement env1 stmt True typeIfInsideFun
+            (env1, rexprEnriched) = checkRExpr env rexpr mForVar
+            (env2, stmtEnriched) = checkStatement env1 stmt True isInsideFun funType mForVar
         in if isBoolean rexprEnriched
             then (env2, DoWhile stmtEnriched rexprEnriched loc)
             else case getRExprType rexprEnriched of
-                Nothing -> (env2, DoWhile stmtEnriched rexprEnriched loc) -- Don't add an error if the condition itself contains an error
+                Error -> (env2, DoWhile stmtEnriched rexprEnriched loc) -- Don't add an error if the condition itself contains an error
                 _ -> (addError env2 (NotBooleanCondition "repeat-until" (getRExprType rexprEnriched), loc), DoWhile stmtEnriched rexprEnriched loc)
-    ForTo lexpr rexpr1 rexpr2 stmt ->
+    ForTo lexpr rexpr1 rexpr2 stmt loc ->
         let
-            (env1, lexprEnriched) = checkLExpr env lexpr
-            (env2, rexpr1Enriched) = checkRExpr env1 rexpr1
-            (env3, rexpr2Enriched) = checkRExpr env2 rexpr2
-            (env4, stmtEnriched) = checkStatement env stmt True typeIfInsideFun
-        in (env4, ForTo lexprEnriched rexpr1Enriched rexpr2Enriched stmtEnriched)
+            (env1, rexpr1Enriched) = checkRExpr env rexpr1 Nothing
+            (env2, rexpr2Enriched) = checkRExpr env1 rexpr2 Nothing
+            ty = getRExprType rexpr1Enriched
+            localEnv = enterScope env2 -- Create local env for the for loop
+            (localEnv1, controlVarEnriched) = checkForControlVar localEnv lexpr ty loc
+            forVarName = case lexpr of
+                LId (Ident name _ _ _ _) _ -> Just name
+                _ -> Nothing
+            (localEnv2, stmtEnriched) = checkStatement localEnv1 stmt True isInsideFun funType forVarName
+        in if getRExprType rexpr1Enriched == getRExprType rexpr2Enriched -- Bounds of the array must be of the same type
+            then (mergeForEnvs env2 localEnv2, ForTo controlVarEnriched rexpr1Enriched rexpr2Enriched stmtEnriched loc)
+            else (addError (mergeForEnvs env2 localEnv2) (ForBoundsTypeMismatch, loc), ForTo controlVarEnriched rexpr1Enriched rexpr2Enriched stmtEnriched loc)
     ReturnStmt rexpr _ loc ->
-        let (env1, rexprEnriched) = checkRExpr env rexpr in
-        case typeIfInsideFun of
-            Nothing ->
-                (addError env1 (NotInFunction, loc), ReturnStmt rexprEnriched Nothing loc) -- Return is not inside a function
-            Just (BasicType Void) ->
-                (addError env1 (ReturnInsideProcedure, loc), ReturnStmt rexprEnriched Nothing loc) -- Return is inside a procedure
-            Just _ ->
-                case getRExprType rexprEnriched of
-                    Nothing -> (env1, ReturnStmt rexprEnriched typeIfInsideFun loc)
-                    Just t  -> if Just t == typeIfInsideFun
-                                  then (env1, ReturnStmt rexprEnriched typeIfInsideFun loc)
-                                  else (addError env1 (ReturnTypeMismatch (Just t) typeIfInsideFun, loc), ReturnStmt rexprEnriched typeIfInsideFun loc)
+        let
+            (env1, rexprEnriched) = checkRExpr env rexpr mForVar
+            ty = getRExprType rexprEnriched
+        in if not isInsideFun
+            then (addError env1 (NotInFunction, loc), ReturnStmt rexprEnriched Error loc) -- Return is not inside a function
+            else case ty of
+                Error -> (env1, ReturnStmt rexprEnriched Error loc) -- Don't add errors to the environment
+                t -> if t == funType
+                    then (env1, ReturnStmt rexprEnriched (enrichType funType) loc)
+                    else (addError env1 (ReturnTypeMismatch t funType, loc), ReturnStmt rexprEnriched (enrichType funType) loc)
     BreakStmt loc -> if isLoop
         then (env, BreakStmt loc)
         else (addError env (NotInLoop "break", loc), BreakStmt loc)
@@ -499,31 +490,104 @@ checkStatement env stmt isLoop typeIfInsideFun = case stmt of
         then (env, ContinueStmt loc)
         else (addError env (NotInLoop "continue", loc), ContinueStmt loc)
 
-checkOptElse :: Env -> SimpleOptElse -> Bool -> Maybe SimpleType -> (Env, EnrichedOptElse)
-checkOptElse env optElse isLoop typeIfInsideFun = case optElse of
+-------------------- Assignments --------------------
+-- Check the type compatibility in an assignment
+checkCompatibleAssignmentTypes :: Env -> SimpleType -> SimpleType -> Loc -> (Env, SimpleType)
+checkCompatibleAssignmentTypes env targetType sourceType loc
+    | targetType == Error || sourceType == Error = (env, Error) -- If one of the two types is Error, stop the analysis
+    | targetType == sourceType = (env, targetType) -- Same type: compatible
+    | otherwise = case (targetType, sourceType) of
+        (BasicType Real, BasicType Integer)     -> (env, targetType) -- Implicit cast: Integer -> Real
+        (BasicType Integer, BasicType Boolean)  -> (env, targetType) -- Implicit cast: Boolean -> Integer
+        (BasicType Real, BasicType Boolean)     -> (env, targetType) -- Implicit cast: Boolean -> Real
+        (Array _ elemType _, Pointer ptrType)   -> if elemType == ptrType
+            then (env, targetType)
+            else (addError env (IncompatibleArrPtrType, loc), Error)
+        (Pointer ptrType, Array _ elemType _)   -> if ptrType == elemType
+            then (env, targetType)
+            else (addError env (IncompatiblePtrArrType, loc), Error)
+        _ -> (addError env (IncompatibleAssignment targetType sourceType, loc), Error)
+        
+-------------------- If-Then-Else --------------------
+checkOptElse :: Env -> SimpleOptElse -> Bool -> Bool -> SimpleType -> Maybe String -> (Env, EnrichedOptElse)
+checkOptElse env optElse isLoop isInsideFun funType mForVar = case optElse of
     NoElse -> (env, NoElse)
     Else stmt ->
-        let (env1, stmtEnriched) = checkStatement env stmt isLoop typeIfInsideFun
+        let (env1, stmtEnriched) = checkStatement env stmt isLoop isInsideFun funType mForVar
         in (env1, Else stmtEnriched)
+
+-------------------- For --------------------
+checkForControlVar :: Env -> SimpleLExpr -> SimpleType -> Loc -> (Env, EnrichedLExpr)
+checkForControlVar env lexpr ty loc = case lexpr of
+    LId ident@(Ident _ idLoc _ _ _) _ -> case ty of
+        (BasicType Integer) ->
+            let
+                identEnriched = enrichIdent ident (enrichType ty) (VarInfo Nothing False Nothing) NoFunInfo
+                env1 = addEntry env ident (ConstVarEntry ty False Nothing Nothing idLoc) -- Implicit declaration of control variable
+            in (env1, LId identEnriched (enrichType ty))
+        (BasicType Boolean) ->
+            let
+                identEnriched = enrichIdent ident (enrichType ty) (VarInfo Nothing False Nothing) NoFunInfo
+                env1 = addEntry env ident (ConstVarEntry ty False Nothing Nothing idLoc)
+            in (env1, LId identEnriched (enrichType ty))
+        (BasicType Real) ->
+            let
+                identEnriched = enrichIdent ident (enrichType ty) (VarInfo Nothing False Nothing) NoFunInfo
+                env1 = addEntry env ident (ConstVarEntry ty False Nothing Nothing idLoc)
+            in (env1, LId identEnriched (enrichType ty))
+        _ -> 
+            let
+                identEnriched = enrichIdent ident (enrichType ty) (VarInfo Nothing False Nothing) NoFunInfo
+            in (addError env (ForControlVarTypeNotAllowed ty, loc), LId identEnriched Error)
+    LArr lexpr' index _ loc -> 
+        let
+            (env1, lexprEnriched) = checkLExpr env lexpr' Nothing
+            (env2, indexEnriched) = checkArrIndex env1 index loc Nothing
+            isArrayResult = isArray lexprEnriched
+        in (addError env2 (ForControlVarNotLId, loc), LArr lexprEnriched indexEnriched Error loc)
+    LDeref lexpr' _ loc -> 
+        let
+            (env1, lexprEnriched) = checkLExpr env lexpr' Nothing
+        in (addError env1 (ForControlVarNotLId, loc), LDeref lexprEnriched Error loc)
+
+
+-------------------- FCall --------------------
+-- Check the type compatibility between formal and actual parameters in function calls
+areParamsCompatible :: Env -> SimpleType -> SimpleType -> Loc -> (Env, Bool)
+areParamsCompatible env argType formParamType loc
+    | argType == Error || formParamType == Error = (env, False) -- If one of the two types is Error, don't add errors
+    | argType == formParamType = (env, True) -- Same type: compatible
+    | otherwise = case (formParamType, argType) of
+        (BasicType Real, BasicType Integer)     -> (env, True) -- Implicit cast: Integer -> Real
+        (BasicType Integer, BasicType Boolean)  -> (env, True) -- Implicit cast: Boolean -> Integer
+        (BasicType Real, BasicType Boolean)     -> (env, True) -- Implicit cast: Boolean -> Real
+        (Array _ elemType _, Pointer ptrType)   -> if elemType == ptrType
+            then (env, True)
+            else (addError env (IncompatibleArrPtrType, loc), False)
+        (Pointer ptrType, Array _ elemType _)   -> if ptrType == elemType
+            then (env, True)
+            else (addError env (IncompatiblePtrArrType, loc), False)
+        _ -> (addError env (FunArgTypeMismatch argType formParamType, loc), False)
 
 
 
 ------------------------------------------------
 -------------------- CHECKS --------------------
 ------------------------------------------------
-
 identExists :: Env -> SimpleIdent -> (Env, EnrichedIdent)
 identExists env ident@(Ident name loc _ varInfo funInfo) = case lookupByName env name of
     Nothing ->
         (addError env (UnknownIdentifier ident, loc), enrichIdentUnknown ident) -- Identifier doesn't exist
-    Just (ConstVarEntry ty isConst constVal entryLoc, _) ->
-        (env, enrichIdent ident (Just ty) (VarInfo constVal isConst) NoFunInfo)
+    Just (ConstVarEntry ty isConst constVal arrRange entryLoc, _) ->
+        (env, enrichIdent ident (enrichType ty) (VarInfo constVal isConst arrRange) NoFunInfo)
     Just (ProcFunEntry params retTy loc, _) ->
-        (env, enrichIdent ident (Just retTy) NoVarInfo (FunInfo retTy params))
+        (env, enrichIdent ident (enrichType retTy) NoVarInfo (FunInfo retTy params))
 
 -------------------- Binary --------------------
-checkBinaryOp :: Env -> Binary -> Maybe SimpleType -> Maybe SimpleType -> (Env, Maybe SimpleType)
-checkBinaryOp env op (Just t1) (Just t2) = case op of
+checkBinaryOp :: Env -> Binary -> SimpleType -> SimpleType -> (Env, SimpleType)
+checkBinaryOp env op t1 t2 = if t1 == Error || t2 == Error
+    then (env, Error) -- One of the two types is Error, stop expression analysis
+    else case op of
     BinaryPlus loc      -> checkNumericOp env "+" t1 t2 loc
     BinaryMinus loc     -> checkNumericOp env "-" t1 t2 loc
     BinaryMul loc       -> checkNumericOp env "*" t1 t2 loc
@@ -538,154 +602,82 @@ checkBinaryOp env op (Just t1) (Just t2) = case op of
     BinaryLte loc       -> checkComparisonOp env "<=" t1 t2 loc
     BinaryGt loc        -> checkComparisonOp env ">" t1 t2 loc
     BinaryGte loc       -> checkComparisonOp env ">=" t1 t2 loc
-checkBinaryOp env _ _ _ = (env, Nothing)
 
-checkNumericOp :: Env -> String -> SimpleType -> SimpleType -> Loc -> (Env, Maybe SimpleType)
+-- Type checking numeric operations
+checkNumericOp :: Env -> String -> SimpleType -> SimpleType -> Loc -> (Env, SimpleType)
 checkNumericOp env op t1 t2 loc = case (t1, t2) of
-    (incomp1@(BasicType Boolean), incomp2)      -> (addError env (IncompatibleTypes op incomp1 incomp2, loc), Nothing)
-    (incomp1@(BasicType Character), incomp2)    -> (addError env (IncompatibleTypes op incomp1 incomp2, loc), Nothing)
-    (incomp1@(BasicType String), incomp2)       -> (addError env (IncompatibleTypes op incomp1 incomp2, loc), Nothing)
-    (incomp1@(BasicType Void), incomp2)         -> (addError env (IncompatibleTypes op incomp1 incomp2, loc), Nothing)
-    (incomp1, incomp2@(BasicType Boolean))      -> (addError env (IncompatibleTypes op incomp1 incomp2, loc), Nothing)
-    (incomp1, incomp2@(BasicType Character))    -> (addError env (IncompatibleTypes op incomp1 incomp2, loc), Nothing)
-    (incomp1, incomp2@(BasicType String))       -> (addError env (IncompatibleTypes op incomp1 incomp2, loc), Nothing)
-    (incomp1, incomp2@(BasicType Void))         -> (addError env (IncompatibleTypes op incomp1 incomp2, loc), Nothing)
-    _ ->
-        let
-            t1' = promoteNumericType t1
-            t2' = promoteNumericType t2
-        in if t1' == BasicType Real || t2' == BasicType Real
-            then (env, Just (BasicType Real))
-            else (env, Just (BasicType Integer))
+    (BasicType Integer, BasicType Integer)  -> (env, BasicType Integer)
+    (BasicType Integer, BasicType Real)     -> (env, BasicType Real)    -- Implicit cast: Integer -> Real
+    (BasicType Integer, BasicType Boolean)  -> (env, BasicType Integer) -- Implicit cast: Boolean -> Integer
+    (BasicType Real, BasicType Real)        -> (env, BasicType Real)
+    (BasicType Real, BasicType Integer)     -> (env, BasicType Real)    -- Implicit cast: Integer -> Real
+    (BasicType Real, BasicType Boolean)     -> (env, BasicType Real)    -- Implicit cast: Boolean (-> Integer) -> Real
+    (BasicType Boolean, BasicType Integer)  -> (env, BasicType Integer) -- Implicit cast: Boolean -> Integer
+    (BasicType Boolean, BasicType Real)     -> (env, BasicType Real)    -- Implicit cast: Boolean (-> Integer) -> Real
+    (BasicType Boolean, BasicType Boolean)  -> (env, BasicType Integer) -- Implicit cast: Boolean (-> Integer) -> Real
+    _                                       -> (addError env (IncompatibleTypes op t1 t2, loc), Error) -- Incompatible numeric types
 
-checkIntegerOp :: Env -> String -> SimpleType -> SimpleType -> Loc -> (Env, Maybe SimpleType)
-checkIntegerOp env op t1 t2 loc = let
-    (env1, mTy1) = checkIntegerType env op t1 loc
-    (env2, mTy2) = checkIntegerType env1 op t2 loc
-    in if isJust mTy1 && isJust mTy2
-        then (env2, Just (BasicType Integer))
-        else (env2, Nothing)
+-- Type checking integer operations
+checkIntegerOp :: Env -> String -> SimpleType -> SimpleType -> Loc -> (Env, SimpleType)
+checkIntegerOp env op t1 t2 loc = case (t1, t2) of
+    (BasicType Integer, BasicType Integer)  -> (env, BasicType Integer)
+    (BasicType Integer, BasicType Boolean)  -> (env, BasicType Integer) -- Implicit cast: Boolean -> Integer
+    (BasicType Boolean, BasicType Integer)  -> (env, BasicType Integer) -- Implicit cast: Boolean -> Integer
+    (BasicType Boolean, BasicType Boolean)  -> (env, BasicType Integer) -- Implicit cast: Boolean (-> Integer) -> Real (both operands)
+    _                                       -> (addError env (IncompatibleTypes op t1 t2, loc), Error) -- Incompatible numeric types
 
-checkBooleanOp :: Env -> String -> SimpleType -> SimpleType -> Loc -> (Env, Maybe SimpleType)
+checkBooleanOp :: Env -> String -> SimpleType -> SimpleType -> Loc -> (Env, SimpleType)
 checkBooleanOp env op t1 t2 loc =
     let
         (env1, mTy1) = checkBooleanType env op t1 loc
         (env2, mTy2) = checkBooleanType env1 op t2 loc
-    in if isJust mTy1 && isJust mTy2
-        then (env2, Just (BasicType Boolean))
-        else (env2, Nothing)
+    in if mTy1 == Error || mTy2 == Error
+        then (env2, Error) -- Don't add errors if present (done in checkBooleanType)
+        else (env2, BasicType Boolean)
 
-checkComparisonOp :: Env -> String -> SimpleType -> SimpleType -> Loc -> (Env, Maybe SimpleType)
-checkComparisonOp env "<" t1@(BasicType Boolean) t2@(BasicType Boolean) loc = (addError env (NotBooleanOperation "<" t1 t2, loc), Nothing)
-checkComparisonOp env "<=" t1@(BasicType Boolean) t2@(BasicType Boolean) loc = (addError env (NotBooleanOperation "<=" t1 t2, loc), Nothing)
-checkComparisonOp env ">" t1@(BasicType Boolean) t2@(BasicType Boolean) loc = (addError env (NotBooleanOperation ">" t1 t2, loc), Nothing)
-checkComparisonOp env ">=" t1@(BasicType Boolean) t2@(BasicType Boolean) loc = (addError env (NotBooleanOperation ">=" t1 t2, loc), Nothing)
-checkComparisonOp env op t1 t2 loc = if t1 == t2
-    then (env, Just (BasicType Boolean))
-    else case (t1, t2) of
-        (BasicType Integer, BasicType Real)     -> (env, Just (BasicType Boolean)) -- implicit cast of t1
-        (BasicType Real, BasicType Integer)     -> (env, Just (BasicType Boolean)) -- implicit cast of t2
-        (BasicType Character, BasicType String) -> (env, Just (BasicType Boolean)) -- implicit cast of t1
-        (BasicType String, BasicType Character) -> (env, Just (BasicType Boolean)) -- implicit cast of t2
-        _ -> (addError env (ComparisonTypeMismatch op t1 t2, loc), Nothing)
+checkComparisonOp :: Env -> String -> SimpleType -> SimpleType -> Loc -> (Env, SimpleType)
+checkComparisonOp env "=" t1 t2 loc = case (t1, t2) of
+    (BasicType Boolean, BasicType Boolean) -> (env, BasicType Boolean)
+    (BasicType Character, BasicType Character) -> (env, BasicType Boolean)
+    (BasicType Integer, BasicType Integer) -> (env, BasicType Boolean)
+    (BasicType Real, BasicType Real) -> (env, BasicType Boolean)
+    _ -> (addError env (IncompatibleTypes "=" t1 t2, loc), Error)
+checkComparisonOp env "<>" t1 t2 loc = case (t1, t2) of
+    (BasicType Boolean, BasicType Boolean) -> (env, BasicType Boolean)
+    (BasicType Character, BasicType Character) -> (env, BasicType Boolean)
+    (BasicType Integer, BasicType Integer) -> (env, BasicType Boolean)
+    (BasicType Real, BasicType Real) -> (env, BasicType Boolean)
+    _ -> (addError env (IncompatibleTypes "<>" t1 t2, loc), Error)
+checkComparisonOp env op t1 t2 loc =
+    let (env1, _) = checkNumericOp env op t1 t2 loc -- The other comparison operations follow the arithmetic types compatibilty rules
+    in (env1, BasicType Boolean)
 
 -------------------- Unary --------------------
-checkUnaryOp :: Env -> Unary -> Maybe SimpleType -> (Env, Maybe SimpleType)
-checkUnaryOp env op (Just t) = case op of
-    UnaryPlus loc   -> checkNumericType env "+" t loc
-    UnaryMinus loc  -> checkNumericType env "-" t loc
+checkUnaryOp :: Env -> Unary -> SimpleType -> (Env, SimpleType)
+checkUnaryOp env op t = if t == Error
+    then (env, Error) -- If the type is Error, stop expression analysis
+    else case op of
+    UnaryPlus loc   -> checkArithmeticType env "+" t loc
+    UnaryMinus loc  -> checkArithmeticType env "-" t loc
     UnaryNot loc    -> checkBooleanType env "not" t loc
-checkUnaryOp env _ Nothing = (env, Nothing)
 
-checkIntegerType :: Env -> String -> SimpleType -> Loc -> (Env, Maybe SimpleType)
-checkIntegerType env op t loc = case t of
-    BasicType Integer -> (env, Just (BasicType Integer))
-    _ -> (addError env (NotIntegerType op t, loc), Nothing)
-
-checkBooleanType :: Env -> String -> SimpleType -> Loc -> (Env, Maybe SimpleType)
+checkBooleanType :: Env -> String -> SimpleType -> Loc -> (Env, SimpleType)
 checkBooleanType env op t loc = case t of
-    BasicType Boolean -> (env, Just (BasicType Boolean))
-    _ -> (addError env (NotBooleanType op t, loc), Nothing)
+    BasicType Boolean -> (env, BasicType Boolean) -- It can only be Boolean type
+    _ -> (addError env (NotBooleanType op t, loc), Error)
 
-checkNumericType :: Env -> String -> SimpleType -> Loc -> (Env, Maybe SimpleType)
-checkNumericType env op t loc = case t of
-    BasicType Integer -> (env, Just (BasicType Integer))
-    BasicType Real -> (env, Just (BasicType Real))
-    _ -> (addError env (NotNumericType op t, loc), Nothing)
-
--------------------- FCall --------------------
-argCompatible :: Env -> Maybe SimpleType -> SimpleType -> Loc -> (Env, Bool)
-argCompatible env (Just argType) paramType loc = case (argType, paramType) of
-    (t1, t2) | t1 == t2 -> (env, True) -- Same type: compatible
-    -- Numeric cast
-    (BasicType Real, BasicType Integer) -> (env, True) -- int -> real
-    (BasicType Integer, BasicType Real) -> (env, True) -- real -> int (loss of precision)
-    -- Cast between characters and strings
-    (BasicType Character, BasicType String) -> (env, True) -- char -> string
-    -- Cast between arrays and pointers
-    (Array _ elemType, Pointer ptrType) -> if elemType == ptrType
-        then (env, True)
-        else (addError env (IncompatibleArrPtrType, loc), False)
-    (Pointer ptrType, Array _ elemType) -> if ptrType == elemType
-        then (env, True)
-        else (addError env (IncompatiblePtrArrType, loc), False)
-    _ -> (addError env (FunArgTypeMismatch argType paramType, loc), False) -- If it's not any of the above, the LExpr is actually a constant
-argCompatible env _ _ loc = (env, False)
-
--------------------- Arrays --------------------
--- Check if any index in an array declaration is negative
-checkNegativeIndex :: Env -> [SimpleIndexType] -> Loc -> (Env, Bool)
-checkNegativeIndex env [] _ = (env, False)
-checkNegativeIndex env (IndexRange c1 c2 : xs) loc =
-    let
-        val1 = getConstVal env c1
-        val2 = getConstVal env c2
-        isCurrentNegative = val1 < 0 || val2 < 0
-        env1 = if isCurrentNegative
-                        then addError env (NegativeArrIndex, loc) -- Error if there's a negative index
-                        else env
-        (finalEnv, hasErrorInRest) = checkNegativeIndex env1 xs loc -- Recursive call, check the reset of the list
-    in
-        (finalEnv, isCurrentNegative || hasErrorInRest)
-
--------------------- Assignments --------------------
--- Check the type compatibility in an assignment
-compatibleAssignment :: Env -> Maybe SimpleType -> Maybe SimpleType -> Loc -> (Env, Maybe SimpleType)
-compatibleAssignment env (Just targetType) (Just sourceType) loc = case (targetType, sourceType) of
-    (t1, t2) | t1 == t2 -> (env, Just targetType) -- Same type: compatible
-    -- Numeric cast
-    (BasicType Real, BasicType Integer) -> (env, Just targetType) -- int -> real
-    (BasicType Integer, BasicType Real) -> (env, Just targetType) -- real -> int (loss of precision)
-    -- Cast between characters and strings
-    (BasicType String, BasicType Character) -> (env, Just targetType) -- char -> string
-    -- Cast between arrays and pointers
-    (Array _ elemType, Pointer ptrType) -> if elemType == ptrType
-        then (env, Just targetType)
-        else (addError env (IncompatibleArrPtrType, loc), Nothing)
-    (Pointer ptrType, Array _ elemType) -> if ptrType == elemType
-        then (env, Just targetType)
-        else (addError env (IncompatiblePtrArrType, loc), Nothing)
-    _ -> (addError env (IncompatibleAssignment targetType sourceType, loc), Nothing) -- If it's not any of the above, the LExpr is actually a constant
-compatibleAssignment env _ _ loc = (env, Nothing)
+checkArithmeticType :: Env -> String -> SimpleType -> Loc -> (Env, SimpleType)
+checkArithmeticType env op t loc = case t of
+    BasicType Integer   -> (env, BasicType Integer)
+    BasicType Real      -> (env, BasicType Real)
+    BasicType Boolean   -> (env, BasicType Integer)
+    _                   -> (addError env (NotArithmeticType op t, loc), Error)
 
 
 
 ----------------------------------------------------------------
 -------------------- ENVIRONMENT MANAGEMENT --------------------
 ----------------------------------------------------------------
-
--- Iterate the list of formal parameters
-addFormalParams :: Env -> [SimpleFormalParameters] -> Env
-addFormalParams env [] = env
-addFormalParams env (param:params) = addFormalParams env1 params
-  where env1 = addFormalParam env param
-
--- Add the formal parameter to the environment
-addFormalParam :: Env -> SimpleFormalParameters -> Env
-addFormalParam env (FormParam _ [] _) = env
-addFormalParam env (FormParam mod (id:ids) ty) = addFormalParam env1 (FormParam mod ids ty)
-  where env1 = addEntry env id (ConstVarEntry ty False Nothing (getIdentLoc id))
-
 -- Add an entry (variable, constant, function or procedure) to the environment
 addEntry :: Env -> SimpleIdent -> EnvEntry -> Env
 addEntry env ident entry = env { symbols = Map.insert ident entry (symbols env) }
@@ -703,15 +695,18 @@ mergeEnvs env1 env2 = Env
   , errors  = errors env1 ++ errors env2
   }
 
+mergeForEnvs :: Env -> Env -> Env
+mergeForEnvs env1 env2 = Env
+  { symbols = symbols env1 -- NON unisco le symbol table: le variabili locali (es. di for) restano locali
+  , parent  = parent env1
+  , errors  = errors env1 ++ errors env2
+  }
+
 
 
 ----------------------------------------------------------------
 -------------------- ENRICHED AST FUNCTIONS --------------------
 ----------------------------------------------------------------
-
-enrichIndex :: SimpleIndexType -> EnrichedIndexType
-enrichIndex (IndexRange c1 c2) = IndexRange (enrichConst c1) (enrichConst c2)
-
 enrichConst :: SimpleConstant -> EnrichedConstant
 enrichConst (ConstId s i)      = ConstId s (enrichIdentUnknown i)
 enrichConst (ConstInt s n)     = ConstInt s n
@@ -720,28 +715,26 @@ enrichConst (ConstStr s)       = ConstStr s
 enrichConst (ConstChar c)      = ConstChar c
 enrichConst (ConstBool b)      = ConstBool b
 
-enrichIdent :: SimpleIdent -> Maybe SimpleType -> VarInfo -> FunInfo -> EnrichedIdent
+enrichIdent :: SimpleIdent -> EnrichedType -> VarInfo -> FunInfo -> EnrichedIdent
 enrichIdent (Ident name loc _ _ _) = Ident name loc
 
 enrichIdentUnknown :: SimpleIdent -> EnrichedIdent
-enrichIdentUnknown (Ident name loc _ _ _) = Ident name loc Nothing NoVarInfo NoFunInfo
+enrichIdentUnknown (Ident name loc _ _ _) = Ident name loc Error NoVarInfo NoFunInfo
 
 enrichType :: SimpleType -> EnrichedType
-enrichType (Array idxs t) = Array (map enrichIndex idxs) (enrichType t)
-enrichType (Pointer t)    = Pointer (enrichType t)
-enrichType (BasicType b)  = BasicType b
+enrichType (Array idxs t varInfo) = Array idxs (enrichType t) (VarInfo Nothing False (getRange idxs))
+enrichType (Pointer t)            = Pointer (enrichType t)
+enrichType (BasicType b)          = BasicType b
+enrichType Error                  = Error
 
 enrichLitExpr :: Literal -> EnrichedRExpr
 enrichLitExpr lit = case lit of
-    LiteralInteger _ -> Lit lit (Just (BasicType Integer))
-    LiteralDouble _  -> Lit lit (Just (BasicType Real))
-    LiteralChar _    -> Lit lit (Just (BasicType Character))
-    LiteralString _  -> Lit lit (Just (BasicType String))
-    Literal_true     -> Lit lit (Just (BasicType Boolean))
-    Literal_false    -> Lit lit (Just (BasicType Boolean))
-
-setIdentType :: EnrichedIdent -> Maybe SimpleType -> EnrichedIdent
-setIdentType (Ident name loc _ v f) ty = Ident name loc ty v f
+    LiteralInteger _ -> Lit lit (BasicType Integer)
+    LiteralDouble _  -> Lit lit (BasicType Real)
+    LiteralChar _    -> Lit lit (BasicType Character)
+    LiteralString _  -> Lit lit (BasicType String)
+    Literal_true     -> Lit lit (BasicType Boolean)
+    Literal_false    -> Lit lit (BasicType Boolean)
 
 
 
@@ -758,7 +751,7 @@ getIdentLoc :: SimpleIdent -> Loc
 getIdentLoc (Ident _ loc _ _ _) = loc
 
 -- Extract the type information from an enriched identifier
-getIdentType :: EnrichedIdent -> Maybe SimpleType
+getIdentType :: EnrichedIdent -> EnrichedType
 getIdentType (Ident _ _ ty _ _) = ty
 
 -- Infer the type of a constant
@@ -771,19 +764,19 @@ inferConstantType (ConstBool _)     = BasicType Boolean
 inferConstantType _                 = BasicType Void -- Not a constant
 
 -- Extract type information from an RExpr
-getRExprType :: EnrichedRExpr -> Maybe SimpleType
-getRExprType (Binary _ _ _ ty)  = ty
-getRExprType (Unary _ _ ty)     = ty
-getRExprType (Lit _ ty)         = ty
-getRExprType (FCall ident _ _)  = getIdentType ident
-getRExprType (Ref _ _ ty)       = ty
-getRExprType (LExpr _ ty)       = ty
+getRExprType :: EnrichedRExpr -> SimpleType
+getRExprType (Binary _ _ _ ty)  = enrichedTypeToSimpleType ty
+getRExprType (Unary _ _ ty)     = enrichedTypeToSimpleType ty
+getRExprType (Lit _ ty)         = enrichedTypeToSimpleType ty
+getRExprType (FCall ident _ _)  = enrichedTypeToSimpleType (getIdentType ident)
+getRExprType (Ref _ _ ty)       = enrichedTypeToSimpleType ty
+getRExprType (LExpr _ ty)       = enrichedTypeToSimpleType ty
 
 -- Extract type information from a LExpr
-getLExprType :: EnrichedLExpr -> Maybe SimpleType
-getLExprType (LId _ ty)      = ty
-getLExprType (LArr _ _ ty _) = ty
-getLExprType (LDeref _ ty _) = ty
+getLExprType :: EnrichedLExpr -> SimpleType
+getLExprType (LId _ ty)      = enrichedTypeToSimpleType ty
+getLExprType (LArr _ _ ty _) = enrichedTypeToSimpleType ty
+getLExprType (LDeref _ ty _) = enrichedTypeToSimpleType ty
 
 -- Search if the name is already in the environment and return it if present
 lookupByName :: Env -> String -> Maybe (EnvEntry, Bool)
@@ -802,12 +795,6 @@ lookupByName env name =
                     case lookupByName p name of
                         Nothing -> Nothing -- Not found in parent chain
                         Just (entry, _) -> Just (entry, True)
-    
--- Promote a numeric type to the sup
-promoteNumericType :: SimpleType -> SimpleType
-promoteNumericType t = case t of
-    BasicType Integer -> BasicType Integer
-    BasicType Real -> BasicType Real
 
 -- Flatten the parameters list in case of declarations like "a, b, c: Integer, d: Real"
 paramsToList :: [SimpleFormalParameters] -> [SimpleFormalParameters]
@@ -821,76 +808,52 @@ isLExpr _          = False
 
 isPointer :: EnrichedLExpr -> Bool
 isPointer lexpr = case getLExprType lexpr of
-    Just (Pointer _)    -> True
-    _                   -> False
+    Pointer _   -> True
+    _           -> False
 
 isArray :: EnrichedLExpr -> Bool
 isArray lexpr = case getLExprType lexpr of
-    Just (Array _ _)    -> True
-    _                   -> False
+    Array {}    -> True
+    _           -> False
 
--- Extract the range of an array from its index type
-getArrRange :: Env -> [SimpleIndexType] -> (Integer, Integer)
-getArrRange env [] = (0, -1) -- Invalid range for an array
-getArrRange env (IndexRange c1 c2 : _) = (getConstVal env c1, getConstVal env c2)
+-- Extract the range from array indexType
+getRange :: SimpleIndexType -> Maybe (Int, Int)
+getRange (IndexRange c1 c2) =
+    case (c1, c2) of
+        (ConstInt _ n1, ConstInt _ n2) -> Just (fromInteger n1, fromInteger n2)
+        _ -> Nothing
 
--- Extract integer value from a constant, resolving identifiers from the environment
-getConstVal :: Env -> Constant () () () -> Integer
+-- Extract integer value from a constant, resolving identifiers from the environment <-------------------------- TODO: other constant types
+getConstVal :: Env -> SimpleConstant -> Integer
 getConstVal _ (ConstInt sign n) = case sign of
     OptSignMinus -> negate n
     _            -> n
 getConstVal env (ConstId sign ident) =
     let value = case lookupByName env (getIdentName ident) of
-            Just (ConstVarEntry _ True (Just (ConstInt _ val)) _, _) -> val
+            Just (ConstVarEntry _ _ (Just (ConstInt _ val)) _ _, _) -> val
             _ -> 0 -- Not a known integer constant, default to 0
     in case sign of
         OptSignMinus -> negate value
         _            -> value
 getConstVal _ _ = 0 -- Other constant types
 
--- Indices of an array can only be integers
-getValFromIndices :: [EnrichedRExpr] -> [Maybe Integer]
-getValFromIndices = map evalConstExpr
-
-evalConstExpr :: EnrichedRExpr -> Maybe Integer
-evalConstExpr (Lit (LiteralInteger n) _) = Just n
-evalConstExpr (Unary (UnaryPlus _) e _) = evalConstExpr e
-evalConstExpr (Unary (UnaryMinus _) e _) = fmap negate (evalConstExpr e)
-evalConstExpr (Binary e1 op e2 _) =
-  case (evalConstExpr e1, evalConstExpr e2) of
-    (Just v1, Just v2) -> case op of
-        BinaryPlus _    -> Just (v1 + v2)
-        BinaryMinus _   -> Just (v1 - v2)
-        BinaryMul _     -> Just (v1 * v2)
-        BinaryDiv _     -> if v2 /= 0 then Just (v1 `div` v2) else Nothing
-        BinaryIntDiv _  -> if v2 /= 0 then Just (v1 `div` v2) else Nothing
-        BinaryMod _     -> if v2 /= 0 then Just (v1 `mod` v2) else Nothing
-        _               -> Nothing -- non-integer values
-    _ -> Nothing
-evalConstExpr _ = Nothing -- other values cannot be evaluated at compile-time
-
 -- True if the LExpr has been defined as a constant
 isConstant :: EnrichedLExpr -> Bool
 isConstant lexpr = case lexpr of
     LId ident _ -> case ident of
-        Ident _ _ _ (VarInfo _ isConst) _ -> isConst
+        Ident _ _ _ (VarInfo _ isConst _) _ -> isConst
         _ -> False
     LArr l _ _ _ -> isConstant l
     LDeref l _ _ -> isConstant l
 
 isBoolean :: EnrichedRExpr -> Bool
 isBoolean rexpr = case getRExprType rexpr of
-    Just (BasicType Boolean) -> True
+    BasicType Boolean -> True
     _ -> False
 
-getFunHeadType :: EnrichedProcedureAndFunctionHeading -> Maybe SimpleType
-getFunHeadType (ProcHead _ _)      = Just (BasicType Void)
-getFunHeadType (FunHead _ _ retTy _) = getFunType retTy
-
-getFunType :: EnrichedType -> Maybe SimpleType
-getFunType (Array _ ty)     = getFunType ty
-getFunType (Pointer ty)     = getFunType ty
-getFunType (BasicType t)    = Just (BasicType t)
+getHeadingType :: EnrichedProcedureAndFunctionHeading -> SimpleType
+getHeadingType (ProcHead _ _)        = BasicType Void
+getHeadingType (FunHead _ _ retTy _) = retTy
 
 hasReturnStmt :: Env -> EnrichedProcedureAndFunctionHeading -> EnrichedBlock -> Env
 hasReturnStmt env head (Block _ _ _ (CompStmt stmts)) = case head of
@@ -914,15 +877,19 @@ hasReturnEveryPath stmts = anyPathReturns stmts
             case optElse of
             NoElse -> anyPathReturns ss -- return not guaranteed
             Else elseStmt -> hasReturnEveryPath [thenStmt] && hasReturnEveryPath [elseStmt] || anyPathReturns ss
-        Case _ caseItems -> not (null caseItems) && all (\(CaseItem _ stmt) -> hasReturnEveryPath [stmt]) caseItems || anyPathReturns ss
         _ -> anyPathReturns ss -- return not guaranteed
 
--- True if at least one element of the list has non-Integer type
-hasNonInteger :: [EnrichedRExpr] -> Bool
-hasNonInteger = any (\e -> getRExprType e /= Just (BasicType Integer))
+-- True if the r-expression has Integer type
+isInteger :: EnrichedRExpr -> Bool
+isInteger rexpr = case getRExprType rexpr of
+    BasicType Integer -> True
+    _ -> False
 
-hasErrors :: Env -> Bool
-hasErrors env = not (null (errors env))
+enrichedTypeToSimpleType :: EnrichedType -> SimpleType
+enrichedTypeToSimpleType (Array idx t _) = Array idx (enrichedTypeToSimpleType t) ()
+enrichedTypeToSimpleType (Pointer t) = Pointer (enrichedTypeToSimpleType t)
+enrichedTypeToSimpleType (BasicType t) = BasicType t
+enrichedTypeToSimpleType Error = Error
 
 
 
@@ -943,7 +910,7 @@ showNames ((Ident name _ _ _ _, entry):s) = "\n\t" ++ show name ++ ": " ++ showE
 
 showEnvEntry :: EnvEntry -> String
 showEnvEntry entry = case entry of
-    ConstVarEntry ty isConst constVal loc ->
+    ConstVarEntry ty isConst constVal arrRange loc ->
         "Var " ++ showType ty ++ " (const: " ++ show isConst ++ ", value: " ++ show constVal ++ ") at " ++ showLoc loc
     ProcFunEntry params retTy loc -> case retTy of
         (BasicType Void) ->
@@ -964,7 +931,7 @@ showParam (FormParam mod ids ty) =
 
 showType :: SimpleType -> String
 showType ty = case ty of
-    Array _ arrTy       -> "Array of " ++ showType arrTy
+    Array _ arrTy _     -> "Array of " ++ showType arrTy
     Pointer ptrTy       -> "Pointer to " ++ showType ptrTy
     BasicType Integer   -> "Integer"
     BasicType Real      -> "Real"
@@ -975,5 +942,8 @@ showType ty = case ty of
 
 showErrors :: [(String, Loc)] -> String
 showErrors [] = "No errors"
-showErrors errs = intercalate "\n" (map showError (nub errs)) -- (nub errs) removes duplicated errors caused by the mutual recursion mechanism
-    where showError (msg, loc) = showLoc loc ++ ": " ++ msg
+showErrors errs =
+  let uniqueSortedErrors = sortBy (comparing snd) (nub errs) -- (nub errs) removes duplicated errors caused by the mutual recursion mechanism
+  in intercalate "\n" (map showError uniqueSortedErrors)
+  where
+    showError (msg, loc) = showLoc loc ++ ": " ++ msg

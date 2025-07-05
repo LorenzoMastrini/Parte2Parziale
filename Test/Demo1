@@ -10,62 +10,56 @@ var
     flag: Boolean;
     i: Integer;
     arr: array[0..9] of Integer;
-    mat: array[0..2,0..2] of Integer;
+    mat: array[0..2] of Integer;
 
 procedure TestProc(a: Integer);
-begin
-    // ERROR: return inside procedure
-    return a;
-    // ERROR: variable not declared
-    while z < 10 do
-        z := z + 1;
-    // ERROR: index out of bound
-    arr[10] := 5;
-end;
+    begin
+        return a;               // ERROR: return type mismatch
+        
+        while z < 10 do         // ERROR: variable not declared
+            z := z + 1;         // ERROR: variable not declared
+        
+        arr[10] := 5;           // Index out of bound
+    end;
 
 function BoolToInt(b: Boolean): Integer;
-begin
-    // ERROR: while loop with non-boolean condition
-    while 5 do
-        b := false;
-    if b then
-        return 1
-    else
-        return false; // ERROR: return type mismatch
-end;
-
-function LoopSum(n: Integer): Integer;
-var
-    sum: Integer;
-    i: Integer;
-    localArr: array[0..4] of Integer;
-begin
-    sum := 0;
-    i := 0;
-    while i < n do
     begin
-        sum := sum + i;
-        i := i + 1;
+        while 5 do              // ERROR: while loop with non-boolean condition
+            b := false;
+        if b then
+            return 1
+        else
+            return false;       // ERROR: return type mismatch
     end;
-    // ERROR: non-integer index
-    localArr[true] := 7;
-    // ERRORE: index out of bound
-    localArr[5] := 10;
-    // ERROR: return missing inside function
-end;
+
+function LoopSum(n: Integer): Integer;      // ERROR: return missing inside function
+    var
+        sum: Integer;
+        i: Integer;
+        localArr: array[0..4] of Integer;
+
+    begin
+        sum := 0;
+        i := 0;
+        while i < n do
+        begin
+            sum := sum + i;
+            i := i + 1;
+        end;
+        
+        localArr[z] := 7;       // ERROR: Unknown identifier
+        localArr[5] := 10;      // Index out of bound
+    end;
 
 begin
-    // ERROR: assignment to costant
-    answer := 100;
-    // ERROR: variable not declared
-    z := 5;
-    // ERROR: non-boolean condition
-    if y then
+    answer := 100;              // ERROR: assignment to costant
+    z := 5;                     // ERROR: variable not declared
+    
+    if y then                   // ERROR: non-boolean condition
         x := 1;
-    // ERROR: parameter type mismatch
-    TestProc(true);
-    // ERROR: return outside a function
-    return 0;
+    
+    TestProc(true);             // ERROR: parameter type mismatch
+    return 0;                   // ERROR: return outside a function
 
     i := 0;
     while i < 5 do

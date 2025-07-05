@@ -239,7 +239,7 @@ instance Print (AbsLinguaggio.Statement () () ()) where
       doc (showString (replicate (2*i) ' ' ++ "until ")),
       prt 0 expr
     ]
-  prt i (AbsLinguaggio.ForTo lexpr expr1 expr2 stmt) =
+  prt i (AbsLinguaggio.ForTo lexpr expr1 expr2 stmt loc) =
     concatD [
       doc (showString (replicate (2*i) ' ' ++ "for ")),
       prt 0 lexpr,
@@ -264,14 +264,6 @@ instance Print (AbsLinguaggio.Statement () () ()) where
       thenBlock,
       elseBlock
     ]
-  prt i (AbsLinguaggio.Case expr items) =
-    concatD [
-      doc (showString (replicate (2*i) ' ' ++ "case ")),
-      prt 0 expr,
-      doc (showString " of\n"),
-      prt (i+1) items,
-      doc (showString (replicate (2*i) ' ' ++ "end"))
-    ]
   prt i (AbsLinguaggio.ReturnStmt rexpr ty loc) =
     concatD [doc (showString (replicate (2*i) ' ' ++ "return ")), prt 0 rexpr]
   prt i (AbsLinguaggio.ContinueStmt loc) =
@@ -283,15 +275,6 @@ instance Print (AbsLinguaggio.OptElse () () ()) where
   prt i = \case
     AbsLinguaggio.NoElse -> prPrec i 0 (concatD [])
     AbsLinguaggio.Else statement -> prPrec i 0 (concatD [doc (showString "else"), prt 0 statement])
-
-instance Print (AbsLinguaggio.CaseItem () () ()) where
-  prt i = \case
-    AbsLinguaggio.CaseItem constant statement -> prPrec i 0 (concatD [prt 0 constant, doc (showString ":"), prt 0 statement])
-
-instance Print [AbsLinguaggio.CaseItem () () ()] where
-  prt _ [] = concatD []
-  prt _ [x] = concatD [prt 0 x, doc (showString ";")]
-  prt _ (x:xs) = concatD [prt 0 x, doc (showString ";"), prt 0 xs]
 
 instance Print (AbsLinguaggio.ConstantDefinition () () ()) where
   prt i = \case
@@ -341,11 +324,10 @@ instance Print AbsLinguaggio.OptModality where
   prt i = \case
     AbsLinguaggio.ByVal     -> prPrec i 0 (concatD [])
     AbsLinguaggio.ByRef     -> prPrec i 0 (concatD [doc (showString "var")])
-    AbsLinguaggio.ByValRes  -> prPrec i 0 (concatD [doc (showString "valres")])
 
 instance Print (AbsLinguaggio.Type () () ()) where
   prt i = \case
-    AbsLinguaggio.Array indextypes type_ -> prPrec i 0 (concatD [doc (showString "array "), doc (showString "["), prt 0 indextypes, doc (showString "] of "), prt 0 type_])
+    AbsLinguaggio.Array indextypes type_ _ -> prPrec i 0 (concatD [doc (showString "array "), doc (showString "["), prt 0 indextypes, doc (showString "] of "), prt 0 type_])
     AbsLinguaggio.Pointer type_ -> prPrec i 0 (concatD [doc (showString "^ "), prt 0 type_])
     AbsLinguaggio.BasicType basictype -> prPrec i 0 (concatD [prt 0 basictype])
 

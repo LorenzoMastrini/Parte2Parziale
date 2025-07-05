@@ -175,7 +175,7 @@ Terminals
 	'else'         { PT _ (TS _ 36) }
 	'end'          { PT _ (TS _ 37) }
 	'false'        { PT _ (TS _ 38) }
-	'for'          { PT _ (TS _ 39) }
+	'for'          { PT pos (TS _ 39) }
 	'function'     { PT pos (TS _ 40) }
 	'if'           { PT pos (TS _ 41) }
 	'mod'          { PT pos (TS _ 42) }
@@ -289,9 +289,7 @@ State 2
 	'div'          reduce using rule 1
 	'do'           reduce using rule 1
 	'else'         reduce using rule 1
-	'end'          reduce using rule 1
 	'mod'          reduce using rule 1
-	'of'           reduce using rule 1
 	'or'           reduce using rule 1
 	'then'         reduce using rule 1
 	'to'           reduce using rule 1
@@ -329,8 +327,7 @@ State 6
 
 	')'            reduce using rule 26
 	':'            reduce using rule 29
-	'valres'       shift, and enter state 10
-	'var'          shift, and enter state 11
+	'var'          shift, and enter state 10
 	L_Ident        reduce using rule 29
 
 	FormalParametersgoto state 7
@@ -343,14 +340,14 @@ State 7
 	ListFormalParameters -> FormalParameters . ',' ListFormalParameters    (rule 28)
 
 	')'            reduce using rule 27
-	','            shift, and enter state 15
+	','            shift, and enter state 14
 
 
 State 8
 
 	Program -> 'program' Ident '(' ListFormalParameters . ')' ';' Block '.'    (rule 6)
 
-	')'            shift, and enter state 14
+	')'            shift, and enter state 13
 
 
 State 9
@@ -360,18 +357,10 @@ State 9
 	':'            reduce using rule 9
 	L_Ident        shift, and enter state 2
 
-	Ident          goto state 12
-	ListIdent      goto state 13
+	Ident          goto state 11
+	ListIdent      goto state 12
 
 State 10
-
-	OptModality -> 'valres' .                           (rule 31)
-
-	':'            reduce using rule 31
-	L_Ident        reduce using rule 31
-
-
-State 11
 
 	OptModality -> 'var' .                              (rule 30)
 
@@ -379,57 +368,56 @@ State 11
 	L_Ident        reduce using rule 30
 
 
-State 12
+State 11
 
 	ListIdent -> Ident .                                (rule 7)
 	ListIdent -> Ident . ',' ListIdent                  (rule 8)
 
-	','            shift, and enter state 19
+	','            shift, and enter state 18
 	':'            reduce using rule 7
+
+
+State 12
+
+	FormalParameters -> OptModality ListIdent . ':' Type    (rule 25)
+
+	':'            shift, and enter state 17
 
 
 State 13
 
-	FormalParameters -> OptModality ListIdent . ':' Type    (rule 25)
+	Program -> 'program' Ident '(' ListFormalParameters ')' . ';' Block '.'    (rule 6)
 
-	':'            shift, and enter state 18
+	';'            shift, and enter state 16
 
 
 State 14
-
-	Program -> 'program' Ident '(' ListFormalParameters ')' . ';' Block '.'    (rule 6)
-
-	';'            shift, and enter state 17
-
-
-State 15
 
 	ListFormalParameters -> FormalParameters ',' . ListFormalParameters    (rule 28)
 
 	')'            reduce using rule 26
 	':'            reduce using rule 29
-	'valres'       shift, and enter state 10
-	'var'          shift, and enter state 11
+	'var'          shift, and enter state 10
 	L_Ident        reduce using rule 29
 
 	FormalParametersgoto state 7
-	ListFormalParametersgoto state 16
+	ListFormalParametersgoto state 15
 	OptModality    goto state 9
 
-State 16
+State 15
 
 	ListFormalParameters -> FormalParameters ',' ListFormalParameters .    (rule 28)
 
 	')'            reduce using rule 28
 
 
-State 17
+State 16
 
 	Program -> 'program' Ident '(' ListFormalParameters ')' ';' . Block '.'    (rule 6)
 
 	':'            reduce using rule 12
 	'begin'        reduce using rule 12
-	'const'        shift, and enter state 34
+	'const'        shift, and enter state 33
 	'function'     reduce using rule 12
 	'procedure'    reduce using rule 12
 	'var'          reduce using rule 12
@@ -437,44 +425,44 @@ State 17
 			(reduce using rule 12)
 
 
-	Ident          goto state 30
-	Block          goto state 31
-	ConstantDefinitiongoto state 32
-	ListConstantDefinitiongoto state 33
+	Ident          goto state 29
+	Block          goto state 30
+	ConstantDefinitiongoto state 31
+	ListConstantDefinitiongoto state 32
 
-State 18
+State 17
 
 	FormalParameters -> OptModality ListIdent ':' . Type    (rule 25)
 
-	'Boolean'      shift, and enter state 23
-	'Character'    shift, and enter state 24
-	'Integer'      shift, and enter state 25
-	'Real'         shift, and enter state 26
-	'String'       shift, and enter state 27
-	'^'            shift, and enter state 28
-	'array'        shift, and enter state 29
+	'Boolean'      shift, and enter state 22
+	'Character'    shift, and enter state 23
+	'Integer'      shift, and enter state 24
+	'Real'         shift, and enter state 25
+	'String'       shift, and enter state 26
+	'^'            shift, and enter state 27
+	'array'        shift, and enter state 28
 
-	Type           goto state 21
-	BasicType      goto state 22
+	Type           goto state 20
+	BasicType      goto state 21
 
-State 19
+State 18
 
 	ListIdent -> Ident ',' . ListIdent                  (rule 8)
 
 	':'            reduce using rule 9
 	L_Ident        shift, and enter state 2
 
-	Ident          goto state 12
-	ListIdent      goto state 20
+	Ident          goto state 11
+	ListIdent      goto state 19
 
-State 20
+State 19
 
 	ListIdent -> Ident ',' ListIdent .                  (rule 8)
 
 	':'            reduce using rule 8
 
 
-State 21
+State 20
 
 	FormalParameters -> OptModality ListIdent ':' Type .    (rule 25)
 
@@ -482,18 +470,27 @@ State 21
 	','            reduce using rule 25
 
 
+State 21
+
+	Type -> BasicType .                                 (rule 33)
+
+	')'            reduce using rule 33
+	','            reduce using rule 33
+	';'            reduce using rule 33
+
+
 State 22
 
-	Type -> BasicType .                                 (rule 34)
+	BasicType -> 'Boolean' .                            (rule 36)
 
-	')'            reduce using rule 34
-	','            reduce using rule 34
-	';'            reduce using rule 34
+	')'            reduce using rule 36
+	','            reduce using rule 36
+	';'            reduce using rule 36
 
 
 State 23
 
-	BasicType -> 'Boolean' .                            (rule 37)
+	BasicType -> 'Character' .                          (rule 37)
 
 	')'            reduce using rule 37
 	','            reduce using rule 37
@@ -502,16 +499,16 @@ State 23
 
 State 24
 
-	BasicType -> 'Character' .                          (rule 38)
+	BasicType -> 'Integer' .                            (rule 34)
 
-	')'            reduce using rule 38
-	','            reduce using rule 38
-	';'            reduce using rule 38
+	')'            reduce using rule 34
+	','            reduce using rule 34
+	';'            reduce using rule 34
 
 
 State 25
 
-	BasicType -> 'Integer' .                            (rule 35)
+	BasicType -> 'Real' .                               (rule 35)
 
 	')'            reduce using rule 35
 	','            reduce using rule 35
@@ -520,66 +517,57 @@ State 25
 
 State 26
 
-	BasicType -> 'Real' .                               (rule 36)
+	BasicType -> 'String' .                             (rule 38)
 
-	')'            reduce using rule 36
-	','            reduce using rule 36
-	';'            reduce using rule 36
+	')'            reduce using rule 38
+	','            reduce using rule 38
+	';'            reduce using rule 38
 
 
 State 27
 
-	BasicType -> 'String' .                             (rule 39)
+	Type -> '^' . Type                                  (rule 32)
 
-	')'            reduce using rule 39
-	','            reduce using rule 39
-	';'            reduce using rule 39
+	'Boolean'      shift, and enter state 22
+	'Character'    shift, and enter state 23
+	'Integer'      shift, and enter state 24
+	'Real'         shift, and enter state 25
+	'String'       shift, and enter state 26
+	'^'            shift, and enter state 27
+	'array'        shift, and enter state 28
 
+	Type           goto state 43
+	BasicType      goto state 21
 
 State 28
 
-	Type -> '^' . Type                                  (rule 33)
+	Type -> 'array' . '[' IndexType ']' 'of' Type       (rule 31)
 
-	'Boolean'      shift, and enter state 23
-	'Character'    shift, and enter state 24
-	'Integer'      shift, and enter state 25
-	'Real'         shift, and enter state 26
-	'String'       shift, and enter state 27
-	'^'            shift, and enter state 28
-	'array'        shift, and enter state 29
+	'['            shift, and enter state 42
 
-	Type           goto state 44
-	BasicType      goto state 22
 
 State 29
 
-	Type -> 'array' . '[' ListIndexType ']' 'of' Type    (rule 32)
+	ConstantDefinition -> Ident . '=' Constant          (rule 11)
 
-	'['            shift, and enter state 43
+	'='            shift, and enter state 41
 
 
 State 30
 
-	ConstantDefinition -> Ident . '=' Constant          (rule 11)
+	Program -> 'program' Ident '(' ListFormalParameters ')' ';' Block . '.'    (rule 6)
 
-	'='            shift, and enter state 42
+	'.'            shift, and enter state 40
 
 
 State 31
 
-	Program -> 'program' Ident '(' ListFormalParameters ')' ';' Block . '.'    (rule 6)
+	ListConstantDefinition -> ConstantDefinition . ';' ListConstantDefinition    (rule 14)
 
-	'.'            shift, and enter state 41
+	';'            shift, and enter state 39
 
 
 State 32
-
-	ListConstantDefinition -> ConstantDefinition . ';' ListConstantDefinition    (rule 14)
-
-	';'            shift, and enter state 40
-
-
-State 33
 
 	Block -> ListConstantDefinition . ListVariableDeclaration ListProcedureAndFunctionDeclaration CompoundStatement    (rule 10)
 
@@ -587,74 +575,74 @@ State 33
 	'begin'        reduce using rule 16
 	'function'     reduce using rule 16
 	'procedure'    reduce using rule 16
-	'var'          shift, and enter state 39
+	'var'          shift, and enter state 38
 	L_Ident        shift, and enter state 2
 
-	Ident          goto state 12
-	ListIdent      goto state 36
-	VariableDeclarationgoto state 37
-	ListVariableDeclarationgoto state 38
+	Ident          goto state 11
+	ListIdent      goto state 35
+	VariableDeclarationgoto state 36
+	ListVariableDeclarationgoto state 37
 
-State 34
+State 33
 
 	ListConstantDefinition -> 'const' . ConstantDefinition ';' ListConstantDefinition    (rule 13)
 
 	L_Ident        shift, and enter state 2
 
-	Ident          goto state 30
-	ConstantDefinitiongoto state 35
+	Ident          goto state 29
+	ConstantDefinitiongoto state 34
 
-State 35
+State 34
 
 	ListConstantDefinition -> 'const' ConstantDefinition . ';' ListConstantDefinition    (rule 13)
-
-	';'            shift, and enter state 67
-
-
-State 36
-
-	VariableDeclaration -> ListIdent . ':' Type         (rule 15)
-
-	':'            shift, and enter state 66
-
-
-State 37
-
-	ListVariableDeclaration -> VariableDeclaration . ';' ListVariableDeclaration    (rule 18)
 
 	';'            shift, and enter state 65
 
 
-State 38
+State 35
+
+	VariableDeclaration -> ListIdent . ':' Type         (rule 15)
+
+	':'            shift, and enter state 64
+
+
+State 36
+
+	ListVariableDeclaration -> VariableDeclaration . ';' ListVariableDeclaration    (rule 18)
+
+	';'            shift, and enter state 63
+
+
+State 37
 
 	Block -> ListConstantDefinition ListVariableDeclaration . ListProcedureAndFunctionDeclaration CompoundStatement    (rule 10)
 
 	'begin'        reduce using rule 20
-	'function'     shift, and enter state 63
-	'procedure'    shift, and enter state 64
+	'function'     shift, and enter state 61
+	'procedure'    shift, and enter state 62
 
-	ProcedureAndFunctionDeclarationgoto state 60
-	ListProcedureAndFunctionDeclarationgoto state 61
-	ProcedureAndFunctionHeadinggoto state 62
+	ProcedureAndFunctionDeclarationgoto state 58
+	ListProcedureAndFunctionDeclarationgoto state 59
+	ProcedureAndFunctionHeadinggoto state 60
 
-State 39
+State 38
 
 	ListVariableDeclaration -> 'var' . VariableDeclaration ';' ListVariableDeclaration    (rule 17)
 
 	':'            reduce using rule 9
 	L_Ident        shift, and enter state 2
 
-	Ident          goto state 12
-	ListIdent      goto state 36
-	VariableDeclarationgoto state 59
+	Ident          goto state 11
+	ListIdent      goto state 35
+	VariableDeclarationgoto state 57
 
-State 40
+State 39
 
 	ListConstantDefinition -> ConstantDefinition ';' . ListConstantDefinition    (rule 14)
 
 	':'            reduce using rule 12
 	'begin'        reduce using rule 12
-	'const'        shift, and enter state 34
+	'const'        shift, and enter state 33
 	'function'     reduce using rule 12
 	'procedure'    reduce using rule 12
 	'var'          reduce using rule 12
@@ -662,166 +650,148 @@ State 40
 			(reduce using rule 12)
 
 
-	Ident          goto state 30
-	ConstantDefinitiongoto state 32
-	ListConstantDefinitiongoto state 58
+	Ident          goto state 29
+	ConstantDefinitiongoto state 31
+	ListConstantDefinitiongoto state 56
 
-State 41
+State 40
 
 	Program -> 'program' Ident '(' ListFormalParameters ')' ';' Block '.' .    (rule 6)
 
 	%eof           reduce using rule 6
 
 
-State 42
+State 41
 
 	ConstantDefinition -> Ident '=' . Constant          (rule 11)
 
-	'+'            shift, and enter state 51
-	'-'            shift, and enter state 52
-	'false'        shift, and enter state 53
-	'true'         shift, and enter state 54
-	L_Ident        reduce using rule 50
-	L_charac       shift, and enter state 55
-	L_doubl        reduce using rule 50
-	L_integ        reduce using rule 50
-	L_quoted       shift, and enter state 56
+	'+'            shift, and enter state 49
+	'-'            shift, and enter state 50
+	'false'        shift, and enter state 51
+	'true'         shift, and enter state 52
+	L_Ident        reduce using rule 49
+	L_charac       shift, and enter state 53
+	L_doubl        reduce using rule 49
+	L_integ        reduce using rule 49
+	L_quoted       shift, and enter state 54
 
-	Char           goto state 45
-	String         goto state 46
-	Constant       goto state 57
-	OptSign        goto state 50
+	Char           goto state 44
+	String         goto state 45
+	Constant       goto state 55
+	OptSign        goto state 48
+
+State 42
+
+	Type -> 'array' '[' . IndexType ']' 'of' Type       (rule 31)
+
+	'+'            shift, and enter state 49
+	'-'            shift, and enter state 50
+	'false'        shift, and enter state 51
+	'true'         shift, and enter state 52
+	L_Ident        reduce using rule 49
+	L_charac       shift, and enter state 53
+	L_doubl        reduce using rule 49
+	L_integ        reduce using rule 49
+	L_quoted       shift, and enter state 54
+
+	Char           goto state 44
+	String         goto state 45
+	IndexType      goto state 46
+	Constant       goto state 47
+	OptSign        goto state 48
 
 State 43
 
-	Type -> 'array' '[' . ListIndexType ']' 'of' Type    (rule 32)
+	Type -> '^' Type .                                  (rule 32)
 
-	'+'            shift, and enter state 51
-	'-'            shift, and enter state 52
-	'false'        shift, and enter state 53
-	'true'         shift, and enter state 54
-	L_Ident        reduce using rule 50
-	L_charac       shift, and enter state 55
-	L_doubl        reduce using rule 50
-	L_integ        reduce using rule 50
-	L_quoted       shift, and enter state 56
+	')'            reduce using rule 32
+	','            reduce using rule 32
+	';'            reduce using rule 32
 
-	Char           goto state 45
-	String         goto state 46
-	IndexType      goto state 47
-	ListIndexType  goto state 48
-	Constant       goto state 49
-	OptSign        goto state 50
 
 State 44
 
-	Type -> '^' Type .                                  (rule 33)
+	Constant -> Char .                                  (rule 46)
 
-	')'            reduce using rule 33
-	','            reduce using rule 33
-	';'            reduce using rule 33
-
-
-State 45
-
-	Constant -> Char .                                  (rule 47)
-
-	','            reduce using rule 47
-	'..'           reduce using rule 47
-	':'            reduce using rule 47
-	';'            reduce using rule 47
-	']'            reduce using rule 47
-
-
-State 46
-
-	Constant -> String .                                (rule 46)
-
-	','            reduce using rule 46
 	'..'           reduce using rule 46
-	':'            reduce using rule 46
 	';'            reduce using rule 46
 	']'            reduce using rule 46
 
 
+State 45
+
+	Constant -> String .                                (rule 45)
+
+	'..'           reduce using rule 45
+	';'            reduce using rule 45
+	']'            reduce using rule 45
+
+
+State 46
+
+	Type -> 'array' '[' IndexType . ']' 'of' Type       (rule 31)
+
+	']'            shift, and enter state 82
+
+
 State 47
 
-	ListIndexType -> IndexType .                        (rule 41)
-	ListIndexType -> IndexType . ',' ListIndexType      (rule 42)
+	IndexType -> Constant . '..' Constant               (rule 39)
 
-	','            shift, and enter state 85
-	']'            reduce using rule 41
+	'..'           shift, and enter state 81
 
 
 State 48
 
-	Type -> 'array' '[' ListIndexType . ']' 'of' Type    (rule 32)
+	Constant -> OptSign . Ident                         (rule 42)
+	Constant -> OptSign . Integer                       (rule 43)
+	Constant -> OptSign . Double                        (rule 44)
 
-	']'            shift, and enter state 84
+	L_Ident        shift, and enter state 2
+	L_doubl        shift, and enter state 79
+	L_integ        shift, and enter state 80
 
+	Ident          goto state 76
+	Double         goto state 77
+	Integer        goto state 78
 
 State 49
 
-	IndexType -> Constant . '..' Constant               (rule 40)
+	OptSign -> '+' .                                    (rule 50)
 
-	'..'           shift, and enter state 83
+	L_Ident        reduce using rule 50
+	L_doubl        reduce using rule 50
+	L_integ        reduce using rule 50
 
 
 State 50
 
-	Constant -> OptSign . Ident                         (rule 43)
-	Constant -> OptSign . Integer                       (rule 44)
-	Constant -> OptSign . Double                        (rule 45)
-
-	L_Ident        shift, and enter state 2
-	L_doubl        shift, and enter state 81
-	L_integ        shift, and enter state 82
-
-	Ident          goto state 78
-	Double         goto state 79
-	Integer        goto state 80
-
-State 51
-
-	OptSign -> '+' .                                    (rule 51)
+	OptSign -> '-' .                                    (rule 51)
 
 	L_Ident        reduce using rule 51
 	L_doubl        reduce using rule 51
 	L_integ        reduce using rule 51
 
 
-State 52
+State 51
 
-	OptSign -> '-' .                                    (rule 52)
+	Constant -> 'false' .                               (rule 48)
 
-	L_Ident        reduce using rule 52
-	L_doubl        reduce using rule 52
-	L_integ        reduce using rule 52
-
-
-State 53
-
-	Constant -> 'false' .                               (rule 49)
-
-	','            reduce using rule 49
-	'..'           reduce using rule 49
-	':'            reduce using rule 49
-	';'            reduce using rule 49
-	']'            reduce using rule 49
-
-
-State 54
-
-	Constant -> 'true' .                                (rule 48)
-
-	','            reduce using rule 48
 	'..'           reduce using rule 48
-	':'            reduce using rule 48
 	';'            reduce using rule 48
 	']'            reduce using rule 48
 
 
-State 55
+State 52
+
+	Constant -> 'true' .                                (rule 47)
+
+	'..'           reduce using rule 47
+	';'            reduce using rule 47
+	']'            reduce using rule 47
+
+
+State 53
 
 	Char -> L_charac .                                  (rule 2)
 
@@ -832,7 +802,6 @@ State 55
 	'-'            reduce using rule 2
 	'..'           reduce using rule 2
 	'/'            reduce using rule 2
-	':'            reduce using rule 2
 	';'            reduce using rule 2
 	'<'            reduce using rule 2
 	'<='           reduce using rule 2
@@ -845,16 +814,14 @@ State 55
 	'div'          reduce using rule 2
 	'do'           reduce using rule 2
 	'else'         reduce using rule 2
-	'end'          reduce using rule 2
 	'mod'          reduce using rule 2
-	'of'           reduce using rule 2
 	'or'           reduce using rule 2
 	'then'         reduce using rule 2
 	'to'           reduce using rule 2
 	'until'        reduce using rule 2
 
 
-State 56
+State 54
 
 	String -> L_quoted .                                (rule 5)
 
@@ -865,7 +832,6 @@ State 56
 	'-'            reduce using rule 5
 	'..'           reduce using rule 5
 	'/'            reduce using rule 5
-	':'            reduce using rule 5
 	';'            reduce using rule 5
 	'<'            reduce using rule 5
 	'<='           reduce using rule 5
@@ -878,23 +844,21 @@ State 56
 	'div'          reduce using rule 5
 	'do'           reduce using rule 5
 	'else'         reduce using rule 5
-	'end'          reduce using rule 5
 	'mod'          reduce using rule 5
-	'of'           reduce using rule 5
 	'or'           reduce using rule 5
 	'then'         reduce using rule 5
 	'to'           reduce using rule 5
 	'until'        reduce using rule 5
 
 
-State 57
+State 55
 
 	ConstantDefinition -> Ident '=' Constant .          (rule 11)
 
 	';'            reduce using rule 11
 
 
-State 58
+State 56
 
 	ListConstantDefinition -> ConstantDefinition ';' ListConstantDefinition .    (rule 14)
 
@@ -906,37 +870,37 @@ State 58
 	L_Ident        reduce using rule 14
 
 
-State 59
+State 57
 
 	ListVariableDeclaration -> 'var' VariableDeclaration . ';' ListVariableDeclaration    (rule 17)
 
-	';'            shift, and enter state 77
+	';'            shift, and enter state 75
 
 
-State 60
+State 58
 
 	ListProcedureAndFunctionDeclaration -> ProcedureAndFunctionDeclaration .    (rule 21)
 	ListProcedureAndFunctionDeclaration -> ProcedureAndFunctionDeclaration . ';' ListProcedureAndFunctionDeclaration    (rule 22)
 
-	';'            shift, and enter state 76
+	';'            shift, and enter state 74
 	'begin'        reduce using rule 21
 
 
-State 61
+State 59
 
 	Block -> ListConstantDefinition ListVariableDeclaration ListProcedureAndFunctionDeclaration . CompoundStatement    (rule 10)
 
-	'begin'        shift, and enter state 75
+	'begin'        shift, and enter state 73
 
-	CompoundStatementgoto state 74
+	CompoundStatementgoto state 72
 
-State 62
+State 60
 
 	ProcedureAndFunctionDeclaration -> ProcedureAndFunctionHeading . Block    (rule 19)
 
 	':'            reduce using rule 12
 	'begin'        reduce using rule 12
-	'const'        shift, and enter state 34
+	'const'        shift, and enter state 33
 	'function'     reduce using rule 12
 	'procedure'    reduce using rule 12
 	'var'          reduce using rule 12
@@ -944,28 +908,28 @@ State 62
 			(reduce using rule 12)
 
 
-	Ident          goto state 30
-	Block          goto state 73
-	ConstantDefinitiongoto state 32
-	ListConstantDefinitiongoto state 33
+	Ident          goto state 29
+	Block          goto state 71
+	ConstantDefinitiongoto state 31
+	ListConstantDefinitiongoto state 32
 
-State 63
+State 61
 
 	ProcedureAndFunctionHeading -> 'function' . Ident '(' ListFormalParameters ')' ':' Type ';'    (rule 24)
 
 	L_Ident        shift, and enter state 2
 
-	Ident          goto state 72
+	Ident          goto state 70
 
-State 64
+State 62
 
 	ProcedureAndFunctionHeading -> 'procedure' . Ident '(' ListFormalParameters ')' ';'    (rule 23)
 
 	L_Ident        shift, and enter state 2
 
-	Ident          goto state 71
+	Ident          goto state 69
 
-State 65
+State 63
 
 	ListVariableDeclaration -> VariableDeclaration ';' . ListVariableDeclaration    (rule 18)
 
@@ -973,36 +937,36 @@ State 65
 	'begin'        reduce using rule 16
 	'function'     reduce using rule 16
 	'procedure'    reduce using rule 16
-	'var'          shift, and enter state 39
+	'var'          shift, and enter state 38
 	L_Ident        shift, and enter state 2
 
-	Ident          goto state 12
-	ListIdent      goto state 36
-	VariableDeclarationgoto state 37
-	ListVariableDeclarationgoto state 70
+	Ident          goto state 11
+	ListIdent      goto state 35
+	VariableDeclarationgoto state 36
+	ListVariableDeclarationgoto state 68
 
-State 66
+State 64
 
 	VariableDeclaration -> ListIdent ':' . Type         (rule 15)
 
-	'Boolean'      shift, and enter state 23
-	'Character'    shift, and enter state 24
-	'Integer'      shift, and enter state 25
-	'Real'         shift, and enter state 26
-	'String'       shift, and enter state 27
-	'^'            shift, and enter state 28
-	'array'        shift, and enter state 29
+	'Boolean'      shift, and enter state 22
+	'Character'    shift, and enter state 23
+	'Integer'      shift, and enter state 24
+	'Real'         shift, and enter state 25
+	'String'       shift, and enter state 26
+	'^'            shift, and enter state 27
+	'array'        shift, and enter state 28
 
-	Type           goto state 69
-	BasicType      goto state 22
+	Type           goto state 67
+	BasicType      goto state 21
 
-State 67
+State 65
 
 	ListConstantDefinition -> 'const' ConstantDefinition ';' . ListConstantDefinition    (rule 13)
 
 	':'            reduce using rule 12
 	'begin'        reduce using rule 12
-	'const'        shift, and enter state 34
+	'const'        shift, and enter state 33
 	'function'     reduce using rule 12
 	'procedure'    reduce using rule 12
 	'var'          reduce using rule 12
@@ -1010,11 +974,11 @@ State 67
 			(reduce using rule 12)
 
 
-	Ident          goto state 30
-	ConstantDefinitiongoto state 32
-	ListConstantDefinitiongoto state 68
+	Ident          goto state 29
+	ConstantDefinitiongoto state 31
+	ListConstantDefinitiongoto state 66
 
-State 68
+State 66
 
 	ListConstantDefinition -> 'const' ConstantDefinition ';' ListConstantDefinition .    (rule 13)
 
@@ -1026,14 +990,14 @@ State 68
 	L_Ident        reduce using rule 13
 
 
-State 69
+State 67
 
 	VariableDeclaration -> ListIdent ':' Type .         (rule 15)
 
 	';'            reduce using rule 15
 
 
-State 70
+State 68
 
 	ListVariableDeclaration -> VariableDeclaration ';' ListVariableDeclaration .    (rule 18)
 
@@ -1042,21 +1006,21 @@ State 70
 	'procedure'    reduce using rule 18
 
 
-State 71
+State 69
 
 	ProcedureAndFunctionHeading -> 'procedure' Ident . '(' ListFormalParameters ')' ';'    (rule 23)
 
-	'('            shift, and enter state 118
+	'('            shift, and enter state 113
 
 
-State 72
+State 70
 
 	ProcedureAndFunctionHeading -> 'function' Ident . '(' ListFormalParameters ')' ':' Type ';'    (rule 24)
 
-	'('            shift, and enter state 117
+	'('            shift, and enter state 112
 
 
-State 73
+State 71
 
 	ProcedureAndFunctionDeclaration -> ProcedureAndFunctionHeading Block .    (rule 19)
 
@@ -1064,7 +1028,7 @@ State 73
 	'begin'        reduce using rule 19
 
 
-State 74
+State 72
 
 	Block -> ListConstantDefinition ListVariableDeclaration ListProcedureAndFunctionDeclaration CompoundStatement .    (rule 10)
 
@@ -1073,57 +1037,56 @@ State 74
 	'begin'        reduce using rule 10
 
 
-State 75
+State 73
 
-	CompoundStatement -> 'begin' . ListStatement 'end'    (rule 53)
+	CompoundStatement -> 'begin' . ListStatement 'end'    (rule 52)
 
-	'('            shift, and enter state 102
-	'+'            shift, and enter state 103
-	'-'            shift, and enter state 104
-	'^'            shift, and enter state 105
-	'begin'        shift, and enter state 75
-	'break'        shift, and enter state 106
-	'case'         shift, and enter state 107
-	'continue'     shift, and enter state 108
-	'false'        shift, and enter state 109
-	'for'          shift, and enter state 110
-	'if'           shift, and enter state 111
-	'not'          shift, and enter state 112
-	'repeat'       shift, and enter state 113
-	'return'       shift, and enter state 114
-	'true'         shift, and enter state 115
-	'while'        shift, and enter state 116
+	'('            shift, and enter state 98
+	'+'            shift, and enter state 99
+	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
+	'begin'        shift, and enter state 73
+	'break'        shift, and enter state 102
+	'continue'     shift, and enter state 103
+	'false'        shift, and enter state 104
+	'for'          shift, and enter state 105
+	'if'           shift, and enter state 106
+	'not'          shift, and enter state 107
+	'repeat'       shift, and enter state 108
+	'return'       shift, and enter state 109
+	'true'         shift, and enter state 110
+	'while'        shift, and enter state 111
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 55
-	L_doubl        shift, and enter state 81
-	L_integ        shift, and enter state 82
-	L_quoted       shift, and enter state 56
+	L_charac       shift, and enter state 53
+	L_doubl        shift, and enter state 79
+	L_integ        shift, and enter state 80
+	L_quoted       shift, and enter state 54
 
-	Ident          goto state 91
-	Char           goto state 92
-	Double         goto state 93
-	Integer        goto state 94
-	String         goto state 95
-	CompoundStatementgoto state 96
-	ListStatement  goto state 97
-	Statement      goto state 98
-	LExpr          goto state 99
-	RExpr          goto state 100
-	Literal        goto state 101
+	Ident          goto state 87
+	Char           goto state 88
+	Double         goto state 89
+	Integer        goto state 90
+	String         goto state 91
+	CompoundStatementgoto state 92
+	ListStatement  goto state 93
+	Statement      goto state 94
+	LExpr          goto state 95
+	RExpr          goto state 96
+	Literal        goto state 97
 
-State 76
+State 74
 
 	ListProcedureAndFunctionDeclaration -> ProcedureAndFunctionDeclaration ';' . ListProcedureAndFunctionDeclaration    (rule 22)
 
 	'begin'        reduce using rule 20
-	'function'     shift, and enter state 63
-	'procedure'    shift, and enter state 64
+	'function'     shift, and enter state 61
+	'procedure'    shift, and enter state 62
 
-	ProcedureAndFunctionDeclarationgoto state 60
-	ListProcedureAndFunctionDeclarationgoto state 90
-	ProcedureAndFunctionHeadinggoto state 62
+	ProcedureAndFunctionDeclarationgoto state 58
+	ListProcedureAndFunctionDeclarationgoto state 86
+	ProcedureAndFunctionHeadinggoto state 60
 
-State 77
+State 75
 
 	ListVariableDeclaration -> 'var' VariableDeclaration ';' . ListVariableDeclaration    (rule 17)
 
@@ -1131,48 +1094,42 @@ State 77
 	'begin'        reduce using rule 16
 	'function'     reduce using rule 16
 	'procedure'    reduce using rule 16
-	'var'          shift, and enter state 39
+	'var'          shift, and enter state 38
 	L_Ident        shift, and enter state 2
 
-	Ident          goto state 12
-	ListIdent      goto state 36
-	VariableDeclarationgoto state 37
-	ListVariableDeclarationgoto state 89
+	Ident          goto state 11
+	ListIdent      goto state 35
+	VariableDeclarationgoto state 36
+	ListVariableDeclarationgoto state 85
+
+State 76
+
+	Constant -> OptSign Ident .                         (rule 42)
+
+	'..'           reduce using rule 42
+	';'            reduce using rule 42
+	']'            reduce using rule 42
+
+
+State 77
+
+	Constant -> OptSign Double .                        (rule 44)
+
+	'..'           reduce using rule 44
+	';'            reduce using rule 44
+	']'            reduce using rule 44
+
 
 State 78
 
-	Constant -> OptSign Ident .                         (rule 43)
+	Constant -> OptSign Integer .                       (rule 43)
 
-	','            reduce using rule 43
 	'..'           reduce using rule 43
-	':'            reduce using rule 43
 	';'            reduce using rule 43
 	']'            reduce using rule 43
 
 
 State 79
-
-	Constant -> OptSign Double .                        (rule 45)
-
-	','            reduce using rule 45
-	'..'           reduce using rule 45
-	':'            reduce using rule 45
-	';'            reduce using rule 45
-	']'            reduce using rule 45
-
-
-State 80
-
-	Constant -> OptSign Integer .                       (rule 44)
-
-	','            reduce using rule 44
-	'..'           reduce using rule 44
-	':'            reduce using rule 44
-	';'            reduce using rule 44
-	']'            reduce using rule 44
-
-
-State 81
 
 	Double -> L_doubl .                                 (rule 3)
 
@@ -1183,7 +1140,6 @@ State 81
 	'-'            reduce using rule 3
 	'..'           reduce using rule 3
 	'/'            reduce using rule 3
-	':'            reduce using rule 3
 	';'            reduce using rule 3
 	'<'            reduce using rule 3
 	'<='           reduce using rule 3
@@ -1196,16 +1152,14 @@ State 81
 	'div'          reduce using rule 3
 	'do'           reduce using rule 3
 	'else'         reduce using rule 3
-	'end'          reduce using rule 3
 	'mod'          reduce using rule 3
-	'of'           reduce using rule 3
 	'or'           reduce using rule 3
 	'then'         reduce using rule 3
 	'to'           reduce using rule 3
 	'until'        reduce using rule 3
 
 
-State 82
+State 80
 
 	Integer -> L_integ .                                (rule 4)
 
@@ -1216,7 +1170,6 @@ State 82
 	'-'            reduce using rule 4
 	'..'           reduce using rule 4
 	'/'            reduce using rule 4
-	':'            reduce using rule 4
 	';'            reduce using rule 4
 	'<'            reduce using rule 4
 	'<='           reduce using rule 4
@@ -1229,39 +1182,59 @@ State 82
 	'div'          reduce using rule 4
 	'do'           reduce using rule 4
 	'else'         reduce using rule 4
-	'end'          reduce using rule 4
 	'mod'          reduce using rule 4
-	'of'           reduce using rule 4
 	'or'           reduce using rule 4
 	'then'         reduce using rule 4
 	'to'           reduce using rule 4
 	'until'        reduce using rule 4
 
 
+State 81
+
+	IndexType -> Constant '..' . Constant               (rule 39)
+
+	'+'            shift, and enter state 49
+	'-'            shift, and enter state 50
+	'false'        shift, and enter state 51
+	'true'         shift, and enter state 52
+	L_Ident        reduce using rule 49
+	L_charac       shift, and enter state 53
+	L_doubl        reduce using rule 49
+	L_integ        reduce using rule 49
+	L_quoted       shift, and enter state 54
+
+	Char           goto state 44
+	String         goto state 45
+	Constant       goto state 84
+	OptSign        goto state 48
+
+State 82
+
+	Type -> 'array' '[' IndexType ']' . 'of' Type       (rule 31)
+
+	'of'           shift, and enter state 83
+
+
 State 83
 
-	IndexType -> Constant '..' . Constant               (rule 40)
+	Type -> 'array' '[' IndexType ']' 'of' . Type       (rule 31)
 
-	'+'            shift, and enter state 51
-	'-'            shift, and enter state 52
-	'false'        shift, and enter state 53
-	'true'         shift, and enter state 54
-	L_Ident        reduce using rule 50
-	L_charac       shift, and enter state 55
-	L_doubl        reduce using rule 50
-	L_integ        reduce using rule 50
-	L_quoted       shift, and enter state 56
+	'Boolean'      shift, and enter state 22
+	'Character'    shift, and enter state 23
+	'Integer'      shift, and enter state 24
+	'Real'         shift, and enter state 25
+	'String'       shift, and enter state 26
+	'^'            shift, and enter state 27
+	'array'        shift, and enter state 28
 
-	Char           goto state 45
-	String         goto state 46
-	Constant       goto state 88
-	OptSign        goto state 50
+	Type           goto state 150
+	BasicType      goto state 21
 
 State 84
 
-	Type -> 'array' '[' ListIndexType ']' . 'of' Type    (rule 32)
+	IndexType -> Constant '..' Constant .               (rule 39)
 
-	'of'           shift, and enter state 87
+	']'            reduce using rule 39
 
 
 State 85
@@ -1324,7 +1297,7 @@ State 89
 	'procedure'    reduce using rule 17
 
 
-State 90
+State 86
 
 	ListProcedureAndFunctionDeclaration -> ProcedureAndFunctionDeclaration ';' ListProcedureAndFunctionDeclaration .    (rule 22)
 
@@ -2326,9 +2299,7 @@ State 131
 	'div'          reduce using rule 98
 	'do'           reduce using rule 98
 	'else'         reduce using rule 98
-	'end'          reduce using rule 98
 	'mod'          reduce using rule 98
-	'of'           reduce using rule 98
 	'or'           reduce using rule 98
 	'then'         reduce using rule 98
 	'to'           reduce using rule 98
@@ -4242,7 +4213,7 @@ State 196
 	'to'           shift, and enter state 207
 
 
-State 197
+State 91
 
 	CaseItem -> Constant . ':' Statement                (rule 73)
 
@@ -4347,10 +4318,10 @@ State 202
 	'not'          shift, and enter state 112
 	'true'         shift, and enter state 115
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 55
-	L_doubl        shift, and enter state 81
-	L_integ        shift, and enter state 82
-	L_quoted       shift, and enter state 56
+	L_charac       shift, and enter state 53
+	L_doubl        shift, and enter state 79
+	L_integ        shift, and enter state 80
+	L_quoted       shift, and enter state 54
 
 	Ident          goto state 91
 	Char           goto state 92
@@ -4369,6 +4340,14 @@ State 203
 	')'            reduce using rule 104
 	']'            reduce using rule 104
 
+	Ident          goto state 87
+	Char           goto state 88
+	Double         goto state 89
+	Integer        goto state 90
+	String         goto state 91
+	LExpr          goto state 116
+	RExpr          goto state 127
+	Literal        goto state 97
 
 State 204
 
@@ -4406,27 +4385,37 @@ State 206
 
 	CaseItem -> Constant ':' . Statement                (rule 73)
 
-	'('            shift, and enter state 102
-	'+'            shift, and enter state 103
-	'-'            shift, and enter state 104
-	'^'            shift, and enter state 105
-	'begin'        shift, and enter state 75
-	'break'        shift, and enter state 106
-	'case'         shift, and enter state 107
-	'continue'     shift, and enter state 108
-	'false'        shift, and enter state 109
-	'for'          shift, and enter state 110
-	'if'           shift, and enter state 111
-	'not'          shift, and enter state 112
-	'repeat'       shift, and enter state 113
-	'return'       shift, and enter state 114
-	'true'         shift, and enter state 115
-	'while'        shift, and enter state 116
+	')'            reduce using rule 101
+	'*'            reduce using rule 101
+	'+'            reduce using rule 101
+	','            reduce using rule 101
+	'-'            reduce using rule 101
+	'/'            reduce using rule 101
+	';'            reduce using rule 101
+	'<'            reduce using rule 101
+	'<='           reduce using rule 101
+	'<>'           reduce using rule 101
+	'='            reduce using rule 101
+	'>'            reduce using rule 101
+	'>='           reduce using rule 101
+	']'            reduce using rule 101
+	'and'          reduce using rule 101
+	'div'          reduce using rule 101
+	'do'           reduce using rule 101
+	'else'         reduce using rule 101
+	'mod'          reduce using rule 101
+	'or'           reduce using rule 101
+	'then'         reduce using rule 101
+	'to'           reduce using rule 101
+	'until'        reduce using rule 101
+
+
+State 105
+
+	Statement -> 'for' . LExpr ':=' RExpr 'to' RExpr 'do' Statement    (rule 60)
+
+	'('            shift, and enter state 124
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 55
-	L_doubl        shift, and enter state 81
-	L_integ        shift, and enter state 82
-	L_quoted       shift, and enter state 56
 
 	Ident          goto state 91
 	Char           goto state 92
@@ -4443,18 +4432,18 @@ State 207
 
 	Statement -> 'for' LExpr ':=' RExpr 'to' . RExpr 'do' Statement    (rule 65)
 
-	'('            shift, and enter state 102
-	'+'            shift, and enter state 103
-	'-'            shift, and enter state 104
-	'^'            shift, and enter state 105
-	'false'        shift, and enter state 109
-	'not'          shift, and enter state 112
-	'true'         shift, and enter state 115
+	'('            shift, and enter state 98
+	'+'            shift, and enter state 99
+	'-'            shift, and enter state 100
+	'^'            shift, and enter state 101
+	'false'        shift, and enter state 104
+	'not'          shift, and enter state 107
+	'true'         shift, and enter state 110
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 55
-	L_doubl        shift, and enter state 81
-	L_integ        shift, and enter state 82
-	L_quoted       shift, and enter state 56
+	L_charac       shift, and enter state 53
+	L_doubl        shift, and enter state 79
+	L_integ        shift, and enter state 80
+	L_quoted       shift, and enter state 54
 
 	Ident          goto state 91
 	Char           goto state 92
@@ -4475,7 +4464,7 @@ State 208
 	'until'        reduce using rule 66
 
 
-State 209
+State 196
 
 	OptElse -> 'else' . Statement                       (rule 72)
 
@@ -4496,21 +4485,21 @@ State 209
 	'true'         shift, and enter state 115
 	'while'        shift, and enter state 116
 	L_Ident        shift, and enter state 2
-	L_charac       shift, and enter state 55
-	L_doubl        shift, and enter state 81
-	L_integ        shift, and enter state 82
-	L_quoted       shift, and enter state 56
+	L_charac       shift, and enter state 53
+	L_doubl        shift, and enter state 79
+	L_integ        shift, and enter state 80
+	L_quoted       shift, and enter state 54
 
-	Ident          goto state 91
-	Char           goto state 92
-	Double         goto state 93
-	Integer        goto state 94
-	String         goto state 95
-	CompoundStatementgoto state 96
-	Statement      goto state 212
-	LExpr          goto state 99
-	RExpr          goto state 100
-	Literal        goto state 101
+	Ident          goto state 87
+	Char           goto state 88
+	Double         goto state 89
+	Integer        goto state 90
+	String         goto state 91
+	CompoundStatementgoto state 92
+	Statement      goto state 197
+	LExpr          goto state 95
+	RExpr          goto state 96
+	Literal        goto state 97
 
 State 210
 
