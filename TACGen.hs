@@ -36,10 +36,8 @@ genConstDef (ConstDef ident@(Ident _ _ ty _ _) constVal) = do
     (code, valueAddr) <- genConstant constVal -- AST should store the value of the constant (not yet modified)
     -- Create the non-mutable variabile associated to the costant
     let var = ProgVar (TacProgVar (extractSimpleIdent ident) True ByVal (case ty of
-                                                                            Just (BasicType bt) -> bt
-                                                                            _ -> Integer)) (case ty of
-                                                                                                Just t -> getTACType (Just t)
-                                                                                                _ -> TACInteger)
+                                                                            (BasicType bt) -> bt
+                                                                            _ -> Integer)) (getTACType ty)
     let assignCode = [TACAssign var valueAddr] -- Assignment
     return (code ++ assignCode)
 
@@ -48,8 +46,8 @@ genVarDecl :: EnrichedVariableDeclaration -> TACGen [TAC TACLabel]
 genVarDecl (VarDecl idents ty) = do
     -- For each variable, generate an assignment to 0 (default)
     fmap concat $ forM idents $ \ident -> do
-        let tacType = enrichedTypeToTACType ty
-        let var = ProgVar (TacProgVar (extractSimpleIdent ident) True ByVal (enrichedTypeToBasicType ty)) tacType
+        let tacType = typeToTACType ty
+        let var = ProgVar (TacProgVar (extractSimpleIdent ident) True ByVal (typeToBasicType ty)) tacType
         -- Choose default value based on type
         let defaultLit = case tacType of
                 TACInteger   -> LiteralInteger 0
@@ -145,7 +143,7 @@ genLExpr (LId ident ty) = do
     let addr = ProgVar (TacProgVar (extractSimpleIdent ident) True ByVal (getBasicType ty)) (getTACType ty)
     return ([], Addr addr)
 
-genLExpr (LArr e1 [e2] ty loc) = do
+genLExpr (LArr e1 e2 ty loc) = do
     (codeBase, xbase) <- genLExpr e1
     (codeIdx, xidx) <- genRExpr e2
     let idxAddr = case xidx of Addr a -> a; _ -> error "Non-Address index"
@@ -174,12 +172,12 @@ genLExpr (LDeref e1 ty loc) = do
         Addr addr -> return (code1, RefAddr addr)
         RefAddr addr -> do
             -- if dereferencing a RefAddr, generate new temporary and make a TACDerefRead
-            tmp <- newtemp (case ty of Just t' -> getTACType (Just t'); Nothing -> TACInteger)
+            tmp <- newtemp (case ty of t' -> getTACType t')
             let code' = code1 ++ [TACDerefRead tmp addr]
             return (code', Addr tmp)
         _ -> do
             -- Error: dereference of a not-address
-            tmp <- newtemp (case ty of Just t' -> getTACType (Just t'); Nothing -> TACInteger)
+            tmp <- newtemp (case ty of t' -> getTACType t')
             return (code1, Addr tmp)
 
 -- TAC Generator for LExpr 
@@ -188,7 +186,7 @@ genLExprTarget (LId ident t) = do
     let addr = ProgVar (TacProgVar (extractSimpleIdent ident) True ByVal (getBasicType t)) (getTACType t)
     return ([], Addr addr)
 
-genLExprTarget (LArr e1 [e2] ty loc) = do
+genLExprTarget (LArr e1 e2 ty loc) = do
     (codeBase, xbase) <- genLExpr e1
     (codeIdx, xidx) <- genRExpr e2
     let idxAddr = case xidx of Addr a -> a; _ -> error "Indice non Address"
@@ -217,12 +215,12 @@ genLExprTarget (LDeref e1 ty loc) = do
         Addr addr -> return (code1, RefAddr addr)
         RefAddr addr -> do
             -- if dereferencing a RefAddr, generate new temporary and make a TACDerefRead
-            tmp <- newtemp (case ty of Just t' -> getTACType (Just t'); Nothing -> TACInteger)
+            tmp <- newtemp (case ty of t' -> getTACType t')
             let code' = code1 ++ [TACDerefRead tmp addr]
             return (code', Addr tmp)
         _ -> do
             -- Error: dereference of a not-address
-            tmp <- newtemp (case ty of Just t' -> getTACType (Just t'); Nothing -> TACInteger)
+            tmp <- newtemp (case ty of t' -> getTACType t')
             return (code1, Addr tmp)
 
 -- TAC Generator for CompoundStatement
@@ -425,16 +423,13 @@ genShortCircuitOr e1 e2 t = do
 genParamInit :: [EnrichedFormalParameters] -> TACGen [TAC TACLabel]
 genParamInit params = fmap (concat . concat) $ forM params $ \(FormParam mode idents typ) ->
     forM idents $ \ident -> do
-        let var = ProgVar (TacProgVar (extractSimpleIdent ident) True mode (enrichedTypeToBasicType typ)) (enrichedTypeToTACType typ)
+        let var = ProgVar (TacProgVar (extractSimpleIdent ident) True mode (typeToBasicType typ)) (typeToTACType typ)
         case mode of
             ByVal -> do
-                tmp <- newtemp (enrichedTypeToTACType typ)
+                tmp <- newtemp (typeToTACType typ)
                 return [TACParam tmp, TACAssign var tmp]
             ByRef -> do
-                tmp <- newtemp (enrichedTypeToTACType typ)
-                return [TACParam tmp, TACAssign var tmp]
-            ByValRes -> do
-                tmp <- newtemp (enrichedTypeToTACType typ)
+                tmp <- newtemp (typeToTACType typ)
                 return [TACParam tmp, TACAssign var tmp]
 
 -- Extract the flatten list of the formal parameters modality
@@ -453,14 +448,6 @@ genRExprFCall ident args paramModes t = do
                 LExpr le t -> do
                     (code, xaddr) <- genLExprTarget le
                     let addr = case xaddr of Addr a -> a; _ -> error "Parametro ByRef non Address"
-                    return (code, TACParam addr)
-                _ -> do
-                    -- Errore: ByRef parameter (not LExpr)
-                    return ([], TACParam (Temporary 0 TACInteger)) -- Temporary not used
-            ByValRes -> case arg of
-                LExpr le t -> do
-                    (code, xaddr) <- genLExprTarget le
-                    let addr = case xaddr of Addr a -> a; _ -> error "Parametro ByValRes non Address"
                     return (code, TACParam addr)
                 _ -> do
                     -- Errore: ByRef parameter (not LExpr)
@@ -486,10 +473,10 @@ extractAddr (Addr addr) = addr
 extractAddr _ = error "Expected Address but got different XAddr type"
 
 -- Convert EnrichedType to TACType
-enrichedTypeToTACType :: EnrichedType -> TACType
-enrichedTypeToTACType (BasicType bt) = basicTypeToTACType bt
-enrichedTypeToTACType (Pointer _)    = TACAddr
-enrichedTypeToTACType (Array _ _)    = TACAddr
+typeToTACType :: EnrichedType -> TACType
+typeToTACType (BasicType bt) = basicTypeToTACType bt
+typeToTACType (Pointer _)    = TACAddr
+typeToTACType (Array {})  = TACAddr
 
 -- Convert BasicType to TACType
 basicTypeToTACType :: BasicType -> TACType
@@ -501,6 +488,6 @@ basicTypeToTACType String     = TACAddr
 basicTypeToTACType Void       = TACError
 
 -- Convert EnrichedType to BasicType
-enrichedTypeToBasicType :: EnrichedType -> BasicType
-enrichedTypeToBasicType (BasicType bt) = bt
-enrichedTypeToBasicType _ = Void
+typeToBasicType :: EnrichedType -> BasicType
+typeToBasicType (BasicType bt) = bt
+typeToBasicType _ = Void

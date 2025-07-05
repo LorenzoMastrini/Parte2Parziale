@@ -52,11 +52,10 @@ transOptModality :: AbsLinguaggio.OptModality -> Result
 transOptModality x = case x of
   AbsLinguaggio.ByVal -> failure x
   AbsLinguaggio.ByRef -> failure x
-  AbsLinguaggio.ByValRes -> failure x
 
 transType :: AbsLinguaggio.SimpleType -> Result
 transType x = case x of
-  AbsLinguaggio.Array indextypes type_ -> failure x
+  AbsLinguaggio.Array indextypes type_ _ -> failure x
   AbsLinguaggio.Pointer type_ -> failure x
   AbsLinguaggio.BasicType basictype -> failure x
 
@@ -91,9 +90,8 @@ transStatement x = case x of
   AbsLinguaggio.Assign lexpr rexpr ty loc -> failure x
   AbsLinguaggio.While rexpr statement loc -> failure x
   AbsLinguaggio.DoWhile statement rexpr loc -> failure x
-  AbsLinguaggio.ForTo lexpr rexpr1 rexpr2 statement -> failure x
+  AbsLinguaggio.ForTo lexpr rexpr1 rexpr2 statement loc -> failure x
   AbsLinguaggio.If rexpr statement optelse loc -> failure x
-  AbsLinguaggio.Case rexpr caseitems -> failure x
   AbsLinguaggio.ReturnStmt rexpr ty loc -> failure x
   AbsLinguaggio.ContinueStmt loc -> failure x
   AbsLinguaggio.BreakStmt loc -> failure x
@@ -102,10 +100,6 @@ transOptElse :: AbsLinguaggio.SimpleOptElse -> Result
 transOptElse x = case x of
   AbsLinguaggio.NoElse -> failure x
   AbsLinguaggio.Else statement -> failure x
-
-transCaseItem :: AbsLinguaggio.CaseItem () () () -> Result
-transCaseItem x = case x of
-  AbsLinguaggio.CaseItem constant statement -> failure x
 
 transLExpr :: AbsLinguaggio.SimpleLExpr -> Result
 transLExpr x = case x of

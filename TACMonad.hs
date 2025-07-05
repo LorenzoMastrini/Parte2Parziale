@@ -100,19 +100,19 @@ tryPopContinueLabel = do
 -----------------------------------------------------------
 
 -- Convert Maybe SimpleType in TACType
-getTACType :: Maybe SimpleType -> TACType
-getTACType (Just (BasicType t)) = case t of
+getTACType :: EnrichedType -> TACType
+getTACType (BasicType t) = case t of
   Integer   -> TACInteger
   Real      -> TACReal
   Character -> TACCharacter
   Boolean   -> TACBoolean
   String    -> TACAddr
   _         -> TACError
-getTACType (Just (Pointer _)) = TACAddr
-getTACType (Just (Array _ _)) = TACAddr
-getTACType Nothing = TACError  -- default fallback
+getTACType (Pointer _) = TACAddr
+getTACType (Array {}) = TACAddr
+getTACType Error = TACError  -- default fallback
 
 -- Extract BasicType from a (Maybe SimpleType)
-getBasicType :: Maybe SimpleType -> BasicType
-getBasicType (Just (BasicType t)) = t
+getBasicType :: EnrichedType -> BasicType
+getBasicType (BasicType t) = t
 getBasicType _ = Void  -- default fallback (error)

@@ -2,8 +2,10 @@
 
 module PrettyPrinter where
 
+import Data.List (stripPrefix)
 import AbsLinguaggio
 import Prelude
+
 
 
 errorMsg :: String -> String
@@ -33,7 +35,7 @@ colorCyan x = "\x001b[36m" ++ x ++ "\x1b[37;1m"
 colorMagenta :: String -> String
 colorMagenta x = "\x1b[35m" ++  x ++ "\x1b[37;1m"
 
-colorYellow :: String -> String 
+colorYellow :: String -> String
 colorYellow x = "\x001b[33m" ++ x ++ "\x1b[37;1m"
 
 colorGreen :: String -> String
@@ -113,9 +115,9 @@ instance PrintTree EnrichedVariableDeclaration where
   buildTree (VarDecl ids type_) = [colorDecl "VarDecl"] ++ (paddingMultiple (buildTree ids) ++ paddingSingle (buildTree type_))
 
 instance PrintTree [EnrichedIdent] where
-    buildTree [] = []
-    buildTree [id] = paddingSingle [showId id]
-    buildTree (id:ids) = paddingMultiple [showId id] ++ buildTree ids
+  buildTree [] = []
+  buildTree [id] = paddingSingle [showId id]
+  buildTree (id:ids) = paddingMultiple [showId id] ++ buildTree ids
 
 instance PrintTree [EnrichedProcedureAndFunctionDeclaration] where
   buildTree [] = []
@@ -137,17 +139,23 @@ instance PrintTree [EnrichedFormalParameters] where
 instance PrintTree EnrichedFormalParameters where
   buildTree (FormParam modality ids type_) = [colorMod (show modality)] ++ (paddingMultiple (buildTree ids) ++ paddingSingle (buildTree type_))
 
-instance PrintTree EnrichedType where
-  buildTree (Array it ty) = [colorDecl "Array"] ++ (paddingMultiple (buildTree it) ++ paddingSingle (buildTree ty))
+instance PrintTree SimpleType where
+  buildTree (Array it ty varInfo) = [colorDecl "Array " ++ colorGrey (show varInfo)] ++ (paddingMultiple (buildTree it) ++ paddingSingle (buildTree ty))
   buildTree (Pointer ty) = [colorDecl "Pointer"] ++ paddingSingle (buildTree ty)
   buildTree (BasicType bt) = [colorDecl ("BasicType " ++ show bt)]
 
-instance PrintTree [EnrichedIndexType] where
+instance PrintTree EnrichedType where
+  buildTree (Array it ty varInfo) = [colorDecl "Array " ++ showInfoFields [("VarInfo", colorGrey (stripConstructor "VarInfo" (show varInfo)))]] ++ paddingMultiple (buildTree it) ++ paddingSingle (buildTree ty)
+  buildTree (Pointer ty) = [colorDecl "Pointer"] ++ paddingSingle (buildTree ty)
+  buildTree (BasicType bt) = [colorDecl ("BasicType " ++ show bt)]
+  buildTree Error = [colorRed "<Error>"]
+
+instance PrintTree [SimpleIndexType] where
     buildTree [] = []
     buildTree [it] = paddingSingle (buildTree it)
     buildTree (it:its) = paddingMultiple (buildTree it) ++ buildTree its
 
-instance PrintTree EnrichedIndexType where
+instance PrintTree SimpleIndexType where
     buildTree (IndexRange c1 c2) = [colorDecl "IndexRange"] ++ (paddingMultiple (buildTree c1) ++ paddingSingle (buildTree c2))
 
 instance PrintTree EnrichedConstant where
@@ -168,14 +176,13 @@ instance PrintTree [EnrichedStatement] where
 
 instance PrintTree EnrichedStatement where
   buildTree (Stmts stmt) = [colorStmt "Stmts"] ++ paddingSingle (buildTree stmt)
-  buildTree (RExprStmt rexpr ty) = [colorStmt "RExprStmt " ++ showInfoFields [("type", colorType (showMType ty))]] ++ paddingSingle (buildTree rexpr)
-  buildTree (Assign lexpr rexpr ty loc) = [colorStmt "Assign " ++ showInfoFields [("type", colorType (showMType ty)), ("loc", colorPos (showLoc loc))]] ++ (paddingMultiple (buildTree lexpr) ++ paddingSingle (buildTree rexpr))
+  buildTree (RExprStmt rexpr ty) = [colorStmt "RExprStmt " ++ showInfoFields [("type", colorType (showEnrichedType ty))]] ++ paddingSingle (buildTree rexpr)
+  buildTree (Assign lexpr rexpr ty loc) = [colorStmt "Assign " ++ showInfoFields [("type", colorType (showEnrichedType ty)), ("loc", colorPos (showLoc loc))]] ++ (paddingMultiple (buildTree lexpr) ++ paddingSingle (buildTree rexpr))
   buildTree (While rexpr stmt loc) = [colorStmt "While " ++ showInfoFields [("loc", colorPos (showLoc loc))]] ++ (paddingMultiple (buildTree rexpr) ++ paddingSingle (buildTree stmt))
   buildTree (DoWhile stmt rexpr loc) = [colorStmt "DoWhile " ++ showInfoFields [("loc", colorPos (showLoc loc))]] ++ (paddingMultiple (buildTree stmt) ++ paddingSingle (buildTree rexpr))
-  buildTree (ForTo lexpr r1 r2 stmt) = [colorStmt "ForTo"] ++ (paddingMultiple (buildTree lexpr) ++ paddingMultiple (buildTree r1) ++ paddingMultiple (buildTree r2) ++ paddingSingle (buildTree stmt))
+  buildTree (ForTo lexpr r1 r2 stmt loc) = [colorStmt "ForTo" ++ showInfoFields [("loc", colorPos (showLoc loc))]] ++ (paddingMultiple (buildTree lexpr) ++ paddingMultiple (buildTree r1) ++ paddingMultiple (buildTree r2) ++ paddingSingle (buildTree stmt))
   buildTree (If rexpr stmt optElse loc) = [colorStmt "If " ++ showInfoFields [("loc", colorPos (showLoc loc))]] ++ (paddingMultiple (buildTree rexpr) ++ paddingMultiple (buildTree stmt) ++ paddingSingle (buildTree optElse))
-  buildTree (Case rexpr cases) = [colorStmt "Case"] ++ (paddingMultiple (buildTree rexpr) ++ buildTree cases)
-  buildTree (ReturnStmt rexpr ty loc) = [colorStmt "ReturnStmt " ++ showInfoFields [("type", colorType (showMType ty)), ("loc", colorPos (showLoc loc))]] ++ paddingSingle (buildTree rexpr)
+  buildTree (ReturnStmt rexpr ty loc) = [colorStmt "ReturnStmt " ++ showInfoFields [("type", colorType (showEnrichedType ty)), ("loc", colorPos (showLoc loc))]] ++ paddingSingle (buildTree rexpr)
   buildTree (BreakStmt loc) = [colorStmt "BreakStmt " ++ showInfoFields [("loc", colorPos (showLoc loc))]]
   buildTree (ContinueStmt loc) = [colorStmt "ContinueStmt " ++ showInfoFields [("loc", colorPos (showLoc loc))]]
 
@@ -183,18 +190,10 @@ instance PrintTree EnrichedOptElse where
   buildTree NoElse = [colorStmt "NoElse"]
   buildTree (Else stmt) = colorStmt "Else" : paddingSingle (buildTree stmt)
 
-instance PrintTree [EnrichedCaseItem] where
-  buildTree [] = []
-  buildTree [c] = paddingSingle (buildTree c)
-  buildTree (c:cs) = paddingMultiple (buildTree c) ++ buildTree cs
-
-instance PrintTree EnrichedCaseItem where
-  buildTree (CaseItem const stmt) = colorStmt "CaseItem" : (paddingMultiple (buildTree const) ++ paddingSingle (buildTree stmt))
-
 instance PrintTree EnrichedLExpr where
-  buildTree (LId id ty) = [colorLE "LId" ++ " " ++ showInfoFields [("type", colorType (showMType ty))] ++ " " ++ showId id]
-  buildTree (LArr lexpr rexprs ty loc) = [colorLE "LArr" ++ " " ++ showInfoFields [("type", colorType (showMType ty)), ("loc", colorPos (showLoc loc))]] ++ (paddingMultiple (buildTree lexpr) ++ buildTree rexprs)
-  buildTree (LDeref lexpr ty loc) = [colorLE "LDeref" ++ " " ++ showInfoFields [("type", colorType (showMType ty)), ("loc", colorPos (showLoc loc))]] ++ paddingSingle (buildTree lexpr)
+  buildTree (LId id ty) = [colorLE "LId" ++ " " ++ showInfoFields [("type", colorType (showEnrichedType ty))] ++ " " ++ showId id]
+  buildTree (LArr lexpr rexprs ty loc) = [colorLE "LArr" ++ " " ++ showInfoFields [("type", colorType (showEnrichedType ty)), ("loc", colorPos (showLoc loc))]] ++ (paddingMultiple (buildTree lexpr) ++ buildTree rexprs)
+  buildTree (LDeref lexpr ty loc) = [colorLE "LDeref" ++ " " ++ showInfoFields [("type", colorType (showEnrichedType ty)), ("loc", colorPos (showLoc loc))]] ++ paddingSingle (buildTree lexpr)
 
 instance PrintTree [EnrichedRExpr] where
     buildTree [] = []
@@ -204,13 +203,13 @@ instance PrintTree [EnrichedRExpr] where
 instance PrintTree EnrichedRExpr where
   buildTree (Binary r1 op r2 ty) =
     [colorExpr ("Binary " ++ colorRel (showBinaryOp op)) ++ " " ++
-      showInfoFields [("type", colorType (showMType ty)), ("loc", colorPos (showLoc (getBinaryLoc op)))]]
+      showInfoFields [("type", colorType (showEnrichedType ty)), ("loc", colorPos (showLoc (getBinaryLoc op)))]]
     ++ (paddingMultiple (buildTree r1) ++ paddingSingle (buildTree r2))
-  buildTree (Unary op r ty) = [colorExpr ("Unary " ++ colorRel (show op)) ++ " " ++ showInfoFields [("type", colorType (showMType ty))]] ++ paddingSingle (buildTree r)
-  buildTree (Ref op lexpr ty) = [colorExpr "Ref" ++ " " ++ showInfoFields [("type", colorType (showMType ty))]] ++ (paddingMultiple (buildTree op) ++ paddingSingle (buildTree lexpr))
-  buildTree (Lit lit ty) = [colorExpr "Lit" ++ " " ++ showInfoFields [("type", colorType (showMType ty))]] ++ paddingSingle (buildTree lit)
+  buildTree (Unary op r ty) = [colorExpr "Unary" ++ " " ++ showInfoFields [("type", colorType (showEnrichedType ty))]] ++ paddingMultiple (buildTree op) ++ paddingSingle (buildTree r)
+  buildTree (Ref op lexpr ty) = [colorExpr "Ref" ++ " " ++ showInfoFields [("type", colorType (showEnrichedType ty))]] ++ (paddingMultiple (buildTree op) ++ paddingSingle (buildTree lexpr))
+  buildTree (Lit lit ty) = [colorExpr "Lit" ++ " " ++ showInfoFields [("type", colorType (showEnrichedType ty))]] ++ paddingSingle (buildTree lit)
   buildTree (FCall id rexprs loc) = [colorExpr ("FCall " ++ showId id) ++ " " ++ showInfoFields [("loc", colorPos (showLoc loc))]] ++ buildTree rexprs
-  buildTree (LExpr lexpr ty) = [colorExpr "LExpr" ++ " " ++ showInfoFields [("type", colorType (showMType ty))]] ++ paddingSingle (buildTree lexpr)
+  buildTree (LExpr lexpr ty) = [colorExpr "LExpr" ++ " " ++ showInfoFields [("type", colorType (showEnrichedType ty))]] ++ paddingSingle (buildTree lexpr)
 
 instance PrintTree Literal where
   buildTree (LiteralInteger i) = ["Integer " ++ show i]
@@ -222,18 +221,17 @@ instance PrintTree Literal where
 
 -- Instances for the simple types used in VarInfo
 instance PrintTree SimpleConstant where
-    buildTree (ConstId sign id) = [show sign ++ " " ++ showId (idToEnriched id)]
-        where idToEnriched (Ident s l _ _ _) = Ident s l Nothing NoVarInfo NoFunInfo
-    buildTree (ConstInt sign i) = [show sign ++ " " ++ show i]
-    buildTree (ConstDouble sign d) = [show sign ++ " " ++ show d]
-    buildTree (ConstStr s) = ["\"" ++ s ++ "\""]
+  buildTree (ConstId sign id) = [show sign ++ " " ++ showId (idToEnriched id)]
+      where idToEnriched (Ident s l _ _ _) = Ident s l (BasicType Void) NoVarInfo NoFunInfo
+  buildTree (ConstInt sign i) = [show sign ++ " " ++ show i]
+  buildTree (ConstDouble sign d) = [show sign ++ " " ++ show d]
+  buildTree (ConstStr s) = ["\"" ++ s ++ "\""]
 
 instance PrintTree Unary where
-  buildTree (UnaryPlus loc) = ["UnaryPlus " ++ showLoc loc]
-  buildTree (UnaryMinus loc) = ["UnaryMinus " ++ showLoc loc]
-  buildTree (UnaryNot loc) = ["UnaryNot " ++ showLoc loc]
-  buildTree (UnaryRef loc) = ["UnaryRef " ++ showLoc loc]
-
+  buildTree (UnaryPlus loc)    = [colorExpr ("Unary " ++ colorRel "Plus") ++ " " ++ showInfoFields [("loc", colorPos (showLoc loc))]]
+  buildTree (UnaryMinus loc)   = [colorExpr ("Unary " ++ colorRel "Minus") ++ " " ++ showInfoFields [("loc", colorPos (showLoc loc))]]
+  buildTree (UnaryNot loc)     = [colorExpr ("Unary " ++ colorRel "Not") ++ " " ++ showInfoFields [("loc", colorPos (showLoc loc))]]
+  buildTree (UnaryRef loc)     = [colorExpr ("Unary " ++ colorRel "Ref") ++ " " ++ showInfoFields [("loc", colorPos (showLoc loc))]]
 
 
 -----------------------------------------------------------
@@ -244,27 +242,31 @@ showInfoFields :: [(String, String)] -> String
 showInfoFields fields = "{ " ++ (concatMap (\(k,v) -> colorGrey (k ++ ": ") ++ v ++ ", ") (Prelude.init fields) ++ colorGrey (fst (last fields) ++ ": ") ++ snd (last fields)) ++ " }"
 
 showId :: EnrichedIdent -> String
-showId (Ident s (Loc l c) ty varInfo funInfo) = colorId ("'" ++ s ++ "'") ++ " " ++ showInfoFields [
-    ("loc", colorPos (lineAndColumn l c)),
-    ("type", colorType (showMType ty)),
-    ("varInfo", colorGrey (show varInfo)),
-    ("funInfo", colorGrey (show funInfo))
-  ]
+showId (Ident s (Loc l c) ty varInfo funInfo) =
+  colorId ("'" ++ s ++ "'") ++ " " ++ showInfoFields fields
+  where
+    baseFields =
+      [ ("loc", colorPos (lineAndColumn l c))
+      , ("type", colorType (showEnrichedType ty))
+      ]
+    varFields = case varInfo of
+      NoVarInfo -> []
+      _         -> [("varInfo", colorGrey (stripConstructor "VarInfo" (show varInfo)))]
+    funFields = case funInfo of
+      NoFunInfo -> []
+      _         -> [("funInfo", colorGrey (show funInfo))]
+    fields = baseFields ++ varFields ++ funFields
+
+stripConstructor :: String -> String -> String
+stripConstructor ctor str =
+  case stripPrefix (ctor ++ " ") str of
+    Just rest -> rest
+    Nothing   -> str
 
 showLoc :: Loc -> String
 showLoc (Loc line col) = "(line: " ++ show line ++ ", column: " ++ show col ++ ")"
 
-showMType :: Maybe SimpleType -> String
-showMType ty = case ty of
-    Just (Array _ arrTy)        -> "Array of " ++ showMType (Just arrTy)
-    Just (Pointer ptrTy)        -> "Pointer to " ++ showMType (Just ptrTy)
-    Just (BasicType Integer)    -> "Integer"
-    Just (BasicType Real)       -> "Real"
-    Just (BasicType Boolean)    -> "Boolean"
-    Just (BasicType Character)  -> "Character"
-    Just (BasicType String)     -> "String"
-    Just (BasicType Void)       -> "Void"
-    Nothing                     -> "Nothing"
+
 
 showBinaryOp :: Binary -> String
 showBinaryOp op = case op of
@@ -299,3 +301,29 @@ getBinaryLoc op = case op of
   BinaryLte loc     -> loc
   BinaryGt loc      -> loc
   BinaryGte loc     -> loc
+
+
+
+showEnrichedType :: EnrichedType -> String
+showEnrichedType (Pointer t)           = "Pointer to " ++ showEnrichedType t
+showEnrichedType (Array _ t _)         = "Array of " ++ showEnrichedType t
+showEnrichedType (BasicType Integer)   = "Integer"
+showEnrichedType (BasicType Real)      = "Real"
+showEnrichedType (BasicType Boolean)   = "Boolean"
+showEnrichedType (BasicType Character) = "Character"
+showEnrichedType (BasicType String)    = "String"
+showEnrichedType (BasicType Void)      = "Void"
+showEnrichedType Error                 = "<error>"
+
+enrichType :: SimpleType -> EnrichedType
+enrichType (Array idxs t varInfo) = Array idxs (enrichType t) (VarInfo Nothing False (getRange idxs))
+enrichType (Pointer t)            = Pointer (enrichType t)
+enrichType (BasicType b)          = BasicType b
+enrichType Error                  = Error
+
+-- Extract the range from array indexType
+getRange :: SimpleIndexType -> Maybe (Int, Int)
+getRange (IndexRange c1 c2) =
+    case (c1, c2) of
+        (ConstInt _ n1, ConstInt _ n2) -> Just (fromInteger n1, fromInteger n2)
+        _ -> Nothing

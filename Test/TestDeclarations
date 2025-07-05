@@ -10,6 +10,8 @@ const
     c1 = 3.14;      // ERROR (RedeclaredConst)
     c6 = true;
     c7 = c8;        // ERROR (UnknownIdentifier)
+const c8 = 9;
+const c9 = "test";
 
 // --- Variables ---
 var

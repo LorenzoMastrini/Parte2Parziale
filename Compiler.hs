@@ -78,3 +78,6 @@ main = do
     []              -> emptyInputError
     "-s":fs         -> mapM_ (compile 4 pProgram) fs
     fs              -> mapM_ (compile 2 pProgram) fs
+
+hasErrors :: Env -> Bool
+hasErrors env = not (null (errors env))

@@ -1,0 +1,38 @@
+program TestFor();
+
+begin    
+    for i := 1 to 10 do
+        writeInt(i);
+
+    for i := 1 to 5 do
+    begin
+        writeInt(i);
+        writeInt(i * i);
+    end;
+
+    //for i := 1 to 5       // Syntax error: missing "do"
+    //    writeInt(i);
+
+    for i := 1 + 2 to 10 do
+        writeInt(i);
+
+    for j := false to true do
+        writeString(j);     // ERROR (FunArgsTypeMismatch)
+
+    for i := 1 to 3 do
+        //writeln(i)        // Syntax error: missing begin-end statement
+        writeString("done");
+
+    for i := 1 to 3 do
+        for j := 1.6 to 7.9 do
+            begin
+                writeInt(i);
+                writeReal(j);
+            end;
+
+    for i := 1.8 to 3 do
+    begin
+        i := i + 1;
+        writeInt(i);
+    end;
+end.

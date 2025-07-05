@@ -13,24 +13,24 @@ var
 
     function sum(x: Integer, y: Integer): Integer;
         begin
-            x + y;
+            return x + y;
         end;
 
     function concatenate(s1, s2: String): String;
         begin
-            s1;
+            return s1;
         end;
 
     function invert(b: Boolean): Boolean;
         begin
-            not b;
+            return not b;
         end;
 
     // PARAMETER PASSING MODALITIES TESTS
     // --- BY VALUE ---
     function byValue(x: Integer): Integer;
         begin
-            x := x + 1; // Should NOT affect the caller
+            x := x + 1;
             return x;
         end;
     
@@ -39,17 +39,6 @@ var
         begin
             x := x + 1; // Should affect the caller
             return x;
-        end;
-    
-    // --- BY VALUE-RESULT ---
-    procedure byValueResult(valres x: Integer);
-        begin
-            x := x + 1; // Should affect the caller only after function ends
-        end;
-
-    procedure byValueResult(x: Integer, var x: Integer, valres x: Integer);
-        begin
-            x := x + 1; // Should affect the caller only after function ends
         end;
 
     procedure compat(x: String);
@@ -61,29 +50,29 @@ var
 begin
     // VALID CASES
     // Function call
-    compat('a');
     sum(1, 2);                              // Integer, Integer -> Integer
     sum(a, 5);                              // Integer, Integer -> Integer
     concatenate("Hello", " world");         // String, String -> String
     concatenate(e, "!");                    // String, String -> String
     invert(true);                           // Boolean -> Boolean
     invert(c);                              // Boolean -> Boolean
-    sum(1.5, 2);                            // Real (implicit cast), Integer -> Integer
     sum(sum(1,2), 3);                       // Nested Function: (Integer, Integer -> Integer), Integer -> Integer
     concatenate(concatenate("a","b"), "c"); // Nested Function: (String, String -> String), String -> String
 
     // ERROR CASES
     d();                    // ERROR (NotAFunction)
     h();                    // ERROR (FunNotDefined)
-    sum("a", 2);            // String, Integer = ERROR (FunArgTypeMismatch)
-    sum(true, false);       // Boolean, Boolean = ERROR (FunArgTypeMismatch)
-    concatenate(1, 2);      // Integer, Integer = ERROR (FunArgTypeMismatch)
-    concatenate("a", 2);    // String, Integer = ERROR (FunArgTypeMismatch)
-    invert(1);              // Integer = ERROR (FunArgTypeMismatch)
-    invert("true");         // String = ERROR (FunArgTypeMismatch)
+    sum(1.5, 2);            // ERROR (FunArgTypeMismatch)
+    compat('a');            // ERROR (FunArgTypeMismatch)
+    sum("a", 2);            // ERROR (FunArgTypeMismatch)
+    sum(true, false);       // ERROR (FunArgTypeMismatch)
+    concatenate(1, 2);      // ERROR (FunArgTypeMismatch)
+    concatenate("a", 2);    // ERROR (FunArgTypeMismatch)
+    invert(1);              // ERROR (FunArgTypeMismatch)
+    invert("true");         // ERROR (FunArgTypeMismatch)
     sum(1);                 // ERROR (FunArgsNumMismatch)
-    concatenate("a");       // Numero di argomenti errato = ERROR (FunArgsNumMismatch)
-    invert();               // Numero di argomenti errato = ERROR (FunArgsNumMismatch)
+    concatenate("a");       // ERROR (FunArgsNumMismatch)
+    invert();               // ERROR (FunArgsNumMismatch)
 
 
     // PARAMETER PASSING MODALITIES TESTS
@@ -91,20 +80,14 @@ begin
     w := 20;
     z := 30;
 
-    byValue(v);             // By Value: v = 10
+    byValue(v);             // By Value: Integer (compatible with Integer)
+    byValue(c);             // By Value: Boolen (compatible with Integer)
+    byReference(w);         // By Reference: Integer
     
-    byReference(w);         // By Reference: w = 21
-    
-    byValueResult(z);       // By Value-Result: z = 31
-
-    // ERROR CASES FOR PARAMETER PASSING MODALITIES
-    byReference(5);       // ERROR (NotLExprInMod)
-    byValueResult(8);      // ERROR (NotLExprInMod)
-
-    // --- Passing an expression to a by-reference or valres parameter ---
-    byReference(v / 7);       // ERROR: Cannot pass expression to var parameter
-    byValueResult(^w);     // ERROR: Cannot pass expression to valres parameter
-
-    byReference(e);           // ERROR (IncompatibleModParamType)
-    byValueResult(c);         // ERROR (IncompatibleModParamType)
+    // ERROR CASES
+    byValue(b);             // ERROR: (By Value) Real not compatible with Integer
+    byValue(e);             // ERROR: (By Value) String not compatible with Integer
+    byReference(v / 7);     // ERROR (NotLExprInMod)
+    byReference(b);         // ERROR (IncompatibleRefModParamType)
+    byReference(c);         // ERROR (IncompatibleRefModParamType)
 end.

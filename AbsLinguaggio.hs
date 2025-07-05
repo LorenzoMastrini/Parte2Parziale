@@ -24,7 +24,7 @@ data ConstantDefinition ty varInfo funInfo
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data VariableDeclaration ty varInfo funInfo
-  = VarDecl [Ident ty varInfo funInfo] (Type ty varInfo funInfo)
+  = VarDecl [Ident ty varInfo funInfo] (Type () varInfo ())
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data ProcedureAndFunctionDeclaration ty varInfo funInfo
@@ -33,17 +33,16 @@ data ProcedureAndFunctionDeclaration ty varInfo funInfo
 
 data ProcedureAndFunctionHeading ty varInfo funInfo
   = ProcHead (Ident ty varInfo funInfo) [FormalParameters ty varInfo funInfo]
-  | FunHead (Ident ty varInfo funInfo) [FormalParameters ty varInfo funInfo] (Type ty varInfo funInfo) Loc
+  | FunHead (Ident ty varInfo funInfo) [FormalParameters ty varInfo funInfo] (Type () () ()) Loc
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data FormalParameters ty varInfo funInfo
-  = FormParam OptModality [Ident ty varInfo funInfo] (Type ty varInfo funInfo)
+  = FormParam OptModality [Ident ty varInfo funInfo] (Type () varInfo ())
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data OptModality
   = ByVal
   | ByRef
-  | ByValRes
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data CompoundStatement ty varInfo funInfo
@@ -56,9 +55,8 @@ data Statement ty varInfo funInfo
   | Assign (LExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) ty Loc
   | While (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo) Loc
   | DoWhile (Statement ty varInfo funInfo) (RExpr ty varInfo funInfo) Loc
-  | ForTo (LExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo)
+  | ForTo (LExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo) Loc
   | If (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo) (OptElse ty varInfo funInfo) Loc
-  | Case (RExpr ty varInfo funInfo) [CaseItem ty varInfo funInfo]
   | ReturnStmt (RExpr ty varInfo funInfo) ty Loc
   | BreakStmt Loc
   | ContinueStmt Loc
@@ -67,10 +65,6 @@ data Statement ty varInfo funInfo
 data OptElse ty varInfo funInfo
   = NoElse
   | Else (Statement ty varInfo funInfo)
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
-
-data CaseItem ty varInfo funInfo
-  = CaseItem (Constant ty varInfo funInfo) (Statement ty varInfo funInfo)
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Constant ty varInfo funInfo
@@ -99,7 +93,7 @@ data RExpr ty varInfo funInfo
 
 data LExpr ty varInfo funInfo
   = LId (Ident ty varInfo funInfo) ty
-  | LArr (LExpr ty varInfo funInfo) [RExpr ty varInfo funInfo] ty Loc
+  | LArr (LExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) ty Loc
   | LDeref (LExpr ty varInfo funInfo) ty Loc
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
@@ -141,9 +135,10 @@ data Literal
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Type ty varInfo funInfo
-  = Array [IndexType ty varInfo funInfo] (Type ty varInfo funInfo)
-  | Pointer (Type ty varInfo funInfo)
+  = Array (IndexType () () ()) (Type () varInfo ()) varInfo
+  | Pointer (Type () varInfo ())
   | BasicType BasicType
+  | Error
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data IndexType ty varInfo funInfo
@@ -184,23 +179,22 @@ type SimpleType                            = Type () () ()
 type SimpleIndexType                       = IndexType () () ()
 
 -- Type aliases for the enriched AST nodes
-type EnrichedProgram                          = Program (Maybe SimpleType) VarInfo FunInfo
-type EnrichedFormalParameters                 = FormalParameters (Maybe SimpleType) VarInfo FunInfo
-type EnrichedBlock                            = Block (Maybe SimpleType) VarInfo FunInfo
-type EnrichedConstantDefinition               = ConstantDefinition (Maybe SimpleType) VarInfo FunInfo
-type EnrichedVariableDeclaration              = VariableDeclaration (Maybe SimpleType) VarInfo FunInfo
-type EnrichedProcedureAndFunctionDeclaration  = ProcedureAndFunctionDeclaration (Maybe SimpleType) VarInfo FunInfo
-type EnrichedProcedureAndFunctionHeading      = ProcedureAndFunctionHeading (Maybe SimpleType) VarInfo FunInfo
-type EnrichedCompoundStatement                = CompoundStatement (Maybe SimpleType) VarInfo FunInfo
-type EnrichedStatement                        = Statement (Maybe SimpleType) VarInfo FunInfo
-type EnrichedOptElse                          = OptElse (Maybe SimpleType) VarInfo FunInfo
-type EnrichedCaseItem                         = CaseItem (Maybe SimpleType) VarInfo FunInfo
-type EnrichedRExpr                            = RExpr (Maybe SimpleType) VarInfo FunInfo
-type EnrichedLExpr                            = LExpr (Maybe SimpleType) VarInfo FunInfo
-type EnrichedIdent                            = Ident (Maybe SimpleType) VarInfo FunInfo
-type EnrichedType                             = Type (Maybe SimpleType) VarInfo FunInfo
-type EnrichedIndexType                        = IndexType (Maybe SimpleType) VarInfo FunInfo
-type EnrichedConstant                         = Constant (Maybe SimpleType) VarInfo FunInfo
+type EnrichedProgram                          = Program EnrichedType VarInfo FunInfo
+type EnrichedFormalParameters                 = FormalParameters EnrichedType VarInfo FunInfo
+type EnrichedBlock                            = Block EnrichedType VarInfo FunInfo
+type EnrichedConstantDefinition               = ConstantDefinition EnrichedType VarInfo FunInfo
+type EnrichedVariableDeclaration              = VariableDeclaration EnrichedType VarInfo FunInfo
+type EnrichedProcedureAndFunctionDeclaration  = ProcedureAndFunctionDeclaration EnrichedType VarInfo FunInfo
+type EnrichedProcedureAndFunctionHeading      = ProcedureAndFunctionHeading EnrichedType VarInfo FunInfo
+type EnrichedCompoundStatement                = CompoundStatement EnrichedType VarInfo FunInfo
+type EnrichedStatement                        = Statement EnrichedType VarInfo FunInfo
+type EnrichedOptElse                          = OptElse EnrichedType VarInfo FunInfo
+type EnrichedRExpr                            = RExpr EnrichedType VarInfo FunInfo
+type EnrichedLExpr                            = LExpr EnrichedType VarInfo FunInfo
+type EnrichedIdent                            = Ident EnrichedType VarInfo FunInfo
+type EnrichedIndexType                        = IndexType EnrichedType VarInfo FunInfo
+type EnrichedConstant                         = Constant EnrichedType VarInfo FunInfo
+type EnrichedType                             = Type () VarInfo ()
 
 -- Definition of the position of the tokens
 data Loc = Loc {line, column :: Int}
@@ -209,8 +203,9 @@ data Loc = Loc {line, column :: Int}
 -- Variable informations for the enriched AST
 data VarInfo =
   VarInfo {
-    init :: Maybe (Constant () () ()),  -- Value of a constant known at compile time (if present)
-    const :: Bool                       -- True if it's a constant
+    constValue :: Maybe SimpleConstant, -- Value of a constant known at compile time (if present)
+    const :: Bool,                      -- True if it's a constant
+    arrayBound :: Maybe (Int, Int)      -- If it's an array this is its range, otherwise is Nothing
   }
   | NoVarInfo
   deriving (C.Eq, C.Ord, C.Show)

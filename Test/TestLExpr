@@ -20,16 +20,20 @@ begin
     arr[1];
     mat[2][3];
     pmat^[1][2];
+    arr[6];         // Out of bound (Runtime error)
+    arr[3*8];       // Out of bound (Runtime error)
+    mat[0][1];      // Out of bound (Runtime error)
+    pmat^[4][1];    // Out of bound (Runtime error)
 
     // LDeref
     pa^;
     pp^^;
     ^pa;
-    parr^;  // Integer
+    parr^;          // Integer
     ^pp^;
 
     // Combinations
-    ^arr[1];    // ^Integer
+    ^arr[1];        // ^Integer
 
 
 
@@ -37,11 +41,7 @@ begin
     parr^[1];       // ERROR (NotAnArray)
     parr[1];        // ERROR (NotAnArray)
     a[1];           // ERROR (NotAnArray)
-    arr[6];         // ERROR (OutOfBound)
-    arr[3*8];       // ERROR (OutOfBound)
-    mat[0][1];      // ERROR (OutOfBound)
     arr[2]^;        // ERROR (NotAPointer)
     b^;             // ERROR (NotAPointer)
-    pmat^[4][1];    // ERROR (OutOfBound)
-    arr["ciao"];
+    arr["ciao"];    // ERROR (NotIntegerArrType)
 end.
