@@ -1,5 +1,12 @@
 program test();
-var a: Integer;
+
+var
+    i: Integer;
+    r: Real;
+    b: Boolean;
+
 begin
-  a:=a*2;
+    i :+= i * 2;
+    r :-= i * 2;
+    i :*= b * 2;
 end.

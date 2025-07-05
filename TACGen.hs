@@ -50,7 +50,7 @@ genVarDecl (VarDecl idents ty) = do
     -- For each variable, generate an assignment to 0 (default)
     fmap concat $ forM idents $ \ident -> do
         let tacType = typeToTACType ty
-        let var = ProgVar (TacProgVar (extractSimpleIdent ident) True ByVal (typeToBasicType ty)) tacType
+        let var = ProgVar (TacProgVar (extractSimpleIdent ident) True ByVal (enrichedTypeToBasicType ty)) tacType
         -- Choose default value based on type
         let defaultLit = case tacType of
                 TACInteger   -> LiteralInteger 0
@@ -142,8 +142,8 @@ genLExpr (LArr e1 e2 ty loc) = do
     (codeIdx, xidx) <- genRExpr e2
 
     let e1Ty = getLExprType e1
-    let lowerBound = e1Ty >>= getArrayLowerBound
-    let upperBound = e1Ty >>= getArraySize
+    let lowerBound = getArrayLowerBound e1Ty
+    let upperBound = getArraySize e1Ty
     let justLower = case lowerBound of Just a -> a; Nothing -> error "array has no lower bound"
     let justUpper = case upperBound of Just a -> a - 1; Nothing -> error "array has no upper bound"
 
@@ -179,7 +179,7 @@ genLExpr (LDeref e1 ty loc) = do
     case xaddr of
         Addr addr -> do
             -- Load the value pointed to
-            tmp <- newtemp (case ty of Just t' -> getTACType (Just t'); Nothing -> TACInteger)
+            tmp <- newtemp (case ty of t' -> getTACType t')
             let code' = code1 ++ [TACDerefRead tmp addr]
             return (code', Addr tmp)
         RefAddr addr -> do
@@ -203,8 +203,8 @@ genLExprTarget (LArr e1 e2 ty loc) = do
     (codeIdx, xidx) <- genRExpr e2
 
     let e1Ty = getLExprType e1
-    let lowerBound = e1Ty >>= getArrayLowerBound
-    let upperBound = e1Ty >>= getArraySize
+    let lowerBound = getArrayLowerBound e1Ty
+    let upperBound = getArraySize e1Ty
     let justLower = case lowerBound of Just a -> a; Nothing -> error "array has no lower bound"
     let justUpper = case upperBound of Just a -> a - 1; Nothing -> error "array has no upper bound"
 
@@ -367,7 +367,7 @@ genStatement (ContinueStmt loc) = do
         Nothing -> return [] -- Not inside a loop: don't generate anything
 
 -- "for" statement (for variable := start to end do statement)
-genStatement (ForTo var start end body) = do
+genStatement (ForTo var start end body loc) = do
     -- Generate labels for the loop
     loopLabel <- newlabel
     endLabel <- newlabel
@@ -396,8 +396,8 @@ genStatement (ForTo var start end body) = do
     
     -- Generate the complete for loop code
     let initCode = startCode ++ endCode ++ varCode ++ [TACAssign varAddr startAddr]
-    let conditionCode = [TACIfRel varAddr (BinaryGt (Loc 0 0)) endAddr endLabel]
-    let incrementCode = [TACBinary varAddr (BinaryPlus (Loc 0 0)) (tacTypeToBasicType (addrT varAddr)) varAddr (TACLit (LiteralInteger 1) TACInteger)]
+    let conditionCode = [TACIfRel varAddr (BinaryGt loc) endAddr endLabel]
+    let incrementCode = [TACBinary varAddr (BinaryPlus loc) (tacTypeToBasicType (addrT varAddr)) varAddr (TACLit (LiteralInteger 1) TACInteger)]
     
     return (initCode ++ 
             [TACAddLabel loopLabel] ++ 
@@ -535,13 +535,13 @@ genShortCircuitOr e1 e2 t = do
 genParamInit :: [EnrichedFormalParameters] -> TACGen [TAC TACLabel]
 genParamInit params = fmap (concat . concat) $ forM params $ \(FormParam mode idents typ) ->
     forM idents $ \ident -> do
-        let var = ProgVar (TacProgVar (extractSimpleIdent ident) True mode (typeToBasicType typ)) (typeToTACType typ)
+        let var = ProgVar (TacProgVar (extractSimpleIdent ident) True mode (enrichedTypeToBasicType typ)) (typeToTACType typ)
         case mode of
             ByVal -> do
                 tmp <- newtemp (typeToTACType typ)
                 return [TACParam tmp, TACAssign var tmp]
             ByRef -> do
-                tmp <- newtemp (enrichedTypeToTACType typ)
+                tmp <- newtemp (typeToTACType typ)
                 return [TACParam tmp, TACAssign var tmp]
 
 -- Extract the flatten list of the formal parameters modality
@@ -576,7 +576,7 @@ genRExprFCall ident args paramModes t = do
 -----------------------------------------------------------
 
 
-arrayBoundCheck :: XAddr -> Int -> Int -> TACGen ([TAC TACLabel])
+arrayBoundCheck :: XAddr -> Int -> Int -> TACGen [TAC TACLabel]
 arrayBoundCheck idxOperand lowerBound upperBound = do
   let loc = Loc 0 0 
   let lowerLit = TACLit (LiteralInteger (fromIntegral lowerBound)) TACInteger
@@ -601,19 +601,20 @@ arrayBoundCheck idxOperand lowerBound upperBound = do
 
 -- Get array size for out of bound check
 getArraySize :: Type ty varInfo funInfo -> Maybe Int
-getArraySize (Array [IndexRange (ConstInt _ low) (ConstInt _ high)] _) =
-  Just (fromInteger high - fromInteger low + 1)
+getArraySize (Array _ _ varInfo) = case varInfo of
+    (VarInfo _ _ (Just (low, high))) -> Just (high - low + 1)
+    _ -> Nothing
 getArraySize _ = Nothing
 
 -- Get array lower bound for out of bound check
 getArrayLowerBound :: Type ty varInfo funInfo -> Maybe Int
-getArrayLowerBound (Array [IndexRange (ConstInt _ low) (ConstInt _ high)] _) =
-  Just (fromInteger low)
+getArrayLowerBound (Array _ _ varInfo) = case varInfo of
+    (VarInfo _ _ (Just (low, high))) -> Just low
 getArrayLowerBound _ = Nothing
 
 
 
---
+
 getLExprType :: LExpr ty varInfo funInfo -> ty
 getLExprType (LId _ ty)      = ty
 getLExprType (LArr _ _ ty _)  = ty
@@ -632,7 +633,7 @@ extractAddr _ = error "Expected Address but got different XAddr type"
 typeToTACType :: EnrichedType -> TACType
 typeToTACType (BasicType bt) = basicTypeToTACType bt
 typeToTACType (Pointer _)    = TACAddr
-typeToTACType (Array {})  = TACAddr
+typeToTACType (Array {})     = TACAddr
 
 -- Convert BasicType to TACType
 basicTypeToTACType :: BasicType -> TACType

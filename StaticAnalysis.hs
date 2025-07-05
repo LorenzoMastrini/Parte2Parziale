@@ -489,6 +489,17 @@ checkStatement env stmt isLoop isInsideFun funType mForVar = case stmt of
     ContinueStmt loc -> if isLoop
         then (env, ContinueStmt loc)
         else (addError env (NotInLoop "continue", loc), ContinueStmt loc)
+    OpAssign lexpr op rexpr ty ->
+        let
+            (env1, lexprEnriched) = checkLExpr env lexpr mForVar
+            (env2, rexprEnriched) = checkRExpr env1 rexpr mForVar
+            loc = getOpAssignLoc op
+        in if isConstant lexprEnriched
+            then (addError env2 (AssignmentToConstant, loc), Assign lexprEnriched rexprEnriched Error loc) -- If the checks didn't pass as defined in the grammar, it must be a constant
+            else let
+                (env3, ty) = checkOpAssign env2 op (getLExprType lexprEnriched) (getRExprType rexprEnriched)
+                (env4, assTy) = checkCompatibleAssignmentTypes env3 (getLExprType lexprEnriched) (getRExprType rexprEnriched) loc
+                in (env4, Assign lexprEnriched rexprEnriched (enrichType assTy) loc)
 
 -------------------- Assignments --------------------
 -- Check the type compatibility in an assignment
@@ -507,7 +518,16 @@ checkCompatibleAssignmentTypes env targetType sourceType loc
             then (env, targetType)
             else (addError env (IncompatiblePtrArrType, loc), Error)
         _ -> (addError env (IncompatibleAssignment targetType sourceType, loc), Error)
-        
+
+-- Check type compatibility for the operations of ":+=", ":-=" and ":*=" assignments
+checkOpAssign :: Env -> OpAssignType -> SimpleType -> SimpleType -> (Env, SimpleType)
+checkOpAssign env op t1 t2 = if t1 == Error || t2 == Error
+    then (env, Error) -- One of the two types is Error, stop expression analysis
+    else case op of
+    OpAssignAdd loc -> checkNumericOp env "+" t1 t2 loc
+    OpAssignSub loc -> checkNumericOp env "-" t1 t2 loc
+    OpAssignMul loc -> checkNumericOp env "*" t1 t2 loc
+
 -------------------- If-Then-Else --------------------
 checkOptElse :: Env -> SimpleOptElse -> Bool -> Bool -> SimpleType -> Maybe String -> (Env, EnrichedOptElse)
 checkOptElse env optElse isLoop isInsideFun funType mForVar = case optElse of
@@ -886,12 +906,15 @@ isInteger rexpr = case getRExprType rexpr of
     _ -> False
 
 enrichedTypeToSimpleType :: EnrichedType -> SimpleType
-enrichedTypeToSimpleType (Array idx t _) = Array idx (enrichedTypeToSimpleType t) ()
+enrichedTypeToSimpleType (Array idx t _) = Array idx (enrichedTypeToSimpleType t) NoVarInfo
 enrichedTypeToSimpleType (Pointer t) = Pointer (enrichedTypeToSimpleType t)
 enrichedTypeToSimpleType (BasicType t) = BasicType t
 enrichedTypeToSimpleType Error = Error
 
-
+getOpAssignLoc :: OpAssignType -> Loc
+getOpAssignLoc (OpAssignAdd loc) = loc
+getOpAssignLoc (OpAssignSub loc) = loc
+getOpAssignLoc (OpAssignMul loc) = loc
 
 -----------------------------------------------------------
 -------------------- PRINT ENVIRONMENT --------------------

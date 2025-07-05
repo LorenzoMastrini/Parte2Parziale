@@ -142,7 +142,7 @@ data Literal
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Type ty varInfo funInfo
-  = Array (IndexType () () ()) (Type () varInfo ()) varInfo
+  = Array (IndexType () () ()) (Type () varInfo ()) VarInfo
   | Pointer (Type () varInfo ())
   | BasicType BasicType
   | Error
@@ -215,7 +215,7 @@ data VarInfo =
     arrayBound :: Maybe (Int, Int)      -- If it's an array this is its range, otherwise is Nothing
   }
   | NoVarInfo
-  deriving (C.Eq, C.Ord, C.Show)
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 -- Function informations for the enriched AST
 data FunInfo =

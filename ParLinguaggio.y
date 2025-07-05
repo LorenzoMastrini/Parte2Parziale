@@ -181,7 +181,7 @@ OptModality
 
 Type :: { AbsLinguaggio.Type () () () }
 Type
-  : 'array' '[' IndexType ']' 'of' Type { AbsLinguaggio.Array $3 $6 () }
+  : 'array' '[' IndexType ']' 'of' Type { AbsLinguaggio.Array $3 $6 AbsLinguaggio.NoVarInfo }
   | '^' Type { AbsLinguaggio.Pointer $2 }
   | BasicType { AbsLinguaggio.BasicType $1 }
 

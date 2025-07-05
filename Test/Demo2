@@ -11,6 +11,7 @@ var
     ok: Boolean;
     arr: array[0..9] of Integer;
     parr: array[0..4] of ^Integer;
+    mat: array[0..4] of array[0..6] of String;
     p: ^Integer;
 
 function Square(x: Integer): Integer;
@@ -103,13 +104,32 @@ begin
     b := p^ + 10;
     a := 0;
     b := 0;
+    
     repeat
         begin
             if arr[a] mod 2 = 0 then
                 b := b + arr[a];
             a := a + 1;
         end
+    
     until a > 9;
+    
     if ok then
         PrintMessage(s);
-end. 
+
+    a :+= a * 2;
+    a :*= ok * 2;
+
+    for i := 1 to 3 do
+        for j := true to true do
+            begin
+                writeInt(7);
+                writeReal(9.8);
+            end;
+
+    for i := 1 to 3 do
+    begin
+        r :-= a * b;
+        writeInt(69);
+    end;
+end.
