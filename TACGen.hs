@@ -63,12 +63,12 @@ genVarDecl (VarDecl idents ty) = do
         let var = ProgVar (TacProgVar (extractSimpleIdent ident) True ByVal (enrichedTypeToBasicType ty)) tacType
         -- Choose default value based on type
         let defaultLit = case tacType of
-                TACInteger   -> LiteralInteger 0
-                TACReal      -> LiteralDouble 0.0
-                TACBoolean   -> Literal_false
-                TACCharacter -> LiteralChar '\0'
-                TACAddr      -> LiteralInteger 0 -- Default value for addresses (null pointer)
-                _            -> LiteralInteger 0 -- Error
+                Just TACInteger   -> LiteralInteger 0
+                Just TACReal      -> LiteralDouble 0.0
+                Just TACBoolean   -> Literal_false
+                Just TACCharacter -> LiteralChar '\0'
+                Just TACAddr      -> LiteralInteger 0 -- Default value for addresses (null pointer)
+                _                 -> LiteralInteger 0 -- Error
         tmp <- newtemp tacType
         let code = [TACAssign tmp (TACLit defaultLit tacType), TACAssign var tmp]
         return code
@@ -123,7 +123,7 @@ genRExpr (FCall ident@(Ident _ _ ty _ (FunInfo retTy params)) args loc) = do
 
 genRExpr (FCall ident args loc) = do
     -- When funInfo is NoFunInfo (error) do nothing
-    return ([], Addr (Temporary 0 TACInteger)) -- Temporary not used
+    return ([], Addr (Temporary 0 (Just TACInteger))) -- Temporary not used
 
 genRExpr (Ref unary rexpr ty) = do
     (code, xaddr) <- genRExpr rexpr
@@ -171,11 +171,11 @@ genLExpr (LArr e1 e2 ty loc) = do
             return (code', Addr tmp)
         ArrayAddr{base, offset} -> do
             -- Multi-dimentional arrays: calculate total offset
-            dimAddr <- newtemp TACInteger
-            let dimCode = [TACAssign dimAddr (TACLit (LiteralInteger 2) TACInteger)]
-            totalOffsetAddr <- newtemp TACInteger
+            dimAddr <- newtemp (Just TACInteger)
+            let dimCode = [TACAssign dimAddr (TACLit (LiteralInteger 2) (Just TACInteger))]
+            totalOffsetAddr <- newtemp (Just TACInteger)
             let mulCode = [TACBinary totalOffsetAddr (BinaryMul (Loc 0 0)) Integer offset dimAddr]
-            finalOffsetAddr <- newtemp TACInteger
+            finalOffsetAddr <- newtemp (Just TACInteger)
             let addCode = [TACBinary finalOffsetAddr (BinaryPlus (Loc 0 0)) Integer totalOffsetAddr idxAddr]
             -- Load the value from the calculated address
             tmp <- newtemp (getTACType ty)
@@ -231,11 +231,11 @@ genLExprTarget (LArr e1 e2 ty loc) = do
             return (codeBase ++ codeIdx ++ codeBound, xaddr)
         ArrayAddr{base, offset} -> do
             -- Multi-dimentional arrays: calculate total offset
-            dimAddr <- newtemp TACInteger
-            let dimCode = [TACAssign dimAddr (TACLit (LiteralInteger 2) TACInteger)]
-            totalOffsetAddr <- newtemp TACInteger
+            dimAddr <- newtemp (Just TACInteger)
+            let dimCode = [TACAssign dimAddr (TACLit (LiteralInteger 2) (Just TACInteger))]
+            totalOffsetAddr <- newtemp (Just TACInteger)
             let mulCode = [TACBinary totalOffsetAddr (BinaryMul (Loc 0 0)) Integer offset dimAddr]
-            finalOffsetAddr <- newtemp TACInteger
+            finalOffsetAddr <- newtemp (Just TACInteger)
             let addCode = [TACBinary finalOffsetAddr (BinaryPlus (Loc 0 0)) Integer totalOffsetAddr idxAddr]
             -- Return the target address for writing (don't load the value)
             let xaddr = ArrayAddr { base = base, offset = finalOffsetAddr }
@@ -413,7 +413,7 @@ genStatement (ForTo var start end body loc) = do
     -- Generate the complete for loop code
     let initCode = startCode ++ endCode ++ varCode ++ [TACAssign varAddr startAddr]
     let conditionCode = [TACIfRel varAddr (BinaryGt loc) endAddr endLabel]
-    let incrementCode = [TACBinary varAddr (BinaryPlus loc) (tacTypeToBasicType (addrT varAddr)) varAddr (TACLit (LiteralInteger 1) TACInteger)]
+    let incrementCode = [TACBinary varAddr (BinaryPlus loc) (tacTypeToBasicType (addrT varAddr)) varAddr (TACLit (LiteralInteger 1) (Just TACInteger))]
     
     return (initCode ++ 
             [TACAddLabel loopLabel] ++ 
@@ -474,25 +474,25 @@ genStatement (OpAssign lexpr opAssignType rexpr ty) = do
 -- Generate costants
 genConstant :: EnrichedConstant -> TACGen ([TAC TACLabel], Address)
 genConstant (ConstInt sign val) = do
-    addr <- newtemp TACInteger
+    addr <- newtemp (Just TACInteger)
     let intVal = case sign of
                     NoOptSign -> val
                     OptSignPlus -> val
                     OptSignMinus -> -val
-    let code = [TACAssign addr (TACLit (LiteralInteger intVal) TACInteger)]
+    let code = [TACAssign addr (TACLit (LiteralInteger intVal) (Just TACInteger))]
     return (code, addr)
 genConstant (ConstDouble sign val) = do
-    addr <- newtemp TACReal
+    addr <- newtemp (Just TACReal)
     let doubleVal = case sign of
                         NoOptSign -> val
                         OptSignPlus -> val
                         OptSignMinus -> -val
-    let code = [TACAssign addr (TACLit (LiteralDouble doubleVal) TACReal)]
+    let code = [TACAssign addr (TACLit (LiteralDouble doubleVal) (Just TACReal))]
     return (code, addr)
 genConstant (ConstStr str) = do
-    addr <- newtemp TACAddr
+    addr <- newtemp (Just TACAddr)
     strAddr <- newStringAddress str
-    let code = [TACAssign addr (TACLit (LiteralString str) TACAddr)]
+    let code = [TACAssign addr (TACLit (LiteralString str) (Just TACAddr))]
     return (code, addr)
 genConstant (ConstId sign ident@(Ident _ _ ty _ _)) = do
     -- AST should store the value of the consant (not yet modified)
@@ -502,16 +502,16 @@ genConstant (ConstId sign ident@(Ident _ _ ty _ _)) = do
     let code = [TACAssign addr (ProgVar progVar constType)]
     return (code, addr)
 genConstant (ConstChar c) = do
-    addr <- newtemp TACCharacter
-    let code = [TACAssign addr (TACLit (LiteralChar c) TACCharacter)]
+    addr <- newtemp (Just TACCharacter)
+    let code = [TACAssign addr (TACLit (LiteralChar c) (Just TACCharacter))]
     return (code, addr)
 genConstant (ConstBool b) = do
-    addr <- newtemp TACBoolean
-    let code = [TACAssign addr (TACLit (if b then Literal_true else Literal_false) TACBoolean)]
+    addr <- newtemp (Just TACBoolean)
+    let code = [TACAssign addr (TACLit (if b then Literal_true else Literal_false) (Just TACBoolean))]
     return (code, addr)
 
 -- Short-circuit evaluation for "and"
-genShortCircuitAnd :: EnrichedRExpr -> EnrichedRExpr -> TACType -> TACGen ([TAC TACLabel], XAddr)
+genShortCircuitAnd :: EnrichedRExpr -> EnrichedRExpr -> Maybe TACType -> TACGen ([TAC TACLabel], XAddr)
 genShortCircuitAnd e1 e2 t = do
     resultAddr <- newtemp t
     falseLabel <- newlabel
@@ -527,13 +527,13 @@ genShortCircuitAnd e1 e2 t = do
     -- Id the second is false, jump to the result (false)
     let secondCheck = code2 ++ [TACIfFalse addr2' falseLabel]
     -- If get here, they are both true
-    let trueCode = [TACAssign resultAddr (TACLit Literal_true TACBoolean), TACGoto endLabel]
+    let trueCode = [TACAssign resultAddr (TACLit Literal_true (Just TACBoolean)), TACGoto endLabel]
     -- Code for the "false" result
-    let falseCode = [TACAddLabel falseLabel, TACAssign resultAddr (TACLit Literal_false TACBoolean)]
+    let falseCode = [TACAddLabel falseLabel, TACAssign resultAddr (TACLit Literal_false (Just TACBoolean))]
     return (shortcutCode ++ secondCheck ++ trueCode ++ falseCode ++ [TACAddLabel endLabel], Addr resultAddr)
 
 -- Short-circuit evaluation for "or"
-genShortCircuitOr :: EnrichedRExpr -> EnrichedRExpr -> TACType -> TACGen ([TAC TACLabel], XAddr)
+genShortCircuitOr :: EnrichedRExpr -> EnrichedRExpr -> Maybe TACType -> TACGen ([TAC TACLabel], XAddr)
 genShortCircuitOr e1 e2 t = do
     resultAddr <- newtemp t
     trueLabel <- newlabel
@@ -544,8 +544,8 @@ genShortCircuitOr e1 e2 t = do
     (code2, addr2) <- genRExpr e2
     let addr2' = case addr2 of Addr a -> a; _ -> error "Non-Address OR condition"
     let secondCheck = code2 ++ [TACIf addr2' trueLabel]
-    let falseCode = [TACAssign resultAddr (TACLit Literal_false TACBoolean), TACGoto endLabel]
-    let trueCode = [TACAddLabel trueLabel, TACAssign resultAddr (TACLit Literal_true TACBoolean)]
+    let falseCode = [TACAssign resultAddr (TACLit Literal_false (Just TACBoolean)), TACGoto endLabel]
+    let trueCode = [TACAddLabel trueLabel, TACAssign resultAddr (TACLit Literal_true (Just TACBoolean))]
     return (shortcutCode ++ secondCheck ++ falseCode ++ trueCode ++ [TACAddLabel endLabel], Addr resultAddr)
 
 genParamInit :: [EnrichedFormalParameters] -> TACGen [TAC TACLabel]
@@ -564,7 +564,7 @@ genParamInit params = fmap (concat . concat) $ forM params $ \(FormParam mode id
 extractParamModes :: [SimpleFormalParameters] -> [OptModality]
 extractParamModes params = concatMap (\(FormParam m ids _) -> replicate (length ids) m) params
 
-genRExprFCall :: EnrichedIdent -> [EnrichedRExpr] -> [OptModality] -> TACType -> TACGen ([TAC TACLabel], XAddr)
+genRExprFCall :: EnrichedIdent -> [EnrichedRExpr] -> [OptModality] -> Maybe TACType -> TACGen ([TAC TACLabel], XAddr)
 genRExprFCall ident args paramModes t = do
     paramTACs <- forM (zip args paramModes) $ \(arg, mode) ->
         case mode of
@@ -579,7 +579,7 @@ genRExprFCall ident args paramModes t = do
                     return (code, TACParam addr)
                 _ -> do
                     -- Errore: ByRef parameter (not LExpr)
-                    return ([], TACParam (Temporary 0 TACInteger)) -- Temporary not used
+                    return ([], TACParam (Temporary 0 (Just TACInteger))) -- Temporary not used
     let (codes, tacParams) = unzip paramTACs
     addr <- newtemp t
     -- Get the label of the procedure/function
@@ -597,12 +597,12 @@ genRExprFCall ident args paramModes t = do
 arrayBoundCheck :: XAddr -> Int -> Int -> TACGen [TAC TACLabel]
 arrayBoundCheck idxOperand lowerBound upperBound = do
   let loc = Loc 0 0 
-  let lowerLit = TACLit (LiteralInteger (fromIntegral lowerBound)) TACInteger
-  let upperLit = TACLit (LiteralInteger (fromIntegral upperBound)) TACInteger
+  let lowerLit = TACLit (LiteralInteger (fromIntegral lowerBound)) (Just TACInteger)
+  let upperLit = TACLit (LiteralInteger (fromIntegral upperBound)) (Just TACInteger)
 
-  checkLower <- newtemp TACBoolean
-  checkUpper <- newtemp TACBoolean
-  isValid    <- newtemp TACBoolean
+  checkLower <- newtemp (Just TACBoolean)
+  checkUpper <- newtemp (Just TACBoolean)
+  isValid    <- newtemp (Just TACBoolean)
 
   let xlower = [TACBinary checkLower (BinaryGte loc) Integer (extractAddr idxOperand) lowerLit]
   let xupper = [TACBinary checkUpper (BinaryLte loc) Integer (extractAddr idxOperand) upperLit]
@@ -648,19 +648,19 @@ extractAddr (Addr addr) = addr
 extractAddr _ = error "Expected Address but got different XAddr type"
 
 -- Convert EnrichedType to TACType
-typeToTACType :: EnrichedType -> TACType
+typeToTACType :: EnrichedType -> Maybe TACType
 typeToTACType (BasicType bt) = basicTypeToTACType bt
-typeToTACType (Pointer _)    = TACAddr
-typeToTACType (Array {})     = TACAddr
+typeToTACType (Pointer _)    = Just TACAddr
+typeToTACType (Array {})     = Just TACAddr
 
 -- Convert BasicType to TACType
-basicTypeToTACType :: BasicType -> TACType
-basicTypeToTACType Integer    = TACInteger
-basicTypeToTACType Real       = TACReal
-basicTypeToTACType Character  = TACCharacter
-basicTypeToTACType Boolean    = TACBoolean
-basicTypeToTACType String     = TACAddr
-basicTypeToTACType Void       = TACError
+basicTypeToTACType :: BasicType -> Maybe TACType
+basicTypeToTACType Integer    = Just TACInteger
+basicTypeToTACType Real       = Just TACReal
+basicTypeToTACType Character  = Just TACCharacter
+basicTypeToTACType Boolean    = Just TACBoolean
+basicTypeToTACType String     = Just TACAddr
+basicTypeToTACType Void       = Nothing
 
 -- Convert EnrichedType to BasicType
 enrichedTypeToBasicType :: EnrichedType -> BasicType
@@ -668,13 +668,13 @@ enrichedTypeToBasicType (BasicType bt) = bt
 enrichedTypeToBasicType _ = Void
 
 -- Convert TACType to BasicType
-tacTypeToBasicType :: TACType -> BasicType
-tacTypeToBasicType TACInteger   = Integer
-tacTypeToBasicType TACReal      = Real
-tacTypeToBasicType TACBoolean   = Boolean
-tacTypeToBasicType TACCharacter = Character
-tacTypeToBasicType TACAddr      = Integer  -- Default for addresses
-tacTypeToBasicType TACError     = Void
+tacTypeToBasicType :: Maybe TACType -> BasicType
+tacTypeToBasicType (Just TACInteger)   = Integer
+tacTypeToBasicType (Just TACReal)      = Real
+tacTypeToBasicType (Just TACBoolean)   = Boolean
+tacTypeToBasicType (Just TACCharacter) = Character
+tacTypeToBasicType (Just TACAddr)      = Integer  -- Default for addresses
+tacTypeToBasicType Nothing             = Void
 
 getIdentName :: EnrichedIdent -> String
 getIdentName (Ident name _ _ _ _) = name

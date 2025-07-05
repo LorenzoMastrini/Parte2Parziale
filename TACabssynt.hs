@@ -22,9 +22,9 @@ data XAddr
     deriving (Show)
 
 data Address
-    = ProgVar { progVar :: TacProgVariable, addrT :: TACType }
-    | TACLit { tacLit :: Literal, addrT :: TACType }
-    | Temporary { tempInt :: Int, addrT :: TACType }
+    = ProgVar { progVar :: TacProgVariable, addrT :: Maybe TACType }
+    | TACLit { tacLit :: Literal, addrT :: Maybe TACType }
+    | Temporary { tempInt :: Int, addrT :: Maybe TACType }
     deriving (Show)
 
 data TacProgVariable = TacProgVar {

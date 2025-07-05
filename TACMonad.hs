@@ -25,7 +25,7 @@ data TACState = TACState {
 initialTACState :: TACState
 initialTACState = TACState 0 0 [] [] 0 Map.empty False Map.empty
 
-newtemp :: TACType -> TACGen Address
+newtemp :: Maybe TACType -> TACGen Address
 newtemp tacTy = do
     state <- get
     let newCounter = tempCounter state + 1
@@ -118,17 +118,17 @@ genOutOfBound = do
 -----------------------------------------------------------
 
 -- Convert Maybe SimpleType in TACType
-getTACType :: EnrichedType -> TACType
+getTACType :: EnrichedType -> Maybe TACType
 getTACType (BasicType t) = case t of
-  Integer   -> TACInteger
-  Real      -> TACReal
-  Character -> TACCharacter
-  Boolean   -> TACBoolean
-  String    -> TACAddr
-  _         -> TACError
-getTACType (Pointer _) = TACAddr
-getTACType (Array {}) = TACAddr
-getTACType Error = TACError  -- default fallback
+  Integer   -> Just TACInteger
+  Real      -> Just TACReal
+  Character -> Just TACCharacter
+  Boolean   -> Just TACBoolean
+  String    -> Just TACAddr
+  Void      -> Nothing
+getTACType (Pointer _) = Just TACAddr
+getTACType (Array {}) = Just TACAddr
+getTACType Error = Nothing  -- default fallback
 
 -- Extract BasicType from a (Maybe SimpleType)
 getBasicType :: EnrichedType -> BasicType

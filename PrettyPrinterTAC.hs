@@ -96,19 +96,19 @@ prettyTACabssynt = unlines . map prettyTACabssyntInstr
 -- Extract the main type form a list of TAC instructions (if present)
 getTACInstrType :: TACabssynt.TAC TACabssynt.TACLabel -> Maybe TACabssynt.TACType
 getTACInstrType tac = case tac of
-  TACabssynt.TACBinary dst _ _ _ _ -> Just (getAddrType dst)
-  TACabssynt.TACUnary dst _ _ _ -> Just (getAddrType dst)
-  TACabssynt.TACNullary dst _ _ -> Just (getAddrType dst)
-  TACabssynt.TACIndexedLoad dst _ _ -> Just (getAddrType dst)
-  TACabssynt.TACAddrOf dst _ -> Just (getAddrType dst)
-  TACabssynt.TACAssign dst _ -> Just (getAddrType dst)
-  TACabssynt.TACDerefRead dst _ -> Just (getAddrType dst)
-  TACabssynt.TACReturnVal addr -> Just (getAddrType addr)
-  TACabssynt.TACParam addr -> Just (getAddrType addr)
-  TACabssynt.TACFCall addr _ _ -> Just (getAddrType addr)
+  TACabssynt.TACBinary dst _ _ _ _ -> getAddrType dst
+  TACabssynt.TACUnary dst _ _ _ -> getAddrType dst
+  TACabssynt.TACNullary dst _ _ -> getAddrType dst
+  TACabssynt.TACIndexedLoad dst _ _ -> getAddrType dst
+  TACabssynt.TACAddrOf dst _ -> getAddrType dst
+  TACabssynt.TACAssign dst _ -> getAddrType dst
+  TACabssynt.TACDerefRead dst _ -> getAddrType dst
+  TACabssynt.TACReturnVal addr -> getAddrType addr
+  TACabssynt.TACParam addr -> getAddrType addr
+  TACabssynt.TACFCall addr _ _ -> getAddrType addr
   _ -> Nothing
   where
-    getAddrType :: TACabssynt.Address -> TACabssynt.TACType
+    getAddrType :: TACabssynt.Address -> Maybe TACabssynt.TACType
     getAddrType a = case a of
       TACabssynt.ProgVar _ t -> t
       TACabssynt.TACLit _ t -> t
@@ -148,17 +148,17 @@ prettyTACabssyntInstr tac =
           formatLabel Nothing ++ 
           prettyAddress dst ++ 
           replicate (max 0 (12 - length (prettyAddress dst))) ' ' ++
-          " = " ++ prettyAddress (TACabssynt.ProgVar varInfo TACabssynt.TACError) ++ "[" ++ prettyAddress addr ++ "]"
+          " = " ++ prettyAddress (TACabssynt.ProgVar varInfo (Just TACabssynt.TACError)) ++ "[" ++ prettyAddress addr ++ "]"
         TACabssynt.TACIndexedStore varInfo addr src ->
           formatLabel Nothing ++ 
-          prettyAddress (TACabssynt.ProgVar varInfo TACabssynt.TACError) ++ "[" ++ prettyAddress addr ++ "]" ++
-          replicate (max 0 (12 - length (prettyAddress (TACabssynt.ProgVar varInfo TACabssynt.TACError) ++ "[" ++ prettyAddress addr ++ "]"))) ' ' ++
+          prettyAddress (TACabssynt.ProgVar varInfo (Just TACabssynt.TACError)) ++ "[" ++ prettyAddress addr ++ "]" ++
+          replicate (max 0 (12 - length (prettyAddress (TACabssynt.ProgVar varInfo (Just TACabssynt.TACError)) ++ "[" ++ prettyAddress addr ++ "]"))) ' ' ++
           " = " ++ prettyAddress src
         TACabssynt.TACAddrOf dst varInfo ->
           formatLabel Nothing ++ 
           prettyAddress dst ++ 
           replicate (max 0 (12 - length (prettyAddress dst))) ' ' ++
-          " = &" ++ prettyAddress (TACabssynt.ProgVar varInfo TACabssynt.TACError)
+          " = &" ++ prettyAddress (TACabssynt.ProgVar varInfo (Just TACabssynt.TACError))
         TACabssynt.TACAssign dst src ->
           formatLabel Nothing ++ 
           prettyAddress dst ++ 
