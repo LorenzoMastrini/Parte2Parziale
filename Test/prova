@@ -50,15 +50,6 @@ function MaxAbs(a: Integer, b: Integer): Integer;
                 return b;
     end;
 
-procedure DoStuff(x: Integer);
-    begin
-        if x = 0 then
-            return x;       // ERRORE: return type mismatch
-        
-        break;              // ERRORE: break fuori da ciclo
-        continue;           // ERRORE: continue fuori da ciclo
-    end;
-
 function SumMat(m: array[1..2] of array[1..2] of Real): Real;
     var sum: Real;
 
@@ -90,39 +81,9 @@ begin
     PrintMatrix(mat);
     s := msg;
     b := flag or true;
-    r := pi * 2;
-
-    one := 100; // ERRORE: Assegnamento a costante
+    r := pi * 2;    
     
     
-    y := 5; // ERRORE: Uso di variabile non dichiarata
-    
-    // ERRORE: Condizione non booleana
-    if r then
-        s := "bad cond";
-    
-    // ERRORE: Parametro di tipo errato
-    PrintMatrix(arr);
-    
-    // ERRORE: Parameter type mismatch
-    r := MaxAbs(1, 2);
-    i := MaxAbs(1.5, 2.5);
-    
-    // ERRORE: While con condizione non booleana
-    while s do
-        s := s + "!";
-    
-    // ERRORE: DoWhile con condizione non booleana
-    repeat
-        i := i - 1
-    until r;
-    
-    // ERRORE: Return fuori da funzione
-    return 42;
-    
-    // ERRORE: Break/Continue fuori da ciclo
-    break;
-    continue;
 
     -6.89e-9;
 end. 

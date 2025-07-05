@@ -18,11 +18,12 @@ data TACState = TACState {
     continueLabels :: [TACLabel],
     stringCounter :: Int,                   -- counter for string addresses
     stringTable :: Map.Map String String,    -- table for constant strings
-    outOfBound :: Bool
+    outOfBound :: Bool,
+    functionLabels :: Map.Map String TACLabel -- Map between proc/func identifiers and their labels
 }
 
 initialTACState :: TACState
-initialTACState = TACState 0 0 [] [] 0 Map.empty False
+initialTACState = TACState 0 0 [] [] 0 Map.empty False Map.empty
 
 newtemp :: TACType -> TACGen Address
 newtemp tacTy = do

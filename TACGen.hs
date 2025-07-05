@@ -4,9 +4,10 @@ import TACabssynt
 import TACMonad
 import AbsLinguaggio
 import Control.Monad.State
-import Control.Monad (forM)
+import Control.Monad (forM, forM_)
 import Data.Functor.Identity (runIdentity)
 import qualified Data.Map as Map
+import Debug.Trace (traceShow)
 
 
 
@@ -27,6 +28,15 @@ genBlock :: EnrichedBlock -> TACGen ([TAC TACLabel], TACState)
 genBlock (Block constDefs varDecls procFunDecls compStmt) = do 
     constCodes <- mapM genConstDef constDefs -- Constants
     varCodes <- mapM genVarDecl varDecls -- Variables
+
+    -- PRIMO PASSO: inserisci tutte le label delle funzioni nella mappa
+    forM_ procFunDecls $ \(ProcFunDecl heading _) -> do
+        let ident = case heading of
+                        ProcHead i _ -> i
+                        FunHead i _ _ _ -> i
+        entryLabel <- newlabel
+        modify $ \st -> st { functionLabels = Map.insert (getIdentName ident) entryLabel (functionLabels st) }
+        
     procFunResults <- mapM genProcedureFunctionDeclaration procFunDecls -- Procedures and functions
     let procFunCodes = concat procFunResults
     compStmtCode <- genCompoundStatement compStmt -- Compound statement
@@ -70,6 +80,9 @@ genProcedureFunctionDeclaration (ProcFunDecl heading block) = do
             ProcHead i p -> (i, p, Nothing)
             FunHead i p t loc -> (i, p, Just t)
     entryLabel <- newlabel
+    -- Get the label associated with the identifier
+    st <- get
+    let entryLabel = (functionLabels st) Map.! (getIdentName ident)
     paramInitCode <- genParamInit params
     (bodyCode, _) <- genBlock block
     let endCode = case returnType of
@@ -272,6 +285,9 @@ genStatement (ReturnStmt re ty loc) = do
     (code, xaddr) <- genRExpr re
     let addr = extractAddr xaddr
     return (code ++ [TACReturnVal addr])
+
+genStatement (ReturnNoExpr ty loc) = do
+    return [TACReturn]
 
 genStatement (Stmts compStmt) = genCompoundStatement compStmt
 
@@ -566,7 +582,9 @@ genRExprFCall ident args paramModes t = do
                     return ([], TACParam (Temporary 0 TACInteger)) -- Temporary not used
     let (codes, tacParams) = unzip paramTACs
     addr <- newtemp t
-    let codeCall = concat codes ++ tacParams ++ [TACFCall addr 0 (length args)]
+    -- Get the label of the procedure/function
+    funLabel <- gets (Map.findWithDefault (error "Function label not found") (getIdentName ident) . functionLabels)
+    let codeCall = concat codes ++ tacParams ++ [TACFCall addr funLabel (length args)]
     return (codeCall, Addr addr)
 
 
@@ -657,3 +675,6 @@ tacTypeToBasicType TACBoolean   = Boolean
 tacTypeToBasicType TACCharacter = Character
 tacTypeToBasicType TACAddr      = Integer  -- Default for addresses
 tacTypeToBasicType TACError     = Void
+
+getIdentName :: EnrichedIdent -> String
+getIdentName (Ident name _ _ _ _) = name

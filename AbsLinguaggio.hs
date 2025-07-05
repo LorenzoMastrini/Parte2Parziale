@@ -59,6 +59,7 @@ data Statement ty varInfo funInfo
   | ForTo (LExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo) Loc
   | If (RExpr ty varInfo funInfo) (Statement ty varInfo funInfo) (OptElse ty varInfo funInfo) Loc
   | ReturnStmt (RExpr ty varInfo funInfo) ty Loc
+  | ReturnNoExpr ty Loc
   | BreakStmt Loc
   | ContinueStmt Loc
   deriving (C.Eq, C.Ord, C.Show, C.Read)

@@ -44,6 +44,8 @@ var
     procedure compat(x: String);
         begin
             x;
+            if x <> "ciao" then
+                return;
         end;
 
 

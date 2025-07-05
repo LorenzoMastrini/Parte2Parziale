@@ -183,6 +183,7 @@ instance PrintTree EnrichedStatement where
   buildTree (ForTo lexpr r1 r2 stmt loc) = [colorStmt "ForTo" ++ showInfoFields [("loc", colorPos (showLoc loc))]] ++ (paddingMultiple (buildTree lexpr) ++ paddingMultiple (buildTree r1) ++ paddingMultiple (buildTree r2) ++ paddingSingle (buildTree stmt))
   buildTree (If rexpr stmt optElse loc) = [colorStmt "If " ++ showInfoFields [("loc", colorPos (showLoc loc))]] ++ (paddingMultiple (buildTree rexpr) ++ paddingMultiple (buildTree stmt) ++ paddingSingle (buildTree optElse))
   buildTree (ReturnStmt rexpr ty loc) = [colorStmt "ReturnStmt " ++ showInfoFields [("type", colorType (showEnrichedType ty)), ("loc", colorPos (showLoc loc))]] ++ paddingSingle (buildTree rexpr)
+  buildTree (ReturnNoExpr ty loc) = [colorStmt "ReturnStmt " ++ showInfoFields [("type", colorType (showEnrichedType ty)), ("loc", colorPos (showLoc loc))]]
   buildTree (BreakStmt loc) = [colorStmt "BreakStmt " ++ showInfoFields [("loc", colorPos (showLoc loc))]]
   buildTree (ContinueStmt loc) = [colorStmt "ContinueStmt " ++ showInfoFields [("loc", colorPos (showLoc loc))]]
 

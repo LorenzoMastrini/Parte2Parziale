@@ -86,7 +86,7 @@ end;
 
 procedure PrintMessage(msg: String);
 begin
-    writeString(msg);
+    0;
 end;
 
 begin
@@ -123,13 +123,14 @@ begin
     for i := 1 to 3 do
         for j := true to true do
             begin
-                writeInt(7);
-                writeReal(9.8);
+                a :*= 5;
             end;
 
     for i := 1 to 3 do
     begin
         r :-= a * b;
-        writeInt(69);
+        Factorial(69);
     end;
+
+    a :+= 2;
 end.

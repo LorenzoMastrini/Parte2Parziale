@@ -266,6 +266,8 @@ instance Print (AbsLinguaggio.Statement () () ()) where
     ]
   prt i (AbsLinguaggio.ReturnStmt rexpr ty loc) =
     concatD [doc (showString (replicate (2*i) ' ' ++ "return ")), prt 0 rexpr]
+  prt i (AbsLinguaggio.ReturnNoExpr ty loc) =
+    concatD [doc (showString (replicate (2*i) ' ' ++ "return "))]
   prt i (AbsLinguaggio.ContinueStmt loc) =
     concatD [doc (showString (replicate (2*i) ' ' ++ "continue"))]
   prt i (AbsLinguaggio.BreakStmt loc) =

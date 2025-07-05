@@ -1,0 +1,54 @@
+program TestFunCall();
+
+var
+    a: Integer;
+    b: Real;
+    c: Boolean;
+    d: Character;
+    e: String;
+    v: Integer;
+    w: Integer;
+    z: Integer;
+
+
+    function sum(x: Integer, y: Integer): Integer;
+        begin
+            return x + y;
+        end;
+
+    function concatenate(s1, s2: String): String;
+        begin
+            return s1;
+        end;
+
+    function invert(b: Boolean): Boolean;
+        begin
+            return not b;
+        end;
+
+    // PARAMETER PASSING MODALITIES TESTS
+    // --- BY VALUE ---
+    function byValue(x: Integer): Integer;
+        begin
+            x := x + 1;
+            return x;
+        end;
+    
+    // --- BY REFERENCE ---
+    function byReference(var x: Integer): Integer;
+        begin
+            x := x + 1; // Should affect the caller
+            return x;
+        end;
+
+    procedure compat(x: String);
+        begin
+            x;
+            if 6 < 10 then
+                return;
+        end;
+
+
+begin
+    compat("Hello");
+end.

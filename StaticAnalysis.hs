@@ -483,6 +483,11 @@ checkStatement env stmt isLoop isInsideFun funType mForVar = case stmt of
                 t -> if t == funType
                     then (env1, ReturnStmt rexprEnriched (enrichType funType) loc)
                     else (addError env1 (ReturnTypeMismatch t funType, loc), ReturnStmt rexprEnriched (enrichType funType) loc)
+    ReturnNoExpr _ loc -> if not isInsideFun
+            then (addError env (NotInFunction, loc), ReturnNoExpr Error loc) -- Return is not inside a function
+            else if funType == BasicType Void
+                    then (env, ReturnNoExpr (enrichType funType) loc)
+                    else (addError env (ReturnTypeMismatch (BasicType Void) funType, loc), ReturnNoExpr (enrichType funType) loc)
     BreakStmt loc -> if isLoop
         then (env, BreakStmt loc)
         else (addError env (NotInLoop "break", loc), BreakStmt loc)

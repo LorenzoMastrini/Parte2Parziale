@@ -244,6 +244,7 @@ Statement
   | 'for' LExpr ':=' RExpr 'to' RExpr 'do' Statement { AbsLinguaggio.ForTo $2 $4 $6 $8 (posToLoc (getPos $3)) }
   | 'if' RExpr 'then' Statement OptElse { AbsLinguaggio.If $2 $4 $5 (posToLoc (getPos $1)) }
   | 'return' RExpr { AbsLinguaggio.ReturnStmt $2 () (posToLoc (getPos $1)) }
+  | 'return' { AbsLinguaggio.ReturnNoExpr () (posToLoc (getPos $1)) }
   | 'break' { AbsLinguaggio.BreakStmt (posToLoc (getPos $1)) }
   | 'continue' { AbsLinguaggio.ContinueStmt (posToLoc (getPos $1)) }
 
